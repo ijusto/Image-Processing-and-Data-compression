@@ -8,26 +8,16 @@
 
 #define        BUFFER_LEN        100000024
 
-static void create_file(const char *sourcefname, const char *fname, int format) {
+static void createDestFile(const SndfileHandle *sourceFile, const char *fname) {
 
-    SndfileHandle sourceFile;
-    SndfileHandle destFile;
-
-    sourceFile = SndfileHandle(sourcefname);
-    const int64_t size = sourceFile.frames();
+    const int64_t size = sourceFile->frames();
     short buffer[size];
-
-    SndfileHandle file;
-    int channels = sourceFile.channels();
-    int srate = sourceFile.samplerate();
-
-    printf("Creating file named '%s'\n", fname);
-
-    file = SndfileHandle(fname, SFM_WRITE, sourceFile.format(), channels, srate);
+    SndfileHandle destFile  = SndfileHandle(fname, SFM_WRITE, sourceFile->format(), sourceFile->channels(),
+            sourceFile->samplerate());
 
     memset(buffer, 0, sizeof(buffer));
 
-    file.write(buffer, size);
+    destFile.write(buffer, size);
 
     puts("");
     /*
@@ -38,21 +28,23 @@ static void create_file(const char *sourcefname, const char *fname, int format) 
     */
 } /* create_file */
 
-static void copy_file(const char *sourcefname, const char *destfname) {
+static void copyFile(const char *sourcefname, const char *destfname) {
 
-    SndfileHandle sourceFile;
-    SndfileHandle destFile;
+    SndfileHandle sourceFile = SndfileHandle(sourcefname, SFM_READ);
 
-    sourceFile = SndfileHandle(sourcefname);
-    destFile = SndfileHandle(destfname);
     const int64_t size = sourceFile.frames();
     short buffer[size];
+
     printf("Opened file '%s'\n", sourcefname);
     printf("    Sample rate : %d\n", sourceFile.samplerate());
     printf("    Channels    : %d\n", sourceFile.channels());
 
-    sourceFile.read(buffer, sourceFile.frames());
-    destFile.write(buffer, sourceFile.frames());
+    createDestFile(&sourceFile, destfname);
+
+    sourceFile.read(buffer, size);
+    SndfileHandle destFile = SndfileHandle(destfname, SFM_WRITE, sourceFile.format(), sourceFile.channels(),
+            sourceFile.samplerate());
+    destFile.write(buffer, size);
 
     puts("");
 
@@ -65,9 +57,7 @@ int main(void) {
 
     puts("\nSimple example showing usage of the C++ SndfileHandle object.\n");
 
-    create_file(sourcefpath, destfname, SF_FORMAT_WAV | SF_FORMAT_PCM_16);
-
-    copy_file(sourcefpath, destfname);
+    copyFile(sourcefpath, destfname);
 
     puts("Done.\n");
     return 0;
