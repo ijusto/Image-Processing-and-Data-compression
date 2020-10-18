@@ -1,0 +1,1 @@
+/usr/bin/c++  -lsndfile -g   CMakeFiles/sndfilehandle.dir/sndfilehandle.cpp.o  -o sndfilehandle 
