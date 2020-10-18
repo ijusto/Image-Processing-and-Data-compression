@@ -1,5 +1,5 @@
 file(REMOVE_RECURSE
-  "CMakeFiles/createwav.dir/sndfilehandle.cpp.o"
+  "CMakeFiles/createwav.dir/wav_copy.cpp.o"
   "createwav"
   "createwav.pdb"
 )

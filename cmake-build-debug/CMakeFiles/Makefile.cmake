@@ -54,5 +54,5 @@ set(CMAKE_MAKEFILE_PRODUCTS
 
 # Dependency information for all targets:
 set(CMAKE_DEPEND_INFO_FILES
-  "CMakeFiles/createwav.dir/DependInfo.cmake"
+  "CMakeFiles/copywav.dir/DependInfo.cmake"
   )

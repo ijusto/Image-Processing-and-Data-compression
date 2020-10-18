@@ -111,44 +111,44 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named createwav
+# Target rules for targets named copywav
 
 # Build rule for target.
-createwav: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 createwav
-.PHONY : createwav
+copywav: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 copywav
+.PHONY : copywav
 
 # fast build rule for target.
-createwav/fast:
-	$(MAKE) -f CMakeFiles/createwav.dir/build.make CMakeFiles/createwav.dir/build
-.PHONY : createwav/fast
+copywav/fast:
+	$(MAKE) -f CMakeFiles/copywav.dir/build.make CMakeFiles/copywav.dir/build
+.PHONY : copywav/fast
 
-sndfilehandle.o: sndfilehandle.cpp.o
+wav_copy.o: wav_copy.cpp.o
 
-.PHONY : sndfilehandle.o
+.PHONY : wav_copy.o
 
 # target to build an object file
-sndfilehandle.cpp.o:
-	$(MAKE) -f CMakeFiles/createwav.dir/build.make CMakeFiles/createwav.dir/sndfilehandle.cpp.o
-.PHONY : sndfilehandle.cpp.o
+wav_copy.cpp.o:
+	$(MAKE) -f CMakeFiles/copywav.dir/build.make CMakeFiles/copywav.dir/wav_copy.cpp.o
+.PHONY : wav_copy.cpp.o
 
-sndfilehandle.i: sndfilehandle.cpp.i
+wav_copy.i: wav_copy.cpp.i
 
-.PHONY : sndfilehandle.i
+.PHONY : wav_copy.i
 
 # target to preprocess a source file
-sndfilehandle.cpp.i:
-	$(MAKE) -f CMakeFiles/createwav.dir/build.make CMakeFiles/createwav.dir/sndfilehandle.cpp.i
-.PHONY : sndfilehandle.cpp.i
+wav_copy.cpp.i:
+	$(MAKE) -f CMakeFiles/copywav.dir/build.make CMakeFiles/copywav.dir/wav_copy.cpp.i
+.PHONY : wav_copy.cpp.i
 
-sndfilehandle.s: sndfilehandle.cpp.s
+wav_copy.s: wav_copy.cpp.s
 
-.PHONY : sndfilehandle.s
+.PHONY : wav_copy.s
 
 # target to generate assembly for a file
-sndfilehandle.cpp.s:
-	$(MAKE) -f CMakeFiles/createwav.dir/build.make CMakeFiles/createwav.dir/sndfilehandle.cpp.s
-.PHONY : sndfilehandle.cpp.s
+wav_copy.cpp.s:
+	$(MAKE) -f CMakeFiles/copywav.dir/build.make CMakeFiles/copywav.dir/wav_copy.cpp.s
+.PHONY : wav_copy.cpp.s
 
 # Help Target
 help:
@@ -157,11 +157,11 @@ help:
 	@echo "... clean"
 	@echo "... depend"
 	@echo "... rebuild_cache"
-	@echo "... createwav"
+	@echo "... copywav"
 	@echo "... edit_cache"
-	@echo "... sndfilehandle.o"
-	@echo "... sndfilehandle.i"
-	@echo "... sndfilehandle.s"
+	@echo "... wav_copy.o"
+	@echo "... wav_copy.i"
+	@echo "... wav_copy.s"
 .PHONY : help
 
 

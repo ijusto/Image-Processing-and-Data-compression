@@ -1,1 +1,1 @@
-/usr/bin/c++  -g   CMakeFiles/createwav.dir/sndfilehandle.cpp.o  -o createwav -L/usr/lib/ -lsndfile 
+/usr/bin/c++  -g   CMakeFiles/createwav.dir/wav_copy.cpp.o  -o createwav -L/usr/lib/ -lsndfile 
