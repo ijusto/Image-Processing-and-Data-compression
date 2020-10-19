@@ -86,9 +86,6 @@
 				</MakeCommands>
 			</Target>
 		</Build>
-		<Unit filename="/home/inesjusto/Documents/5ano/CAV project/Image-Processing-and-Data-compression/sndfile.hh">
-			<Option target="copywav"/>
-		</Unit>
 		<Unit filename="/home/inesjusto/Documents/5ano/CAV project/Image-Processing-and-Data-compression/wav_copy.cpp">
 			<Option target="copywav"/>
 		</Unit>

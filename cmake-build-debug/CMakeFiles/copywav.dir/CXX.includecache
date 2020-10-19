@@ -9,7 +9,7 @@
 /home/inesjusto/Documents/5ano/CAV project/Image-Processing-and-Data-compression/wav_copy.cpp
 cstdio
 -
-cstring
+iostream
 -
 sndfile.hh
 -
