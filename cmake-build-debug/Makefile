@@ -123,32 +123,72 @@ copywav/fast:
 	$(MAKE) -f CMakeFiles/copywav.dir/build.make CMakeFiles/copywav.dir/build
 .PHONY : copywav/fast
 
-wav_copy.o: wav_copy.cpp.o
+#=============================================================================
+# Target rules for targets named audioHistAndEnt
 
-.PHONY : wav_copy.o
+# Build rule for target.
+audioHistAndEnt: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 audioHistAndEnt
+.PHONY : audioHistAndEnt
+
+# fast build rule for target.
+audioHistAndEnt/fast:
+	$(MAKE) -f CMakeFiles/audioHistAndEnt.dir/build.make CMakeFiles/audioHistAndEnt.dir/build
+.PHONY : audioHistAndEnt/fast
+
+audioHistAndEntropy.o: audioHistAndEntropy.cpp.o
+
+.PHONY : audioHistAndEntropy.o
 
 # target to build an object file
-wav_copy.cpp.o:
-	$(MAKE) -f CMakeFiles/copywav.dir/build.make CMakeFiles/copywav.dir/wav_copy.cpp.o
-.PHONY : wav_copy.cpp.o
+audioHistAndEntropy.cpp.o:
+	$(MAKE) -f CMakeFiles/audioHistAndEnt.dir/build.make CMakeFiles/audioHistAndEnt.dir/audioHistAndEntropy.cpp.o
+.PHONY : audioHistAndEntropy.cpp.o
 
-wav_copy.i: wav_copy.cpp.i
+audioHistAndEntropy.i: audioHistAndEntropy.cpp.i
 
-.PHONY : wav_copy.i
+.PHONY : audioHistAndEntropy.i
 
 # target to preprocess a source file
-wav_copy.cpp.i:
-	$(MAKE) -f CMakeFiles/copywav.dir/build.make CMakeFiles/copywav.dir/wav_copy.cpp.i
-.PHONY : wav_copy.cpp.i
+audioHistAndEntropy.cpp.i:
+	$(MAKE) -f CMakeFiles/audioHistAndEnt.dir/build.make CMakeFiles/audioHistAndEnt.dir/audioHistAndEntropy.cpp.i
+.PHONY : audioHistAndEntropy.cpp.i
 
-wav_copy.s: wav_copy.cpp.s
+audioHistAndEntropy.s: audioHistAndEntropy.cpp.s
 
-.PHONY : wav_copy.s
+.PHONY : audioHistAndEntropy.s
 
 # target to generate assembly for a file
-wav_copy.cpp.s:
-	$(MAKE) -f CMakeFiles/copywav.dir/build.make CMakeFiles/copywav.dir/wav_copy.cpp.s
-.PHONY : wav_copy.cpp.s
+audioHistAndEntropy.cpp.s:
+	$(MAKE) -f CMakeFiles/audioHistAndEnt.dir/build.make CMakeFiles/audioHistAndEnt.dir/audioHistAndEntropy.cpp.s
+.PHONY : audioHistAndEntropy.cpp.s
+
+wavCopy.o: wavCopy.cpp.o
+
+.PHONY : wavCopy.o
+
+# target to build an object file
+wavCopy.cpp.o:
+	$(MAKE) -f CMakeFiles/copywav.dir/build.make CMakeFiles/copywav.dir/wavCopy.cpp.o
+.PHONY : wavCopy.cpp.o
+
+wavCopy.i: wavCopy.cpp.i
+
+.PHONY : wavCopy.i
+
+# target to preprocess a source file
+wavCopy.cpp.i:
+	$(MAKE) -f CMakeFiles/copywav.dir/build.make CMakeFiles/copywav.dir/wavCopy.cpp.i
+.PHONY : wavCopy.cpp.i
+
+wavCopy.s: wavCopy.cpp.s
+
+.PHONY : wavCopy.s
+
+# target to generate assembly for a file
+wavCopy.cpp.s:
+	$(MAKE) -f CMakeFiles/copywav.dir/build.make CMakeFiles/copywav.dir/wavCopy.cpp.s
+.PHONY : wavCopy.cpp.s
 
 # Help Target
 help:
@@ -157,11 +197,15 @@ help:
 	@echo "... clean"
 	@echo "... depend"
 	@echo "... rebuild_cache"
-	@echo "... copywav"
 	@echo "... edit_cache"
-	@echo "... wav_copy.o"
-	@echo "... wav_copy.i"
-	@echo "... wav_copy.s"
+	@echo "... copywav"
+	@echo "... audioHistAndEnt"
+	@echo "... audioHistAndEntropy.o"
+	@echo "... audioHistAndEntropy.i"
+	@echo "... audioHistAndEntropy.s"
+	@echo "... wavCopy.o"
+	@echo "... wavCopy.i"
+	@echo "... wavCopy.s"
 .PHONY : help
 
 

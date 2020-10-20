@@ -4,7 +4,7 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_CXX
-  "/home/inesjusto/Documents/5ano/CAV project/Image-Processing-and-Data-compression/wav_copy.cpp" "/home/inesjusto/Documents/5ano/CAV project/Image-Processing-and-Data-compression/cmake-build-debug/CMakeFiles/copywav.dir/wav_copy.cpp.o"
+  "/home/inesjusto/Documents/5ano/CAV project/Image-Processing-and-Data-compression/wavCopy.cpp" "/home/inesjusto/Documents/5ano/CAV project/Image-Processing-and-Data-compression/cmake-build-debug/CMakeFiles/copywav.dir/wavCopy.cpp.o"
   )
 set(CMAKE_CXX_COMPILER_ID "GNU")
 

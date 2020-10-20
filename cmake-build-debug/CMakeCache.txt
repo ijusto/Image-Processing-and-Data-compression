@@ -238,14 +238,50 @@ LIBSNDFILE_LIBRARIES:FILEPATH=/usr/lib/libsndfile.so
 //The directory containing a CMake configuration file for LibSndFile.
 LibSndFile_DIR:PATH=LibSndFile_DIR-NOTFOUND
 
+//Path to a file.
+MATPLOTLIB_CPP_INCLUDE_DIRS:PATH=MATPLOTLIB_CPP_INCLUDE_DIRS-NOTFOUND
+
 //The directory containing a CMake configuration file for OpenCV.
 OpenCV_DIR:PATH=/usr/local/lib/cmake/opencv4
+
+//Path to a program.
+PYTHON_EXECUTABLE:FILEPATH=/usr/bin/python2.7
+
+//Path to a file.
+PYTHON_INCLUDE_DIR:PATH=
+
+//Path to a library.
+PYTHON_LIBRARY:FILEPATH=/usr/local/lib/libpython3.7m.a
+
+//Path to a library.
+PYTHON_LIBRARY_DEBUG:FILEPATH=PYTHON_LIBRARY_DEBUG-NOTFOUND
+
+//Path to a library.
+PYTHON_LIBRARY_RELEASE:FILEPATH=PYTHON_LIBRARY_RELEASE-NOTFOUND
 
 //Path to a program.
 ProcessorCount_cmd_nproc:FILEPATH=/usr/bin/nproc
 
 //Path to a program.
 ProcessorCount_cmd_sysctl:FILEPATH=/sbin/sysctl
+
+//Path to a program.
+Python2_EXECUTABLE:FILEPATH=/usr/bin/python2.7
+
+//Path to a file.
+Python2_INCLUDE_DIR:PATH=/usr/include/python2.7
+
+//Path to a library.
+Python2_LIBRARY_DEBUG:FILEPATH=Python2_LIBRARY_DEBUG-NOTFOUND
+
+//Path to a library.
+Python2_LIBRARY_RELEASE:FILEPATH=/usr/lib/x86_64-linux-gnu/libpython2.7.so
+
+//Path to a file.
+Python2_NumPy_INCLUDE_DIR:PATH=/usr/lib/python2.7/dist-packages/numpy/core/include
+
+//The directory containing a CMake configuration file for VTK.
+VTK_DIR:PATH=VTK_DIR-NOTFOUND
 
 //The directory containing a CMake configuration file for libsndfile.
 libsndfile_DIR:PATH=libsndfile_DIR-NOTFOUND
@@ -404,8 +440,32 @@ CMAKE_VERBOSE_MAKEFILE-ADVANCED:INTERNAL=1
 FIND_PACKAGE_MESSAGE_DETAILS_LibSndFile:INTERNAL=[/usr/lib/libsndfile.so][/usr/include][v()]
 //Details about finding OpenCV
 FIND_PACKAGE_MESSAGE_DETAILS_OpenCV:INTERNAL=[/usr/local][v4.1.2()]
+//Details about finding Python2
+FIND_PACKAGE_MESSAGE_DETAILS_Python2:INTERNAL=[/usr/lib/x86_64-linux-gnu/libpython2.7.so][/usr/include/python2.7][/usr/lib/python2.7/dist-packages/numpy/core/include][cfound components:  Development NumPy Interpreter ][v2.7.17()]
+//Details about finding PythonInterp
+FIND_PACKAGE_MESSAGE_DETAILS_PythonInterp:INTERNAL=[/usr/bin/python3.6][v3.6.9(3.6)]
+//Details about finding PythonLibs
+FIND_PACKAGE_MESSAGE_DETAILS_PythonLibs:INTERNAL=[/usr/local/lib/libpython3.7m.a][/usr/include/python3.6][v3.6.9(3.6)]
+//ADVANCED property for variable: PYTHON_EXECUTABLE
+PYTHON_EXECUTABLE-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: PYTHON_INCLUDE_DIR
+PYTHON_INCLUDE_DIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: PYTHON_LIBRARY
+PYTHON_LIBRARY-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: PYTHON_LIBRARY_DEBUG
+PYTHON_LIBRARY_DEBUG-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: PYTHON_LIBRARY_RELEASE
+PYTHON_LIBRARY_RELEASE-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: ProcessorCount_cmd_nproc
 ProcessorCount_cmd_nproc-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: ProcessorCount_cmd_sysctl
 ProcessorCount_cmd_sysctl-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: Python2_EXECUTABLE
+Python2_EXECUTABLE-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: Python2_INCLUDE_DIR
+Python2_INCLUDE_DIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: Python2_LIBRARY_DEBUG
+Python2_LIBRARY_DEBUG-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: Python2_LIBRARY_RELEASE
+Python2_LIBRARY_RELEASE-ADVANCED:INTERNAL=1
 

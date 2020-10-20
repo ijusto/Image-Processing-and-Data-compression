@@ -24,6 +24,8 @@ set(CMAKE_MAKEFILE_DEPENDS
   "/home/inesjusto/CLion-2019.2.5/clion-2019.2.5/bin/cmake/linux/share/cmake-3.15/Modules/Compiler/GNU.cmake"
   "/home/inesjusto/CLion-2019.2.5/clion-2019.2.5/bin/cmake/linux/share/cmake-3.15/Modules/FindPackageHandleStandardArgs.cmake"
   "/home/inesjusto/CLion-2019.2.5/clion-2019.2.5/bin/cmake/linux/share/cmake-3.15/Modules/FindPackageMessage.cmake"
+  "/home/inesjusto/CLion-2019.2.5/clion-2019.2.5/bin/cmake/linux/share/cmake-3.15/Modules/FindPython/Support.cmake"
+  "/home/inesjusto/CLion-2019.2.5/clion-2019.2.5/bin/cmake/linux/share/cmake-3.15/Modules/FindPython2.cmake"
   "/home/inesjusto/CLion-2019.2.5/clion-2019.2.5/bin/cmake/linux/share/cmake-3.15/Modules/Internal/CMakeCheckCompilerFlag.cmake"
   "/home/inesjusto/CLion-2019.2.5/clion-2019.2.5/bin/cmake/linux/share/cmake-3.15/Modules/Platform/Linux-GNU-C.cmake"
   "/home/inesjusto/CLion-2019.2.5/clion-2019.2.5/bin/cmake/linux/share/cmake-3.15/Modules/Platform/Linux-GNU-CXX.cmake"
@@ -31,6 +33,7 @@ set(CMAKE_MAKEFILE_DEPENDS
   "/home/inesjusto/CLion-2019.2.5/clion-2019.2.5/bin/cmake/linux/share/cmake-3.15/Modules/Platform/Linux.cmake"
   "/home/inesjusto/CLion-2019.2.5/clion-2019.2.5/bin/cmake/linux/share/cmake-3.15/Modules/Platform/UnixPaths.cmake"
   "/home/inesjusto/CLion-2019.2.5/clion-2019.2.5/bin/cmake/linux/share/cmake-3.15/Modules/ProcessorCount.cmake"
+  "/home/inesjusto/CLion-2019.2.5/clion-2019.2.5/bin/cmake/linux/share/cmake-3.15/Modules/SelectLibraryConfigurations.cmake"
   "../CMakeLists.txt"
   "CMakeFiles/3.15.3/CMakeCCompiler.cmake"
   "CMakeFiles/3.15.3/CMakeCXXCompiler.cmake"
@@ -55,4 +58,5 @@ set(CMAKE_MAKEFILE_PRODUCTS
 # Dependency information for all targets:
 set(CMAKE_DEPEND_INFO_FILES
   "CMakeFiles/copywav.dir/DependInfo.cmake"
+  "CMakeFiles/audioHistAndEnt.dir/DependInfo.cmake"
   )

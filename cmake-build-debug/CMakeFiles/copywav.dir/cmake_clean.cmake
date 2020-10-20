@@ -1,5 +1,5 @@
 file(REMOVE_RECURSE
-  "CMakeFiles/copywav.dir/wav_copy.cpp.o"
+  "CMakeFiles/copywav.dir/wavCopy.cpp.o"
   "copywav"
   "copywav.pdb"
 )

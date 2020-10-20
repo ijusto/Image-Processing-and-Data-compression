@@ -1,9 +1,11 @@
-//
-// Created by inesjusto on 18/10/20.
-//
+/*!
+ *  Copies a wav file, sample by sample. Both file names should be passed as command line arguments to the program.
+ *  It is used the libsndfile library to aid in the handling of the wav files.
+ *  @author Inês Justo
+ *  @author
+ */
 
 #include    <cstdio>
-#include    <iostream>
 #include    <sndfile.hh>
 
 static void copyFile(const char *sourceFName, const char *destFName) {
@@ -15,13 +17,6 @@ static void copyFile(const char *sourceFName, const char *destFName) {
     short buffer[srcFileFrames*srcFileChannels];
     sourceFile.read(buffer, srcFileFrames*srcFileChannels);
     puts("");
-
-    /*
-    printf("Opened file '%s'\n", sourcefname);
-    printf("    Sample rate : %d\n", sourceFile.samplerate());
-    printf("    Frames : %d\n", (int)sourceFile.frames());
-    printf("    Channels    : %d\n", sourceFile.channels());
-    */
 
     /* create dest wav file */
     SndfileHandle destFile  = SndfileHandle(destFName, SFM_WRITE, sourceFile.format(), srcFileChannels,

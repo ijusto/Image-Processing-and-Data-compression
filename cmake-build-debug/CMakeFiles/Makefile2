@@ -54,11 +54,13 @@ CMAKE_BINARY_DIR = "/home/inesjusto/Documents/5ano/CAV project/Image-Processing-
 
 # The main recursive "all" target.
 all: CMakeFiles/copywav.dir/all
+all: CMakeFiles/audioHistAndEnt.dir/all
 
 .PHONY : all
 
 # The main recursive "clean" target.
 clean: CMakeFiles/copywav.dir/clean
+clean: CMakeFiles/audioHistAndEnt.dir/clean
 
 .PHONY : clean
 
@@ -74,7 +76,7 @@ preinstall:
 CMakeFiles/copywav.dir/all:
 	$(MAKE) -f CMakeFiles/copywav.dir/build.make CMakeFiles/copywav.dir/depend
 	$(MAKE) -f CMakeFiles/copywav.dir/build.make CMakeFiles/copywav.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir="/home/inesjusto/Documents/5ano/CAV project/Image-Processing-and-Data-compression/cmake-build-debug/CMakeFiles" --progress-num=1,2 "Built target copywav"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir="/home/inesjusto/Documents/5ano/CAV project/Image-Processing-and-Data-compression/cmake-build-debug/CMakeFiles" --progress-num=3,4 "Built target copywav"
 .PHONY : CMakeFiles/copywav.dir/all
 
 # Build rule for subdir invocation for target.
@@ -93,6 +95,33 @@ copywav: CMakeFiles/copywav.dir/rule
 CMakeFiles/copywav.dir/clean:
 	$(MAKE) -f CMakeFiles/copywav.dir/build.make CMakeFiles/copywav.dir/clean
 .PHONY : CMakeFiles/copywav.dir/clean
+
+#=============================================================================
+# Target rules for target CMakeFiles/audioHistAndEnt.dir
+
+# All Build rule for target.
+CMakeFiles/audioHistAndEnt.dir/all:
+	$(MAKE) -f CMakeFiles/audioHistAndEnt.dir/build.make CMakeFiles/audioHistAndEnt.dir/depend
+	$(MAKE) -f CMakeFiles/audioHistAndEnt.dir/build.make CMakeFiles/audioHistAndEnt.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir="/home/inesjusto/Documents/5ano/CAV project/Image-Processing-and-Data-compression/cmake-build-debug/CMakeFiles" --progress-num=1,2 "Built target audioHistAndEnt"
+.PHONY : CMakeFiles/audioHistAndEnt.dir/all
+
+# Build rule for subdir invocation for target.
+CMakeFiles/audioHistAndEnt.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start "/home/inesjusto/Documents/5ano/CAV project/Image-Processing-and-Data-compression/cmake-build-debug/CMakeFiles" 2
+	$(MAKE) -f CMakeFiles/Makefile2 CMakeFiles/audioHistAndEnt.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start "/home/inesjusto/Documents/5ano/CAV project/Image-Processing-and-Data-compression/cmake-build-debug/CMakeFiles" 0
+.PHONY : CMakeFiles/audioHistAndEnt.dir/rule
+
+# Convenience name for target.
+audioHistAndEnt: CMakeFiles/audioHistAndEnt.dir/rule
+
+.PHONY : audioHistAndEnt
+
+# clean rule for target.
+CMakeFiles/audioHistAndEnt.dir/clean:
+	$(MAKE) -f CMakeFiles/audioHistAndEnt.dir/build.make CMakeFiles/audioHistAndEnt.dir/clean
+.PHONY : CMakeFiles/audioHistAndEnt.dir/clean
 
 #=============================================================================
 # Special targets to cleanup operation of make.
