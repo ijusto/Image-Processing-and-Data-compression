@@ -1,1 +1,0 @@
-/usr/bin/c++   -std=c++11 -g   CMakeFiles/copywav.dir/wavCopy.cpp.o  -o copywav -L/usr/lib/ -lsndfile 

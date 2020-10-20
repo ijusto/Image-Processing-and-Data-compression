@@ -1,1 +1,0 @@
-/usr/bin/c++  -g   CMakeFiles/wav_copy.dir/wav_copy.cpp.o  -o wav_copy 
