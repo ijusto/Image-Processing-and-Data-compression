@@ -1,1 +1,0 @@
-/usr/bin/c++  -g   CMakeFiles/wav_copy.cpp.dir/sndfilehandle.cpp.o  -o wav_copy.cpp 

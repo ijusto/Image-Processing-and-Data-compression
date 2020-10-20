@@ -1,4 +1,0 @@
-/home/inesjusto/Documents/5ano/CAV project/Image-Processing-and-Data-compression/cmake-build-debug/CMakeFiles/rebuild_cache.dir
-/home/inesjusto/Documents/5ano/CAV project/Image-Processing-and-Data-compression/cmake-build-debug/CMakeFiles/edit_cache.dir
-/home/inesjusto/Documents/5ano/CAV project/Image-Processing-and-Data-compression/cmake-build-debug/CMakeFiles/copywav.dir
-/home/inesjusto/Documents/5ano/CAV project/Image-Processing-and-Data-compression/cmake-build-debug/CMakeFiles/audioEnt.dir
