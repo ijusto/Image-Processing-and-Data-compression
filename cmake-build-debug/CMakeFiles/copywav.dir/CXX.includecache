@@ -6,7 +6,7 @@
 
 #IncludeRegexTransform: 
 
-/home/inesjusto/Documents/5ano/CAV project/Image-Processing-and-Data-compression/wavCopy.cpp
+/home/inesjusto/Documents/5ano/CAV project/Image-Processing-and-Data-compression/audio/wavCopy.cpp
 cstdio
 -
 sndfile.hh
