@@ -4,13 +4,15 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_CXX
-  "/home/inesjusto/Documents/5ano/CAV project/Image-Processing-and-Data-compression/audio/wavCopy.cpp" "/home/inesjusto/Documents/5ano/CAV project/Image-Processing-and-Data-compression/cmake-build-debug/CMakeFiles/copywav.dir/audio/wavCopy.cpp.o"
+  "/home/inesjusto/Documents/5ano/CAV project/Image-Processing-and-Data-compression/audioEntropyHist.cpp" "/home/inesjusto/Documents/5ano/CAV project/Image-Processing-and-Data-compression/cmake-build-debug/CMakeFiles/audioEntHist.dir/audioEntropyHist.cpp.o"
   )
 set(CMAKE_CXX_COMPILER_ID "GNU")
 
 # The include file search paths:
 set(CMAKE_CXX_TARGET_INCLUDE_PATH
   "/usr/local/include/opencv4"
+  "/usr/include/python2.7"
+  "/usr/lib/python2.7/dist-packages/numpy/core/include"
   )
 
 # Targets to which this target links.

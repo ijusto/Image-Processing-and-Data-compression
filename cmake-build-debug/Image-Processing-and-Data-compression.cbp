@@ -85,8 +85,8 @@
 					<DistClean command="/usr/bin/make -j4 -f &quot;/home/inesjusto/Documents/5ano/CAV\ project/Image-Processing-and-Data-compression/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
 				</MakeCommands>
 			</Target>
-			<Target title="audioHistAndEnt">
-				<Option output="/home/inesjusto/Documents/5ano/CAV project/Image-Processing-and-Data-compression/cmake-build-debug/audioHistAndEnt" prefix_auto="0" extension_auto="0"/>
+			<Target title="audioEnt">
+				<Option output="/home/inesjusto/Documents/5ano/CAV project/Image-Processing-and-Data-compression/cmake-build-debug/audioEnt" prefix_auto="0" extension_auto="0"/>
 				<Option working_dir="/home/inesjusto/Documents/5ano/CAV project/Image-Processing-and-Data-compression/cmake-build-debug"/>
 				<Option object_output="./"/>
 				<Option type="1"/>
@@ -105,14 +105,14 @@
 					<Add directory="/usr/include"/>
 				</Compiler>
 				<MakeCommands>
-					<Build command="/usr/bin/make -j4 -f &quot;/home/inesjusto/Documents/5ano/CAV\ project/Image-Processing-and-Data-compression/cmake-build-debug/Makefile&quot;  VERBOSE=1 audioHistAndEnt"/>
+					<Build command="/usr/bin/make -j4 -f &quot;/home/inesjusto/Documents/5ano/CAV\ project/Image-Processing-and-Data-compression/cmake-build-debug/Makefile&quot;  VERBOSE=1 audioEnt"/>
 					<CompileFile command="/usr/bin/make -j4 -f &quot;/home/inesjusto/Documents/5ano/CAV\ project/Image-Processing-and-Data-compression/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
 					<Clean command="/usr/bin/make -j4 -f &quot;/home/inesjusto/Documents/5ano/CAV\ project/Image-Processing-and-Data-compression/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
 					<DistClean command="/usr/bin/make -j4 -f &quot;/home/inesjusto/Documents/5ano/CAV\ project/Image-Processing-and-Data-compression/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
 				</MakeCommands>
 			</Target>
-			<Target title="audioHistAndEnt/fast">
-				<Option output="/home/inesjusto/Documents/5ano/CAV project/Image-Processing-and-Data-compression/cmake-build-debug/audioHistAndEnt" prefix_auto="0" extension_auto="0"/>
+			<Target title="audioEnt/fast">
+				<Option output="/home/inesjusto/Documents/5ano/CAV project/Image-Processing-and-Data-compression/cmake-build-debug/audioEnt" prefix_auto="0" extension_auto="0"/>
 				<Option working_dir="/home/inesjusto/Documents/5ano/CAV project/Image-Processing-and-Data-compression/cmake-build-debug"/>
 				<Option object_output="./"/>
 				<Option type="1"/>
@@ -131,17 +131,17 @@
 					<Add directory="/usr/include"/>
 				</Compiler>
 				<MakeCommands>
-					<Build command="/usr/bin/make -j4 -f &quot;/home/inesjusto/Documents/5ano/CAV\ project/Image-Processing-and-Data-compression/cmake-build-debug/Makefile&quot;  VERBOSE=1 audioHistAndEnt/fast"/>
+					<Build command="/usr/bin/make -j4 -f &quot;/home/inesjusto/Documents/5ano/CAV\ project/Image-Processing-and-Data-compression/cmake-build-debug/Makefile&quot;  VERBOSE=1 audioEnt/fast"/>
 					<CompileFile command="/usr/bin/make -j4 -f &quot;/home/inesjusto/Documents/5ano/CAV\ project/Image-Processing-and-Data-compression/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
 					<Clean command="/usr/bin/make -j4 -f &quot;/home/inesjusto/Documents/5ano/CAV\ project/Image-Processing-and-Data-compression/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
 					<DistClean command="/usr/bin/make -j4 -f &quot;/home/inesjusto/Documents/5ano/CAV\ project/Image-Processing-and-Data-compression/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
 				</MakeCommands>
 			</Target>
 		</Build>
-		<Unit filename="/home/inesjusto/Documents/5ano/CAV project/Image-Processing-and-Data-compression/audioHistAndEntropy.cpp">
-			<Option target="audioHistAndEnt"/>
+		<Unit filename="/home/inesjusto/Documents/5ano/CAV project/Image-Processing-and-Data-compression/audio/audioEntropy.cpp">
+			<Option target="audioEnt"/>
 		</Unit>
-		<Unit filename="/home/inesjusto/Documents/5ano/CAV project/Image-Processing-and-Data-compression/wavCopy.cpp">
+		<Unit filename="/home/inesjusto/Documents/5ano/CAV project/Image-Processing-and-Data-compression/audio/wavCopy.cpp">
 			<Option target="copywav"/>
 		</Unit>
 		<Unit filename="/home/inesjusto/Documents/5ano/CAV project/Image-Processing-and-Data-compression/CMakeLists.txt">

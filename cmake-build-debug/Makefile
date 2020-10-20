@@ -124,71 +124,71 @@ copywav/fast:
 .PHONY : copywav/fast
 
 #=============================================================================
-# Target rules for targets named audioHistAndEnt
+# Target rules for targets named audioEnt
 
 # Build rule for target.
-audioHistAndEnt: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 audioHistAndEnt
-.PHONY : audioHistAndEnt
+audioEnt: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 audioEnt
+.PHONY : audioEnt
 
 # fast build rule for target.
-audioHistAndEnt/fast:
-	$(MAKE) -f CMakeFiles/audioHistAndEnt.dir/build.make CMakeFiles/audioHistAndEnt.dir/build
-.PHONY : audioHistAndEnt/fast
+audioEnt/fast:
+	$(MAKE) -f CMakeFiles/audioEnt.dir/build.make CMakeFiles/audioEnt.dir/build
+.PHONY : audioEnt/fast
 
-audioHistAndEntropy.o: audioHistAndEntropy.cpp.o
+audio/audioEntropy.o: audio/audioEntropy.cpp.o
 
-.PHONY : audioHistAndEntropy.o
-
-# target to build an object file
-audioHistAndEntropy.cpp.o:
-	$(MAKE) -f CMakeFiles/audioHistAndEnt.dir/build.make CMakeFiles/audioHistAndEnt.dir/audioHistAndEntropy.cpp.o
-.PHONY : audioHistAndEntropy.cpp.o
-
-audioHistAndEntropy.i: audioHistAndEntropy.cpp.i
-
-.PHONY : audioHistAndEntropy.i
-
-# target to preprocess a source file
-audioHistAndEntropy.cpp.i:
-	$(MAKE) -f CMakeFiles/audioHistAndEnt.dir/build.make CMakeFiles/audioHistAndEnt.dir/audioHistAndEntropy.cpp.i
-.PHONY : audioHistAndEntropy.cpp.i
-
-audioHistAndEntropy.s: audioHistAndEntropy.cpp.s
-
-.PHONY : audioHistAndEntropy.s
-
-# target to generate assembly for a file
-audioHistAndEntropy.cpp.s:
-	$(MAKE) -f CMakeFiles/audioHistAndEnt.dir/build.make CMakeFiles/audioHistAndEnt.dir/audioHistAndEntropy.cpp.s
-.PHONY : audioHistAndEntropy.cpp.s
-
-wavCopy.o: wavCopy.cpp.o
-
-.PHONY : wavCopy.o
+.PHONY : audio/audioEntropy.o
 
 # target to build an object file
-wavCopy.cpp.o:
-	$(MAKE) -f CMakeFiles/copywav.dir/build.make CMakeFiles/copywav.dir/wavCopy.cpp.o
-.PHONY : wavCopy.cpp.o
+audio/audioEntropy.cpp.o:
+	$(MAKE) -f CMakeFiles/audioEnt.dir/build.make CMakeFiles/audioEnt.dir/audio/audioEntropy.cpp.o
+.PHONY : audio/audioEntropy.cpp.o
 
-wavCopy.i: wavCopy.cpp.i
+audio/audioEntropy.i: audio/audioEntropy.cpp.i
 
-.PHONY : wavCopy.i
+.PHONY : audio/audioEntropy.i
 
 # target to preprocess a source file
-wavCopy.cpp.i:
-	$(MAKE) -f CMakeFiles/copywav.dir/build.make CMakeFiles/copywav.dir/wavCopy.cpp.i
-.PHONY : wavCopy.cpp.i
+audio/audioEntropy.cpp.i:
+	$(MAKE) -f CMakeFiles/audioEnt.dir/build.make CMakeFiles/audioEnt.dir/audio/audioEntropy.cpp.i
+.PHONY : audio/audioEntropy.cpp.i
 
-wavCopy.s: wavCopy.cpp.s
+audio/audioEntropy.s: audio/audioEntropy.cpp.s
 
-.PHONY : wavCopy.s
+.PHONY : audio/audioEntropy.s
 
 # target to generate assembly for a file
-wavCopy.cpp.s:
-	$(MAKE) -f CMakeFiles/copywav.dir/build.make CMakeFiles/copywav.dir/wavCopy.cpp.s
-.PHONY : wavCopy.cpp.s
+audio/audioEntropy.cpp.s:
+	$(MAKE) -f CMakeFiles/audioEnt.dir/build.make CMakeFiles/audioEnt.dir/audio/audioEntropy.cpp.s
+.PHONY : audio/audioEntropy.cpp.s
+
+audio/wavCopy.o: audio/wavCopy.cpp.o
+
+.PHONY : audio/wavCopy.o
+
+# target to build an object file
+audio/wavCopy.cpp.o:
+	$(MAKE) -f CMakeFiles/copywav.dir/build.make CMakeFiles/copywav.dir/audio/wavCopy.cpp.o
+.PHONY : audio/wavCopy.cpp.o
+
+audio/wavCopy.i: audio/wavCopy.cpp.i
+
+.PHONY : audio/wavCopy.i
+
+# target to preprocess a source file
+audio/wavCopy.cpp.i:
+	$(MAKE) -f CMakeFiles/copywav.dir/build.make CMakeFiles/copywav.dir/audio/wavCopy.cpp.i
+.PHONY : audio/wavCopy.cpp.i
+
+audio/wavCopy.s: audio/wavCopy.cpp.s
+
+.PHONY : audio/wavCopy.s
+
+# target to generate assembly for a file
+audio/wavCopy.cpp.s:
+	$(MAKE) -f CMakeFiles/copywav.dir/build.make CMakeFiles/copywav.dir/audio/wavCopy.cpp.s
+.PHONY : audio/wavCopy.cpp.s
 
 # Help Target
 help:
@@ -199,13 +199,13 @@ help:
 	@echo "... rebuild_cache"
 	@echo "... edit_cache"
 	@echo "... copywav"
-	@echo "... audioHistAndEnt"
-	@echo "... audioHistAndEntropy.o"
-	@echo "... audioHistAndEntropy.i"
-	@echo "... audioHistAndEntropy.s"
-	@echo "... wavCopy.o"
-	@echo "... wavCopy.i"
-	@echo "... wavCopy.s"
+	@echo "... audioEnt"
+	@echo "... audio/audioEntropy.o"
+	@echo "... audio/audioEntropy.i"
+	@echo "... audio/audioEntropy.s"
+	@echo "... audio/wavCopy.o"
+	@echo "... audio/wavCopy.i"
+	@echo "... audio/wavCopy.s"
 .PHONY : help
 
 

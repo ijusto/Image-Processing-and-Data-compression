@@ -57,27 +57,27 @@ include CMakeFiles/copywav.dir/progress.make
 # Include the compile flags for this target's objects.
 include CMakeFiles/copywav.dir/flags.make
 
-CMakeFiles/copywav.dir/wavCopy.cpp.o: CMakeFiles/copywav.dir/flags.make
-CMakeFiles/copywav.dir/wavCopy.cpp.o: ../wavCopy.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir="/home/inesjusto/Documents/5ano/CAV project/Image-Processing-and-Data-compression/cmake-build-debug/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/copywav.dir/wavCopy.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/copywav.dir/wavCopy.cpp.o -c "/home/inesjusto/Documents/5ano/CAV project/Image-Processing-and-Data-compression/wavCopy.cpp"
+CMakeFiles/copywav.dir/audio/wavCopy.cpp.o: CMakeFiles/copywav.dir/flags.make
+CMakeFiles/copywav.dir/audio/wavCopy.cpp.o: ../audio/wavCopy.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir="/home/inesjusto/Documents/5ano/CAV project/Image-Processing-and-Data-compression/cmake-build-debug/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/copywav.dir/audio/wavCopy.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/copywav.dir/audio/wavCopy.cpp.o -c "/home/inesjusto/Documents/5ano/CAV project/Image-Processing-and-Data-compression/audio/wavCopy.cpp"
 
-CMakeFiles/copywav.dir/wavCopy.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/copywav.dir/wavCopy.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E "/home/inesjusto/Documents/5ano/CAV project/Image-Processing-and-Data-compression/wavCopy.cpp" > CMakeFiles/copywav.dir/wavCopy.cpp.i
+CMakeFiles/copywav.dir/audio/wavCopy.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/copywav.dir/audio/wavCopy.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E "/home/inesjusto/Documents/5ano/CAV project/Image-Processing-and-Data-compression/audio/wavCopy.cpp" > CMakeFiles/copywav.dir/audio/wavCopy.cpp.i
 
-CMakeFiles/copywav.dir/wavCopy.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/copywav.dir/wavCopy.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S "/home/inesjusto/Documents/5ano/CAV project/Image-Processing-and-Data-compression/wavCopy.cpp" -o CMakeFiles/copywav.dir/wavCopy.cpp.s
+CMakeFiles/copywav.dir/audio/wavCopy.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/copywav.dir/audio/wavCopy.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S "/home/inesjusto/Documents/5ano/CAV project/Image-Processing-and-Data-compression/audio/wavCopy.cpp" -o CMakeFiles/copywav.dir/audio/wavCopy.cpp.s
 
 # Object files for target copywav
 copywav_OBJECTS = \
-"CMakeFiles/copywav.dir/wavCopy.cpp.o"
+"CMakeFiles/copywav.dir/audio/wavCopy.cpp.o"
 
 # External object files for target copywav
 copywav_EXTERNAL_OBJECTS =
 
-copywav: CMakeFiles/copywav.dir/wavCopy.cpp.o
+copywav: CMakeFiles/copywav.dir/audio/wavCopy.cpp.o
 copywav: CMakeFiles/copywav.dir/build.make
 copywav: CMakeFiles/copywav.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir="/home/inesjusto/Documents/5ano/CAV project/Image-Processing-and-Data-compression/cmake-build-debug/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable copywav"
