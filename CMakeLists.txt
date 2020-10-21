@@ -8,7 +8,7 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 set(SNDFILE_LIBRARY "-lsndfile")
 set(SNDFILE_DIR "-L/usr/lib/")
 
-add_executable(copywav wavCopy.cpp)
+add_executable(copywav audio/wavCopy.cpp)
 target_link_libraries(copywav ${SNDFILE_DIR} ${SNDFILE_LIBRARY})
 
 add_executable(video video/copy.cpp)
