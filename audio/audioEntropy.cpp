@@ -7,7 +7,6 @@
  * @author
  */
 
-// TODO: Everything xd
 #include    "../thirdparty/matplotlib-cpp-master/matplotlibcpp.h"
 #include    <sndfile.hh>
 #include    <vector>
@@ -16,38 +15,36 @@
 
 namespace plt = matplotlibcpp;
 
+#define		FRAMES_BUFFER_LEN		65536
+
 int main(int argc, char *argv[]) {
+
     SndfileHandle audio = SndfileHandle(argv[argc-1], SFM_READ);
-    auto numSamples = audio.frames() * audio.channels();
-    short buffer[numSamples];
-    audio.read(buffer, numSamples);
 
-    std::vector<short> vector;
-    vector.assign(buffer, buffer + numSamples);
-
-    // 16 bits (short) for each sample
-    auto numSymbols = pow(2, numSamples);
+    std::vector<short> buffer(FRAMES_BUFFER_LEN * audio.channels());
 
     std::unordered_map<short, int> hist;
-    for(int i = 0; i < numSamples; i++){
-        if (hist.find(buffer[i]) != hist.end()){
-            hist[buffer[i]] += 1;
+    for(sf_count_t nFrames = audio.readf(buffer.data(), FRAMES_BUFFER_LEN); nFrames != 0;
+        nFrames = audio.readf(buffer.data(), FRAMES_BUFFER_LEN)){
+        if (hist.find(nFrames) != hist.end()){
+            hist[nFrames] += 1;
         } else {
-            hist[buffer[i]] = 1;
+            hist[nFrames] = 1;
         }
     }
 
     /* TODO: resolve underflow */
     long double entropy = 0;
     for(auto iter = hist.begin(); iter != hist.end(); ++iter){
-        unsigned long int pi = iter->second / numSamples;
+        unsigned long int pi = iter->second / audio.channels();
         printf("%f\n", entropy);
-        entropy -= pi * (log(pi)/log(numSymbols));
+        entropy -= pi * (log(pi)/log(FRAMES_BUFFER_LEN));
     }
     printf("entropy of the audio sample: %f", entropy);
     puts("");
-    
-    plt::hist(vector);
-    plt::title("Histogram of audio samples");
-    plt::show();
+
+
+    //plt::hist(vector);
+    //plt::title("Histogram of audio samples");
+    //plt::show();
 }
