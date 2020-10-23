@@ -20,7 +20,8 @@ static void copyFile(const char *sourceFName, const char *destFName) {
                                             sourceFile.samplerate());
 
     std::vector<short> buffer(FRAMES_BUFFER_LEN * srcFileChannels);
-    for(sf_count_t nFrames = 1; nFrames != 0; nFrames = sourceFile.readf(buffer.data(), FRAMES_BUFFER_LEN)){
+    for(sf_count_t nFrames = sourceFile.readf(buffer.data(), FRAMES_BUFFER_LEN); nFrames != 0;
+            nFrames = sourceFile.readf(buffer.data(), FRAMES_BUFFER_LEN)){
         destFile.writef(buffer.data(), nFrames);
     }
 }
