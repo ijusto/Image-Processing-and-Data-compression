@@ -7,25 +7,22 @@
 
 #include    <cstdio>
 #include    <sndfile.hh>
+#include    <vector>
+
+#define		FRAMES_BUFFER_LEN		65536
 
 static void copyFile(const char *sourceFName, const char *destFName) {
 
     SndfileHandle sourceFile = SndfileHandle(sourceFName, SFM_READ);
-
-    int64_t srcFileFrames = sourceFile.frames();
     int srcFileChannels = sourceFile.channels();
-    short buffer[srcFileFrames*srcFileChannels];
-    sourceFile.read(buffer, srcFileFrames*srcFileChannels);
-    puts("");
 
-    /* create dest wav file */
     SndfileHandle destFile  = SndfileHandle(destFName, SFM_WRITE, sourceFile.format(), srcFileChannels,
-            sourceFile.samplerate());
-    destFile.write(buffer, srcFileFrames*srcFileChannels);
+                                            sourceFile.samplerate());
 
-    puts("");
-
-    /* RAII takes care of destroying SndfileHandle object. */
+    std::vector<short> buffer(FRAMES_BUFFER_LEN * srcFileChannels);
+    for(sf_count_t nFrames = 1; nFrames != 0; nFrames = sourceFile.readf(buffer.data(), FRAMES_BUFFER_LEN)){
+        destFile.writef(buffer.data(), nFrames);
+    }
 }
 
 int main(int argc, char *argv[]) {
