@@ -8,6 +8,7 @@
 #include    <cstdio>
 #include    <sndfile.hh>
 #include    <vector>
+#include    <iostream>
 
 #define		FRAMES_BUFFER_LEN		65536
 
@@ -27,18 +28,16 @@ static void copyFile(const char *sourceFName, const char *destFName) {
 }
 
 int main(int argc, char *argv[]) {
+
     if(argc < 3){
-        puts("Not enough program arguments.\nArguments: [source file path] [destination file path]");
-    } else {
-        const char *sourceFPath = argv[argc-2];  // "../wav_files/sample01.wav"
-        const char *destFName = argv[argc-1];  // "copysample01.wav";
-
-        puts("\nSimple example showing usage of the C++ SndfileHandle object.\n");
-
-        copyFile(sourceFPath, destFName);
-
-        puts("Done.\n");
+        std::cout << "Usage: " << argv[0] << " [source file path] [destination file path]" << std::endl;
+        return 0;
     }
+
+    copyFile(argv[argc-2], argv[argc-1]);
+
+    puts("Done.\n");
+
     return 0;
 }
 
