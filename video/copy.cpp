@@ -4,7 +4,6 @@
 
 #include <opencv2/core.hpp>
 #include <opencv2/videoio.hpp>
-#include <opencv2/highgui.hpp>
 #include <iostream>
 
 using namespace cv;
@@ -52,7 +51,6 @@ int main(int argc, char *argv[]) {
 
     bool isColor = (src.type() == CV_8UC3);
 
-
     VideoWriter writer;
 
     int codec = VideoWriter::fourcc('M', 'J', 'P', 'G');
@@ -68,7 +66,11 @@ int main(int argc, char *argv[]) {
 
     cout << "Copying video file: " << src_path << "... "<< endl;
 
-    while (cap.read(src)){
+    while (true){
+        if (!cap.read(src)) {
+            cerr << "ERROR! blank frame grabbed\n";
+            break;
+        }
 
         dst = copyFrame(src);
         writer.write(dst);
