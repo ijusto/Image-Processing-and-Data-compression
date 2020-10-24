@@ -1,7 +1,10 @@
 //
 // Created by bruno on 10/22/20.
 //
-// Tested with file: ducks_take_off_444_720p50.y4m (4:4:4)
+// Tested with files:
+// ducks_take_off_444_720p50.y4m (4:4:4)
+// ducks_take_off_422_720p50.y4m (4:2:2)
+// ducks_take_off_420_720p50.y4m (4:2:0)
 //
 
 #include <iostream>
@@ -13,15 +16,28 @@ using namespace std;
 
 int main(int argc, char *argv[]) {
     // args
-    if(argc < 2){
-        cout << "Usage: " << argv[0] << " src_path" << endl;
+    if (argc < 3){
+        cout << "Usage: " << argv[0] << " src_path subsampling" << endl;
+        cout << "src_path:\n\tpath to yuv video file" << endl;
+        cout << "subsampling: " << endl;
+        cout << "\t1 - 4:4:4,\n"
+                "\t2 - 4:2:2,\n"
+                "\t3 - 4:2:0\n";
         return 0;
     }
     string src_path = argv[1];
+    int subsampling = stoi(argv[2]);
+    double fps = 25.0;
 
     // open video file
     ifstream video;
     video.open(src_path);
+
+    // check if file exists
+    if (!video.is_open()){
+        cout << "Error opening file: " << src_path << endl;
+        return 0;
+    }
 
     // parse header
     string header;
@@ -38,7 +54,6 @@ int main(int argc, char *argv[]) {
     // read frame into this buffer
     unsigned char* frameData = new unsigned char[rows*cols*3];
 
-    double fps = 25.0;
     while (true) {
         // skip word FRAME
         getline(video, header);
@@ -54,10 +69,31 @@ int main(int argc, char *argv[]) {
         // convert to rgb
         for(int i = 0; i < rows * cols; i++){
             // get YUV components from data in planar mode
-            // 4:4:4
-            int y = frameData[i];
-            int u = frameData[i + (rows * cols)];
-            int v = frameData[i + (rows * cols) * 2];
+            int y,u,v;
+
+            switch (subsampling) {
+                case 1:
+                    // 4:4:4
+                    y = frameData[i];
+                    u = frameData[i + (rows * cols)];
+                    v = frameData[i + (rows * cols) * 2];
+                    break;
+                case 2:
+                    // 4:2:2
+                    y = frameData[i];
+                    u = frameData[i/2 + (rows * cols)];
+                    v = frameData[i/2 + (rows * cols) + (rows * cols)/2];
+                    break;
+                case 3:
+                    // 4:2:0 (based on https://en.wikipedia.org/wiki/File:Yuv420.svg)
+                    int ci = (i % cols)/2;   // x of every 2 cols
+                    int ri = i/(cols*2);     // y of every 2 rows
+                    int shift = (cols/2)*ri; // shift amount within U/V planar region
+                    y = frameData[i];
+                    u = frameData[(ci + shift) + (rows * cols)];
+                    v = frameData[(ci + shift) + (rows * cols) + (rows * cols)/4];
+                    break;
+            }
 
             /* convert to RGB */
             int b = (int)(1.164*(y - 16) + 2.018*(u-128));
