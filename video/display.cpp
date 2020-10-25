@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
     // check if file exists
     if (!video.is_open()){
         cout << "Error opening file: " << src_path << endl;
-        return 0;
+        return -1;
     }
 
     // parse header

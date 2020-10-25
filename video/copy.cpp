@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
 
     // check if we succeeded
     if (!cap.isOpened()) {
-        cerr << "ERROR! Unable to open camera\n";
+        cerr << "ERROR! Unable to open video file\n";
         return -1;
     }
 
