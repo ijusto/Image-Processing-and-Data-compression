@@ -20,6 +20,9 @@ target_link_libraries(dispVideo ${OpenCV_LIBS})
 add_executable(videoEnt video/videoEntropy.cpp)
 target_link_libraries(videoEnt ${OpenCV_LIBS})
 
+add_executable(videoSNR video/videoSNR.cpp)
+target_link_libraries(videoSNR ${OpenCV_LIBS})
+
 add_executable(audioEnt audio/audioEntropy.cpp)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
