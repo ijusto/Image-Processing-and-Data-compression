@@ -39,13 +39,17 @@ int main(int argc, char *argv[]) {
     std::unordered_map<short, int> hist;
     for(sf_count_t nFrames = audio.readf(buffer.data(), FRAMES_BUFFER_LEN);
         nFrames != 0; nFrames = audio.readf(buffer.data(), FRAMES_BUFFER_LEN)) {
-        if (hist.find(nFrames) != hist.end()) {
-            hist[nFrames] += 1;
-        } else {
-            hist[nFrames] = 1;
+
+        // read frame's samples
+        for(int i = 0; i < nFrames; i++){
+            if (hist.find(buffer[i]) != hist.end()) {
+                hist[buffer[i]] += 1;
+            } else {
+                hist[buffer[i]] = 1;
+            }
         }
 
-        sample_count += 1;
+        sample_count += nFrames;
     }
     std::vector<int> hist_vector(hist.size());
     for(auto & iter : hist){
