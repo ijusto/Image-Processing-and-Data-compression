@@ -2,7 +2,6 @@
  *  Copies a wav file, sample by sample. Both file names should be passed as command line arguments to the program.
  *  It is used the libsndfile library to aid in the handling of the wav files.
  *  @author Inês Justo
- *  @author
  */
 
 #include    <cstdio>

@@ -4,7 +4,6 @@
  * mono version).
  * For visualizing graphically the histograms, it is used the matplotlib library.
  * @author Inês Justo
- * @author
  */
 
 #include    "../thirdparty/matplotlib-cpp-master/matplotlibcpp.h"
@@ -46,7 +45,7 @@ int main(int argc, char *argv[]) {
             hist[nFrames] = 1;
         }
 
-        sample_count += FRAMES_BUFFER_LEN;
+        sample_count += 1;
     }
     std::vector<int> hist_vector(hist.size());
     for(auto & iter : hist){
