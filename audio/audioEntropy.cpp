@@ -19,6 +19,11 @@ namespace plt = matplotlibcpp;
 
 int main(int argc, char *argv[]) {
 
+    if(argc < 2){
+        std::cout << "Usage: " << argv[0] << " [file path]" << std::endl;
+        return 0;
+    }
+
     SndfileHandle audio = SndfileHandle(argv[argc-1], SFM_READ);
 
     std::vector<short> buffer(FRAMES_BUFFER_LEN * audio.channels());
