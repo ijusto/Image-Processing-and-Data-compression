@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
 
     size_t nFrames;
     vector<short> samples(FRAMES_BUFFER_SIZE * sndfileIn.channels());
-    short int SNR,SumIn =0;
+    int SNR,SumIn =0;
     while((nFrames = sndfileIn.readf(samples.data(), FRAMES_BUFFER_SIZE))){
 
         SumIn = SumIn + pow(*samples.data(),2);
@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
 
     nFrames = 0;
     vector<short> samplesN(FRAMES_BUFFER_SIZE * sndfileInN.channels());
-    short int SumInN=0;
+    int SumInN=0;
     while((nFrames = sndfileInN.readf(samples.data(), FRAMES_BUFFER_SIZE))){
         SumInN = SumInN + pow(*samples.data()-*samplesN.data(),2);
     }
