@@ -23,8 +23,8 @@ target_link_libraries(videoEnt ${OpenCV_LIBS})
 add_executable(videoSNR video/videoSNR.cpp)
 target_link_libraries(videoSNR ${OpenCV_LIBS})
 
-add_executable(KMeans KMeans.cpp )
-target_link_libraries(KMeans ${OpenCV_LIBS} )
+add_executable(kmeans video/kmeans.cpp )
+target_link_libraries(kmeans ${OpenCV_LIBS} )
 
 add_executable(uniscalarquant audio/uni_scalar_quant.cpp)
 target_link_libraries(uniscalarquant ${SNDFILE_DIR} ${SNDFILE_LIBRARY})
