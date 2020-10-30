@@ -4,8 +4,13 @@
  * @author
  */
 
-int main(int argc, char *argv[]) {
+#include    <sndfile.hh>
+#include    <vector>
+#include    <unordered_map>
 
+#define		FRAMES_BUFFER_LEN		65536
+
+int main(int argc, char *argv[]) {
 
     SndfileHandle audio = SndfileHandle(argv[argc-1], SFM_READ);
 

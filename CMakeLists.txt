@@ -36,6 +36,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 # Matplotlib
 find_package(Python2 COMPONENTS Development NumPy)
-#target_include_directories(audioEnt PRIVATE ${Python2_INCLUDE_DIRS} ${Python2_NumPy_INCLUDE_DIRS})
-#target_link_libraries(audioEnt Python2::Python Python2::NumPy ${SNDFILE_DIR} ${SNDFILE_LIBRARY})
+target_include_directories(audioEnt PRIVATE ${Python2_INCLUDE_DIRS} ${Python2_NumPy_INCLUDE_DIRS})
+target_link_libraries(audioEnt Python2::Python Python2::NumPy ${SNDFILE_DIR} ${SNDFILE_LIBRARY})
 
