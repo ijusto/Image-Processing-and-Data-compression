@@ -11,20 +11,11 @@
 #include    <vector>
 #include    <cstdio>
 #include    <cmath>
+#include    "../EntropyCalculator.h"
 
 namespace plt = matplotlibcpp;
 
 #define		FRAMES_BUFFER_LEN		65536
-
-double calculateEntropy(std::unordered_map<short, int>* hist, int sample_count){
-    double entropy = 0;
-    for(auto & iter : *hist){
-        double pi = ((double) iter.second) / sample_count;
-        if (pi == 0) continue;
-        entropy -= pi * log2(pi);
-    }
-    return entropy;
-}
 
 int main(int argc, char *argv[]) {
 
@@ -92,11 +83,16 @@ int main(int argc, char *argv[]) {
     plt::show();
 
     // Calculate the corresponding entropy of the audio sample
-    double entropy = calculateEntropy(&hist_mono, left_channel_sample_count);
+    auto * entropyCalculator = new EntropyCalculator(&hist_mono, mono_sample_count);
+    double entropy = entropyCalculator->getEntropy();
     printf("\nentropy of the mono channel: %f", entropy);
-    entropy = calculateEntropy(&hist_left_channel, right_channel_sample_count);
+
+    entropyCalculator->setParams(&hist_left_channel, left_channel_sample_count);
+    entropy = entropyCalculator->getEntropy();
     printf("\nentropy of the left channel: %f", entropy);
-    entropy = calculateEntropy(&hist_right_channel, mono_sample_count);
+
+    entropyCalculator->setParams(&hist_right_channel, right_channel_sample_count);
+    entropy = entropyCalculator->getEntropy();
     printf("\nentropy of the right channel: %f", entropy);
 
     return 0;
