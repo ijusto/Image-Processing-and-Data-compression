@@ -6,6 +6,7 @@
 #include <opencv2/videoio.hpp>
 #include <iostream>
 #include <fstream>
+#include "../EntropyCalculator.h"
 
 using namespace cv;
 using namespace std;

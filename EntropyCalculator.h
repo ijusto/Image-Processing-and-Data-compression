@@ -8,24 +8,45 @@
 #include    <iostream>
 #include    <unordered_map>
 
+/*!
+ *
+ */
 class EntropyCalculator {
 
 private:
-    std::unordered_map<short, int>* hist;
+    std::unordered_map<short, int>*  histMap;
+    int* histPointer;
+    int histSize;
     unsigned int sampleCount;
 
 public:
-    EntropyCalculator(std::unordered_map<short, int>* _hist, int _sampleCount) : hist(_hist), sampleCount(_sampleCount){}
+    EntropyCalculator(std::unordered_map<short, int>* _histMap, int _sampleCount) : histMap(_histMap),
+                        sampleCount(_sampleCount){}
 
-    EntropyCalculator(){}
+    EntropyCalculator(unsigned int* _histPointer, int _histSize, int _sampleCount) : histPointer(_histPointer),
+                        histSize(_histSize),sampleCount(_sampleCount){}
 
-    void setParams(std::unordered_map<short, int>* _hist, int _sampleCount) {
-        hist = _hist;
+    void setParams(std::unordered_map<T, int>* _histMap, int _sampleCount) {
+        histMap = _histMap;
         sampleCount = _sampleCount;
     }
 
-    std::unordered_map<short, int>* getHist() const {
-        return hist;
+    void setParams(unsigned int* _histPointer, int _histSize, int _sampleCount) {
+        histPointer = _histPointer;
+        histSize = _histSize;
+        sampleCount = _sampleCount;
+    }
+
+    unsigned int* getHistPointer() const {
+        return histPointer;
+    }
+
+    unsigned int getHistSize() const {
+        return histSize;
+    }
+
+    std::unordered_map<short, int>* getHistMap() const {
+        return histMap;
     }
 
     unsigned int getSampleCount() const {
@@ -34,10 +55,21 @@ public:
 
     double getEntropy(){
         double h = 0;
-        for(auto & iter : *hist){
-            double pi = ((double) iter.second) / sampleCount;
-            if (pi == 0) continue;
-            h -= pi * log2(pi);
+        if(histSize != NULL){
+            double h = 0;
+            double P, I;
+            for(int i = 0; i < histSize; i++){
+                P = ((double) histPointer[i])/sampleCount;
+                if (P == 0) continue;   // to avoid inf values
+                I = - log2(P);           // when computing log(P)
+                h += P*I;
+            }
+        } else {
+            for(auto & iter : *histMap){
+                double pi = ((double) iter.second) / sampleCount;
+                if (pi == 0) continue;
+                h -= pi * log2(pi);
+            }
         }
         return h;
     }
