@@ -42,13 +42,9 @@ int main(int argc, char *argv[]) {
 
         // read frame's samples
         for(int i = 0; i < nFrames; i++){
-            if (hist.find(buffer[i]) != hist.end()) {
-                hist[buffer[i]] += 1;
-            } else {
-                hist[buffer[i]] = 1;
-            }
+            hist[buffer[i]] = (hist.find(buffer[i]) != hist.end()) ? hist[buffer[i]] + 1 : 1;
         }
-
+        
         sample_count += nFrames;
     }
     std::vector<int> hist_vector(hist.size());
