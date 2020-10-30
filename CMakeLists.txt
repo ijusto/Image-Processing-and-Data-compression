@@ -11,8 +11,21 @@ set(SNDFILE_DIR "-L/usr/lib/")
 add_executable(copywav audio/wavCopy.cpp)
 target_link_libraries(copywav ${SNDFILE_DIR} ${SNDFILE_LIBRARY})
 
-add_executable(video video/copy.cpp)
-target_link_libraries(video ${OpenCV_LIBS})
+add_executable(copyVideo video/copy.cpp)
+target_link_libraries(copyVideo ${OpenCV_LIBS})
+
+add_executable(dispVideo video/display.cpp)
+target_link_libraries(dispVideo ${OpenCV_LIBS})
+
+add_executable(videoEnt video/videoEntropy.cpp)
+target_link_libraries(videoEnt ${OpenCV_LIBS})
+
+add_executable(videoSNR video/videoSNR.cpp)
+target_link_libraries(videoSNR ${OpenCV_LIBS})
+
+add_executable(KMeans KMeans.cpp )
+target_link_libraries(KMeans ${OpenCV_LIBS} )
+
 add_executable(audioEnt audio/audioEntropy.cpp)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
@@ -20,6 +33,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 # Matplotlib
 find_package(Python2 COMPONENTS Development NumPy)
-target_include_directories(audioEnt PRIVATE ${Python2_INCLUDE_DIRS} ${Python2_NumPy_INCLUDE_DIRS})
-target_link_libraries(audioEnt Python2::Python Python2::NumPy ${SNDFILE_DIR} ${SNDFILE_LIBRARY})
+#target_include_directories(audioEnt PRIVATE ${Python2_INCLUDE_DIRS} ${Python2_NumPy_INCLUDE_DIRS})
+#target_link_libraries(audioEnt Python2::Python Python2::NumPy ${SNDFILE_DIR} ${SNDFILE_LIBRARY})
 
