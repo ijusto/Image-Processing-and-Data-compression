@@ -36,7 +36,7 @@ double calcEntropy(int* hist, int hist_size, int sample_count){
     for(int i = 0; i < hist_size; i++){
         P = ((double) hist[i])/sample_count;
         if (P == 0) continue;   // to avoid inf values
-        I = - log(P);           // when computing log(P)
+        I = - log2(P);           // when computing log(P)
         H += P*I;
     }
     return H;
