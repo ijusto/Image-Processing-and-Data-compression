@@ -1,3 +1,9 @@
+/*!
+ *  Display a video in bgr and do some quantization with the numbers of clursters that
+ *  we want, exe ./program src_path subsampling clusters
+ *  @author AgostinhO Pires
+ *  30/10/2020
+ */
 #include <iostream>
 #include <sndfile.hh>
 #include <vector>
