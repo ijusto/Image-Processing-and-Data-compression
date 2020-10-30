@@ -61,20 +61,25 @@ int main(int argc, char *argv[]) {
     double entropy = calculateEntropy(&hist, sample_count);
     printf("entropy of the audio sample: %f", entropy);
 
-    std::vector<short> channels_buffer(FRAMES_BUFFER_LEN*audio.channels());
     // Calculate the histogram of the average of the channels (the mono version).
     std::unordered_map<short, int> hist_mono;
-    for(sf_count_t prev = audio.readf(buffer.data(), FRAMES_BUFFER_LEN),
-            current = audio.readf(buffer.data(), FRAMES_BUFFER_LEN);
-            current != 0; prev = audio.readf(buffer.data(), FRAMES_BUFFER_LEN),
-            current = audio.readf(buffer.data(), FRAMES_BUFFER_LEN)) {
-        sf_count_t mean = (prev + current)/2;
-        if (hist_mono.find(mean) != hist_mono.end()) {
-            hist_mono[mean] += 1;
+
+    int audioChannels = audio.channels();
+    auto audioFrames = audio.frames();
+    short audioBuffer[audioFrames*audioChannels];
+    audio.read(audioBuffer, audioFrames * audioChannels);
+    for(int i = 0; i < audioFrames; i++){
+        double iter_mono = 0;
+        for(int j = 0; j < audioChannels; j++)
+            iter_mono += audioBuffer[i*audioChannels + j];
+        double m = iter_mono / audioChannels;
+        if (hist_mono.find(m) != hist.end()) {
+            hist_mono[m] += 1;
         } else {
-            hist_mono[mean] = 1;
+            hist_mono[m] = 1;
         }
     }
+
     std::vector<int> hist_vector_mono(hist_mono.size());
     for(auto & iter : hist_mono){
         hist_vector_mono.push_back(iter.second);
