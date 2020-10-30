@@ -23,21 +23,21 @@ public:
     EntropyCalculator(std::unordered_map<short, int>* _histMap, int _sampleCount) : histMap(_histMap),
                         sampleCount(_sampleCount){}
 
-    EntropyCalculator(unsigned int* _histPointer, int _histSize, int _sampleCount) : histPointer(_histPointer),
+    EntropyCalculator(int* _histPointer, int _histSize, int _sampleCount) : histPointer(_histPointer),
                         histSize(_histSize),sampleCount(_sampleCount){}
 
-    void setParams(std::unordered_map<T, int>* _histMap, int _sampleCount) {
+    void setParams(std::unordered_map<short, int>* _histMap, int _sampleCount) {
         histMap = _histMap;
         sampleCount = _sampleCount;
     }
 
-    void setParams(unsigned int* _histPointer, int _histSize, int _sampleCount) {
+    void setParams(int* _histPointer, int _histSize, int _sampleCount) {
         histPointer = _histPointer;
         histSize = _histSize;
         sampleCount = _sampleCount;
     }
 
-    unsigned int* getHistPointer() const {
+    int* getHistPointer() const {
         return histPointer;
     }
 
