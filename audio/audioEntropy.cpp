@@ -33,6 +33,8 @@ int main(int argc, char *argv[]) {
 
     std::vector<short> buffer(FRAMES_BUFFER_LEN * audio.channels());
 
+    int sample_count = 0;
+
     // read audio to calculate Histogram of the audio sample
     std::unordered_map<short, int> hist;
     for(sf_count_t nFrames = audio.readf(buffer.data(), FRAMES_BUFFER_LEN);
@@ -42,14 +44,16 @@ int main(int argc, char *argv[]) {
         } else {
             hist[nFrames] = 1;
         }
+
+        sample_count += FRAMES_BUFFER_LEN;
     }
     std::vector<int> hist_vector(hist.size());
     for(auto & iter : hist){
         hist_vector.push_back(iter.second);
     }
-    int sample_size = hist.size(); //?
+
     // Calculate the corresponding entropy of the audio sample
-    double entropy = calculateEntropy(&hist, sample_size);
+    double entropy = calculateEntropy(&hist, sample_count);
     printf("entropy of the audio sample: %f", entropy);
 
     // Calculate the histogram of the left and right channels
