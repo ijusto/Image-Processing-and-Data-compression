@@ -21,8 +21,8 @@ int main(int argc, char *argv[]) {
         return 1;
     }
     //this will put on the class sndfile the wave file
-    SndfileHandle sndfileIn {argv[argc-1]};
-    SndfileHandle sndfileInN {argv[argc-2]};
+    SndfileHandle sndfileIn {argv[argc-2]};
+    SndfileHandle sndfileInN {argv[argc-1]};
 
     if(sndfileIn.error()){
         cerr << "ERRO : invalid input file, need to be a wave file " << endl;
