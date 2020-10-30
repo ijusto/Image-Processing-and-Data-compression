@@ -11,6 +11,9 @@ set(SNDFILE_DIR "-L/usr/lib/")
 add_executable(copywav audio/wavCopy.cpp)
 target_link_libraries(copywav ${SNDFILE_DIR} ${SNDFILE_LIBRARY})
 
+add_executable(AudioSNR audio/audioSNR.cpp)
+target_link_libraries(AudioSNR ${SNDFILE_DIR} ${SNDFILE_LIBRARY})
+
 add_executable(copyVideo video/copy.cpp)
 target_link_libraries(copyVideo ${OpenCV_LIBS})
 

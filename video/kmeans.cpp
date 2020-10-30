@@ -161,6 +161,5 @@ int main(int argc, char *argv[]) {
         if (waitKey(delay) >= 0)
             break;
     }
-
     return 0;
 }
