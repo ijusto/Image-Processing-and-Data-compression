@@ -1,6 +1,6 @@
 /*!
- *  Display a video in bgr and do some quantization with the numbers of clursters that
- *  we want, exe ./program src_path subsampling clusters
+ *  ./program file.wav filenoise.wav
+ *  calculate the value os snr of to audio signal
  *  @author AgostinhO Pires
  *  30/10/2020
  */
