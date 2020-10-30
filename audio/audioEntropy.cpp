@@ -22,7 +22,7 @@ double calculateEntropy(std::unordered_map<short, int>* hist, int sample_count){
     for(auto & iter : *hist){
         double pi = ((double) iter.second) / sample_count;
         if (pi == 0) continue;
-        entropy -= pi * (log(pi)/log(2));
+        entropy -= pi * log2(pi);
     }
     return entropy;
 }
