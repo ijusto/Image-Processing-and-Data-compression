@@ -4,7 +4,6 @@
  * mono version).
  * For visualizing graphically the histograms, it is used the matplotlib library.
  * @author Inês Justo
- * @author
  */
 
 #include    "../thirdparty/matplotlib-cpp-master/matplotlibcpp.h"
@@ -22,6 +21,7 @@ double calculateEntropy(std::unordered_map<short, int>* hist, int sample_count){
     for(auto & iter : *hist){
         double pi = ((double) iter.second) / sample_count;
         if (pi == 0) continue;
+        printf("pi: %f\n", pi);
         entropy -= pi * log2(pi);
     }
     return entropy;
@@ -35,7 +35,7 @@ int main(int argc, char *argv[]) {
 
     int sample_count = 0;
 
-    // read audio to calculate Histogram of the audio sample
+    // read audio to calculate Histogram of the audio sample (left and right channels)
     std::unordered_map<short, int> hist;
     for(sf_count_t nFrames = audio.readf(buffer.data(), FRAMES_BUFFER_LEN);
         nFrames != 0; nFrames = audio.readf(buffer.data(), FRAMES_BUFFER_LEN)) {
@@ -45,24 +45,44 @@ int main(int argc, char *argv[]) {
             hist[nFrames] = 1;
         }
 
-        sample_count += FRAMES_BUFFER_LEN;
+        sample_count += 1;
     }
     std::vector<int> hist_vector(hist.size());
     for(auto & iter : hist){
         hist_vector.push_back(iter.second);
     }
 
+    // display histogram
+    plt::hist(hist_vector);
+    plt::title("Histogram of audio samples");
+    plt::show();
+
     // Calculate the corresponding entropy of the audio sample
     double entropy = calculateEntropy(&hist, sample_count);
     printf("entropy of the audio sample: %f", entropy);
 
-    // Calculate the histogram of the left and right channels
-
+    std::vector<short> channels_buffer(FRAMES_BUFFER_LEN*audio.channels());
     // Calculate the histogram of the average of the channels (the mono version).
+    std::unordered_map<short, int> hist_mono;
+    for(sf_count_t prev = audio.readf(buffer.data(), FRAMES_BUFFER_LEN),
+            current = audio.readf(buffer.data(), FRAMES_BUFFER_LEN);
+            current != 0; prev = audio.readf(buffer.data(), FRAMES_BUFFER_LEN),
+            current = audio.readf(buffer.data(), FRAMES_BUFFER_LEN)) {
+        sf_count_t mean = (prev + current)/2;
+        if (hist_mono.find(mean) != hist_mono.end()) {
+            hist_mono[mean] += 1;
+        } else {
+            hist_mono[mean] = 1;
+        }
+    }
+    std::vector<int> hist_vector_mono(hist_mono.size());
+    for(auto & iter : hist_mono){
+        hist_vector_mono.push_back(iter.second);
+    }
 
     // display histogram
-    plt::hist(hist_vector);
-    plt::title("Histogram of audio samples");
+    plt::hist(hist_vector_mono);
+    plt::title("Histogram of the average of the channels");
     plt::show();
 
     return 0;
