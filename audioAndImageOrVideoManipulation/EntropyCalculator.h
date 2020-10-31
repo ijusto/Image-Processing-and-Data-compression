@@ -1,16 +1,13 @@
-//
-// Created by inesjusto on 30/10/20.
-//
-
 #ifndef IMAGE_PROCESSING_AND_DATA_COMPRESSION_ENTROPYCALCULATOR_H
 #define IMAGE_PROCESSING_AND_DATA_COMPRESSION_ENTROPYCALCULATOR_H
 
 #include    <iostream>
 #include    <unordered_map>
 
+//!  Entropy Calculator class.
 /*!
- *
- */
+  A more elaborate class description.
+*/
 class EntropyCalculator {
 
 private:
@@ -20,6 +17,10 @@ private:
     unsigned int sampleCount;
 
 public:
+    //! A constructor.
+    /*!
+      A more elaborate description of the constructor.
+    */
     EntropyCalculator(std::unordered_map<short, int>* _histMap, int _sampleCount) : histMap(_histMap),
                         sampleCount(_sampleCount){}
 
@@ -53,6 +54,10 @@ public:
         return sampleCount;
     }
 
+    //! ....
+    /*!
+      \return The entropy
+    */
     double getEntropy(){
         double h = 0;
         if(histSize != NULL){
