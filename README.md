@@ -1,6 +1,11 @@
 # Image-Processing-and-Data-compression
 Project of the Audio And Video Coding course, University of Aveiro
 
+## Documentation
+```
+cd docs && doxygen && firefox html/index.html
+```
+
 ## Installation of libsndfile
 Decrompress the file, on the cmd go to the repository of the file libsndfile-1.0.28 
 LinuxCMD:~.../libsndfile-1.0.28
