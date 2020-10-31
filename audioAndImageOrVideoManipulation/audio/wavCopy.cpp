@@ -4,7 +4,6 @@
  *  @author Inês Justo
  */
 
-#include    <cstdio>
 #include    <sndfile.hh>
 #include    <vector>
 #include    <iostream>

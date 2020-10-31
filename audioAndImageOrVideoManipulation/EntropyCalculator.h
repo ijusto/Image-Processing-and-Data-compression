@@ -6,6 +6,7 @@
 
 //!  Entropy Calculator class.
 /*!
+ *
   A more elaborate class description.
 */
 class EntropyCalculator {
@@ -24,6 +25,10 @@ public:
     EntropyCalculator(std::unordered_map<short, int>* _histMap, int _sampleCount) : histMap(_histMap),
                         sampleCount(_sampleCount){}
 
+    //! A constructor.
+    /*!
+      A more elaborate description of the constructor.
+    */
     EntropyCalculator(int* _histPointer, int _histSize, int _sampleCount) : histPointer(_histPointer),
                         histSize(_histSize),sampleCount(_sampleCount){}
 
@@ -38,25 +43,41 @@ public:
         sampleCount = _sampleCount;
     }
 
+    //! ....
+    /*!
+      @return
+    */
     int* getHistPointer() const {
         return histPointer;
     }
 
+    //! ....
+    /*!
+      @return
+    */
     unsigned int getHistSize() const {
         return histSize;
     }
 
+    //! ....
+    /*!
+      @return Histogram map with the sample as key and the sample frequency in the audio file as value.
+    */
     std::unordered_map<short, int>* getHistMap() const {
         return histMap;
     }
 
+    //! ....
+    /*!
+      @return Number of samples.
+    */
     unsigned int getSampleCount() const {
         return sampleCount;
     }
 
     //! ....
     /*!
-      \return The entropy
+      @return The entropy.
     */
     double getEntropy(){
         double h = 0;
