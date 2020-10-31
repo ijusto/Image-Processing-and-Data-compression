@@ -32,17 +32,17 @@ g++ audio/wavCopy.cpp -lsndfile -o audio/copywav
 
 ```
 
-####Reduce the number of bits used to represent each pixel of an image/video.
+#### Reduce the number of bits used to represent each pixel of an image/video.
 ```
 
 ```
 
-####Print the SNR of the relation between two audio files, and the maximum per sample absolute error.
+#### Print the SNR of the relation between two audio files, and the maximum per sample absolute error.
 ```
 
 ```
 
-####Print the SNR of the relation between two image/video files, and the maximum per pixel absolute error.
+#### Print the SNR of the relation between two image/video files, and the maximum per pixel absolute error.
 ```
 
 ```
