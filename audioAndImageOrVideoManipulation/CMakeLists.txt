@@ -4,35 +4,37 @@ project(Image-Processing-and-Data-compression)
 set(CMAKE_CXX_STANDARD  17)
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
+include_directories(includes)
+file(GLOB SOURCES src/*.cpp)
 
 set(SNDFILE_LIBRARY "-lsndfile")
 set(SNDFILE_DIR "-L/usr/lib/")
 
-add_executable(copywav audio/wavCopy.cpp)
+add_executable(copywav src/audio/wavCopy.cpp)
 target_link_libraries(copywav ${SNDFILE_DIR} ${SNDFILE_LIBRARY})
 
-add_executable(AudioSNR audio/audioSNR.cpp)
+add_executable(AudioSNR src/audio/audioSNR.cpp)
 target_link_libraries(AudioSNR ${SNDFILE_DIR} ${SNDFILE_LIBRARY})
 
-add_executable(copyVideo video/copy.cpp)
+add_executable(copyVideo src/video/copy.cpp)
 target_link_libraries(copyVideo ${OpenCV_LIBS})
 
-add_executable(dispVideo video/display.cpp)
+add_executable(dispVideo src/video/display.cpp)
 target_link_libraries(dispVideo ${OpenCV_LIBS})
 
-add_executable(videoEnt video/videoEntropy.cpp)
+add_executable(videoEnt src/video/videoEntropy.cpp)
 target_link_libraries(videoEnt ${OpenCV_LIBS})
 
-add_executable(videoSNR video/videoSNR.cpp)
+add_executable(videoSNR src/video/videoSNR.cpp)
 target_link_libraries(videoSNR ${OpenCV_LIBS})
 
-add_executable(kmeans video/kmeans.cpp )
+add_executable(kmeans src/video/kmeans.cpp )
 target_link_libraries(kmeans ${OpenCV_LIBS} )
 
-add_executable(uniscalarquant audio/uni_scalar_quant.cpp)
+add_executable(uniscalarquant src/audio/uni_scalar_quant.cpp)
 target_link_libraries(uniscalarquant ${SNDFILE_DIR} ${SNDFILE_LIBRARY})
 
-add_executable(audioEnt audio/audioEntropy.cpp)
+add_executable(audioEnt src/audio/audioEntropy.cpp)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 #target_link_libraries(audioEnt "-I/usr/local/include/python3.7m -I/usr/local/lib/python3.7/site-packages/numpy/core/include -lpython3.7m -lpthread -lutil -ldl -Xlinker -export-dynamic")

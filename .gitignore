@@ -4,3 +4,13 @@ cmake-build-debug/
 *.csv
 
 docs/html/
+
+audioAndImageOrVideoManipulation/build/CMakeFiles/
+
+audioAndImageOrVideoManipulation/build/cmake_install.cmake
+
+audioAndImageOrVideoManipulation/build/CMakeCache.txt
+
+audioAndImageOrVideoManipulation/build/Image-Processing-and-Data-compression.cbp
+
+audioAndImageOrVideoManipulation/build/Makefile
