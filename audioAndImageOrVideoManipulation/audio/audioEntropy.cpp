@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
     plt::title("Histogram of Left channel");
     plt::xlabel("Samples");
     plt::ylabel("Freq");
-    plt::show();
+    plt::save("../audio/audioHistograms/Left_channel.png");
 
 
     std::vector<int> hist_right_channel_vector(hist_right_channel.size());
@@ -72,7 +72,7 @@ int main(int argc, char *argv[]) {
     plt::title("Histogram of Right channel");
     plt::xlabel("Samples");
     plt::ylabel("Freq");
-    plt::show();
+    plt::save("../audio/audioHistograms/Right_channel.png");
 
 
     std::vector<int> hist_mono_vector(hist_mono.size());
@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
     plt::title("Histogram of mono");
     plt::xlabel("Samples");
     plt::ylabel("Freq");
-    plt::show();
+    plt::save("../audio/audioHistograms/Mono.png");
 
     // Calculate the corresponding entropy of the audio sample
     auto * entropyCalculator = new EntropyCalculator(&hist_mono, mono_sample_count);

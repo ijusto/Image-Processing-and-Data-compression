@@ -60,7 +60,7 @@ public:
     */
     double getEntropy(){
         double h = 0;
-        if(histSize != NULL){
+        if(histSize != 0){
             double h = 0;
             double P, I;
             for(int i = 0; i < histSize; i++){
