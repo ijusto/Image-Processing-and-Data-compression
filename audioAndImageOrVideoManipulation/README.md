@@ -2,9 +2,9 @@
 
 #### Copy a wav file, sample by sample. 
 ```
-g++ audio/wavCopy.cpp -lsndfile -o audio/copywav
+g++ src/audio/wavCopy.cpp -lsndfile -o build/copywav
   
-./audio/copywav ./wav_files/sample01.wav ./audio/copiedwav.wav
+./build/copywav ./wav_files/sample01.wav ./src/audio/copiedwav.wav
 ```
 
 #### Copy a video, pixel by pixel.
