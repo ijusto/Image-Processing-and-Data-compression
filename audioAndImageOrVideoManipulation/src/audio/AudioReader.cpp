@@ -2,10 +2,27 @@
 
 AudioReader::AudioReader(char* sourceFileName){
     sourceFile = SndfileHandle(sourceFileName, SFM_READ);
-    readSampleBySample();
 }
 
-void AudioReader::readSampleBySample(){
+void AudioReader::copySampleBySample(char* destFileName){
+
+    if (sourceFile.frames() == 0) {
+        std::cerr << "Error: File with zero frames." << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    auto srcFileChannels = sourceFile.channels();
+    SndfileHandle destFile  = SndfileHandle(destFileName, SFM_WRITE, sourceFile.format(),
+                                            srcFileChannels,sourceFile.samplerate());
+
+    std::vector<short> audioSample(RESOLUTION*srcFileChannels);
+    for(sf_count_t nFrames = sourceFile.readf(audioSample.data(), RESOLUTION);
+        nFrames != 0; nFrames = sourceFile.readf(audioSample.data(), RESOLUTION)) {
+        destFile.writef(audioSample.data(), nFrames);
+    }
+}
+
+void AudioReader::readChannels(){
 
     if(sourceFile.channels() != 2){
         std::cerr << "Error: This program is meant to handle stereo audio." << std::endl;

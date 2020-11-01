@@ -40,6 +40,7 @@ int main(int argc, char *argv[]) {
     }
 
     auto * audioReader = new AudioReader(argv[argc - 1]);
+    audioReader->readChannels();
     std::vector<short> leftChannel = audioReader->getLeftCh();
     std::vector<short> rightChannel = audioReader->getRightCh();
     std::vector<short> mono = audioReader->getMono();

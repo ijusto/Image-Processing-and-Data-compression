@@ -5,6 +5,9 @@
 #include    <vector>
 #include    <iostream>
 
+#define     BIT_DEPTH       16
+#define		RESOLUTION		pow(2, BIT_DEPTH)
+
 class AudioReader{
 
 private:
@@ -16,7 +19,9 @@ private:
 public:
     explicit AudioReader(char* sourceFileName);
 
-    void readSampleBySample();
+    void readChannels();
+
+    void copySampleBySample(char* destFileName);
 
     std::vector<short> getLeftCh();
 
