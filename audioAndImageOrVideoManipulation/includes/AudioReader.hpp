@@ -4,6 +4,7 @@
 #include    <sndfile.hh>
 #include    <vector>
 #include    <iostream>
+#include    <cmath>
 
 #define     BIT_DEPTH       16
 #define		RESOLUTION		pow(2, BIT_DEPTH)
@@ -32,7 +33,7 @@ public:
 
     void copySampleBySample(char* destFileName);
 
-    void uniformScalarQuantization();
+    void uniformScalarQuantization(char* destFileName);
 
     //! ....
     /*!

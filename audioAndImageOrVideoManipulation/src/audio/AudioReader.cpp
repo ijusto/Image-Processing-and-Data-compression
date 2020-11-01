@@ -48,7 +48,7 @@ void AudioReader::readChannels(){
     }
 }
 
-void AudioReader::uniformScalarQuantization(){
+void AudioReader::uniformScalarQuantization(char* destFileName){
 
 }
 

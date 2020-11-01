@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.10)
 project(Image-Processing-and-Data-compression)
 
 set(CMAKE_CXX_STANDARD  17)
@@ -40,7 +40,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 #target_link_libraries(audioEnt "-I/usr/local/include/python3.7m -I/usr/local/lib/python3.7/site-packages/numpy/core/include -lpython3.7m -lpthread -lutil -ldl -Xlinker -export-dynamic")
 
 # Matplotlib
-find_package(Python2 COMPONENTS Development NumPy)
-target_include_directories(audioEnt PRIVATE ${Python2_INCLUDE_DIRS} ${Python2_NumPy_INCLUDE_DIRS})
-target_link_libraries(audioEnt Python2::Python Python2::NumPy ${SNDFILE_DIR} ${SNDFILE_LIBRARY})
+find_package(PythonLibs 2.7)
+target_include_directories(audioEnt PRIVATE ${PYTHON_INCLUDE_DIRS})
+target_link_libraries(audioEnt ${PYTHON_LIBRARIES} ${SNDFILE_DIR} ${SNDFILE_LIBRARY})
 

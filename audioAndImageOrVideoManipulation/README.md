@@ -1,9 +1,15 @@
 # Audio and Image/Video Manipulation
 
-#### Copy a wav file, sample by sample. 
+#### Build the entire project.
 ```
-g++ src/audio/wavCopy.cpp -lsndfile -o build/copywav
-  
+cd build
+cmake ..
+cmake --build .
+cd ..
+```
+
+#### Copy a wav file, sample by sample. 
+``` 
 ./build/copywav ./wav_files/sample01.wav ./src/audio/copiedwav.wav
 ```
 

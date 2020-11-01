@@ -14,3 +14,5 @@ audioAndImageOrVideoManipulation/build/CMakeCache.txt
 audioAndImageOrVideoManipulation/build/Image-Processing-and-Data-compression.cbp
 
 audioAndImageOrVideoManipulation/build/Makefile
+
+audioAndImageOrVideoManipulation/src/audio/copiedwav.wav
