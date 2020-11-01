@@ -28,7 +28,9 @@ void AudioReader::copySampleBySample(char* destFileName){
 
 void AudioReader::readChannels(){
 
-    if(sourceFile.channels() != 2){
+    auto srcFileChannels = sourceFile.channels();
+
+    if(srcFileChannels != 2){
         std::cerr << "Error: This program is meant to handle stereo audio." << std::endl;
         exit(EXIT_FAILURE);
     }
@@ -38,7 +40,7 @@ void AudioReader::readChannels(){
         exit(EXIT_FAILURE);
     }
 
-    std::vector<short> samplesFromFrame(sourceFile.channels());
+    std::vector<short> samplesFromFrame(srcFileChannels);
 
     for(auto frame = sourceFile.readf(samplesFromFrame.data(), 1);
         frame != 0; frame = sourceFile.readf(samplesFromFrame.data(), 1)) {
@@ -48,8 +50,28 @@ void AudioReader::readChannels(){
     }
 }
 
-void AudioReader::uniformScalarQuantization(char* destFileName){
-    //TODO
+void AudioReader::uniformScalarQuantization(char* destFileName, int nBits){
+
+    if (sourceFile.frames() == 0) {
+        std::cerr << "Error: File with zero frames." << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    auto srcFileChannels = sourceFile.channels();
+    SndfileHandle destFile  = SndfileHandle(destFileName, SFM_WRITE, sourceFile.format(),
+                                            srcFileChannels,sourceFile.samplerate());
+
+    std::vector<short> samplesFromFrame(srcFileChannels);
+    std::vector<short> samplesShifted(srcFileChannels);
+
+    for(auto frame = sourceFile.readf(samplesFromFrame.data(), 1);
+        frame != 0; frame = sourceFile.readf(samplesFromFrame.data(), 1)) {
+
+        // Shift nBits
+        //TODO
+
+        destFile.writef(samplesShifted.data(), 1);
+    }
 }
 
 std::vector<short> AudioReader::getLeftCh() {

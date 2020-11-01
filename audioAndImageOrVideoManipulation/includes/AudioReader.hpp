@@ -33,7 +33,7 @@ public:
 
     void copySampleBySample(char* destFileName);
 
-    void uniformScalarQuantization(char* destFileName);
+    void uniformScalarQuantization(char* destFileName, int nBits);
 
     //! ....
     /*!

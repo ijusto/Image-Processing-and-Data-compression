@@ -9,11 +9,11 @@
 
 int main(int argc, char *argv[]) {
 
-    if(argc < 3){
-        std::cout << "Usage: " << argv[0] << " [file path] [dest file path]" << std::endl;
+    if(argc < 4){
+        std::cout << "Usage: " << argv[0] << " [file path] [dest file path] [bits (1 - 15)]" << std::endl;
         return 0;
     }
-
-    auto * audioReader = new AudioReader(argv[argc - 2]);
-    audioReader->uniformScalarQuantization(argv[argc - 1]);
+    int bits = (int)std::strtol(argv[argc - 1], (char **)nullptr, 10);
+    auto * audioReader = new AudioReader(argv[argc - 3]);
+    audioReader->uniformScalarQuantization(argv[argc - 2], bits);
 }
