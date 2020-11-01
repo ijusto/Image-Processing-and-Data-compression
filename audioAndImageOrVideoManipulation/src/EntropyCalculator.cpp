@@ -12,7 +12,7 @@
   A more elaborate description of the constructor.
 */
 EntropyCalculator::EntropyCalculator(std::unordered_map<short, int>* _histMap, int _sampleCount) : histMap(_histMap),
-                                                                                    sampleCount(_sampleCount){}
+                                                                            sampleCount(_sampleCount), histSize(0){}
 
 //! A constructor.
 /*!

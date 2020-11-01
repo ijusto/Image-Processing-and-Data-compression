@@ -10,12 +10,27 @@
 #include    <sndfile.hh>
 #include    <vector>
 #include    <cstdio>
-#include    <cmath>
+#include    <unordered_map>
 #include    "../EntropyCalculator.cpp"
+#include    "AudioReader.cpp"
 
 namespace plt = matplotlibcpp;
 
-#define		FRAMES_BUFFER_LEN		65536
+void plotHistogram(const std::vector<short> histVector, const char* title, const char* savePath) {
+    plt::hist(histVector);
+    plt::title(title);
+    plt::xlabel("Samples");
+    plt::ylabel("Freq");
+    plt::save(savePath);
+}
+
+std::unordered_map<short, int> calcHistogram(const std::vector<short>& values){
+    std::unordered_map<short, int> histogram;
+    for(short value : values) {
+        histogram[value] = (histogram.find(value) != histogram.end()) ? histogram[value] + 1 : 1;
+    }
+    return histogram;
+}
 
 int main(int argc, char *argv[]) {
 
@@ -24,81 +39,29 @@ int main(int argc, char *argv[]) {
         return 0;
     }
 
-    SndfileHandle audio = SndfileHandle(argv[argc-1], SFM_READ);
-
-    std::vector<short> buffer(FRAMES_BUFFER_LEN * audio.channels());
-
-    int left_channel_sample_count = 0;
-    int right_channel_sample_count = 0;
-    int mono_sample_count = 0;
+    auto * audioReader = new AudioReader(argv[argc - 1]);
+    std::vector<short> leftChannel = audioReader->getLeftCh();
+    std::vector<short> rightChannel = audioReader->getRightCh();
+    std::vector<short> mono = audioReader->getMono();
 
     // read audio to calculate Histogram of the audio sample (left and right channels and mono)
-    std::unordered_map<short, int> hist_left_channel, hist_right_channel, hist_mono;
-    for(sf_count_t nFrames = audio.readf(buffer.data(), FRAMES_BUFFER_LEN);
-        nFrames != 0; nFrames = audio.readf(buffer.data(), FRAMES_BUFFER_LEN)) {
+    std::unordered_map<short, int> hist_left_channel = calcHistogram(leftChannel);
+    std::unordered_map<short, int> hist_right_channel = calcHistogram(rightChannel);
+    std::unordered_map<short, int> hist_mono = calcHistogram(mono);
 
-        // read frame's samples
-        for(int i = 0, j = i + 1; i < nFrames - 1; i++, j++){
-            hist_left_channel[buffer[i]] = (hist_left_channel.find(buffer[i]) != hist_left_channel.end()) ? hist_left_channel[buffer[i]] + 1 : 1;
-            left_channel_sample_count += 1;
-            hist_right_channel[buffer[j]] = (hist_right_channel.find(buffer[j]) != hist_right_channel.end()) ? hist_right_channel[buffer[j]] + 1 : 1;
-            right_channel_sample_count += 1;
-            auto mean_channels = (hist_left_channel[buffer[i]] * hist_right_channel[buffer[j]])/2;
-            hist_mono[mean_channels] = (hist_mono.find(mean_channels) != hist_mono.end()) ? hist_mono[mean_channels] + 1 : 1;
-            mono_sample_count +=1;
-        }
-    }
-
-    std::vector<int> hist_left_channel_vector(hist_left_channel.size());
-    for(auto & iter : hist_left_channel){
-        hist_left_channel_vector.push_back(iter.second);
-    }
-
-    // display histogram
-    plt::hist(hist_left_channel_vector);
-    plt::title("Histogram of Left channel");
-    plt::xlabel("Samples");
-    plt::ylabel("Freq");
-    plt::save("../src/audio/audioHistograms/Left_channel.png");
-
-
-    std::vector<int> hist_right_channel_vector(hist_right_channel.size());
-    for(auto & iter : hist_right_channel){
-        hist_right_channel_vector.push_back(iter.second);
-    }
-
-    // display histogram
-    plt::hist(hist_right_channel_vector);
-    plt::title("Histogram of Right channel");
-    plt::xlabel("Samples");
-    plt::ylabel("Freq");
-    plt::save("../src/audio/audioHistograms/Right_channel.png");
-
-
-    std::vector<int> hist_mono_vector(hist_mono.size());
-    for(auto & iter : hist_mono){
-        hist_mono_vector.push_back(iter.second);
-    }
-
-    // display histogram
-    plt::hist(hist_mono_vector);
-    plt::title("Histogram of mono");
-    plt::xlabel("Samples");
-    plt::ylabel("Freq");
-    plt::save("../src/audio/audioHistograms/Mono.png");
+    plotHistogram(leftChannel, "Histogram of Left channel", "../src/audio/audioHistograms/Left_channel.png");
+    plotHistogram(rightChannel, "Histogram of Right channel", "../src/audio/audioHistograms/Right_channel.png");
+    plotHistogram(mono, "Histogram of mono", "../src/audio/audioHistograms/Mono.png");
 
     // Calculate the corresponding entropy of the audio sample
-    auto * entropyCalculator = new EntropyCalculator(&hist_mono, mono_sample_count);
-    double entropy = entropyCalculator->getEntropy();
-    printf("\nentropy of the mono channel: %f", entropy);
+    auto * entropyCalculator = new EntropyCalculator(&hist_mono, mono.size());
+    printf("\nentropy of the mono channel: %f", entropyCalculator->getEntropy());
 
-    entropyCalculator->setParams(&hist_left_channel, left_channel_sample_count);
-    entropy = entropyCalculator->getEntropy();
-    printf("\nentropy of the left channel: %f", entropy);
+    entropyCalculator->setParams(&hist_left_channel, leftChannel.size());
+    printf("\nentropy of the left channel: %f", entropyCalculator->getEntropy());
 
-    entropyCalculator->setParams(&hist_right_channel, right_channel_sample_count);
-    entropy = entropyCalculator->getEntropy();
-    printf("\nentropy of the right channel: %f", entropy);
+    entropyCalculator->setParams(&hist_right_channel, rightChannel.size());
+    printf("\nentropy of the right channel: %f", entropyCalculator->getEntropy());
 
     return 0;
 }
