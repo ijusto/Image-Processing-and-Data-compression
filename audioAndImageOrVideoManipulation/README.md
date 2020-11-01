@@ -1,6 +1,6 @@
 # Audio and Image/Video Manipulation
 
-#### Install dependencies.
+### Install dependencies.
 ```
 pip install -r requirements.txt         OR
 pip install --user -r requirements.txt  OR
@@ -8,13 +8,16 @@ pip3 install -r requirements.txt        OR
 pip3 install --user -r requirements.txt 
 ```
 
-#### Build the entire project.
+### Build the entire project.
 ```
 cd build
 cmake ..
 cmake --build .
 cd ..
 ```
+
+### Run the scripts
+Always run the scripts on the project directory (/audioAndImageOrVideoManipulation).
 
 #### Copy a wav file, sample by sample. 
 ``` 
