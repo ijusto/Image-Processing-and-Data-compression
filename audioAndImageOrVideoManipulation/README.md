@@ -1,5 +1,13 @@
 # Audio and Image/Video Manipulation
 
+#### Install dependencies.
+```
+pip install -r requirements.txt         OR
+pip install --user -r requirements.txt  OR
+pip3 install -r requirements.txt        OR
+pip3 install --user -r requirements.txt 
+```
+
 #### Build the entire project.
 ```
 cd build
