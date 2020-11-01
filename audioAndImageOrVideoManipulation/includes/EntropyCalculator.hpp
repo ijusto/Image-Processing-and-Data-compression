@@ -6,7 +6,7 @@
 
 //!  Entropy Calculator interface.
 /*!
- *
+ *  @author Inês Justo
   A more elaborate class description.
 */
 class EntropyCalculator {

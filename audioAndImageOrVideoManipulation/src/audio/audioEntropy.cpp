@@ -7,7 +7,6 @@
  */
 
 #include    "../thirdparty/matplotlib-cpp-master/matplotlibcpp.h"
-#include    <sndfile.hh>
 #include    <vector>
 #include    <cstdio>
 #include    <unordered_map>
@@ -16,8 +15,8 @@
 
 namespace plt = matplotlibcpp;
 
-void plotHistogram(const std::vector<short> histVector, const char* title, const char* savePath) {
-    plt::hist(histVector);
+void plotHistogram(const std::vector<short>& histVector, const char* title, const char* savePath, size_t bins) {
+    plt::hist(histVector, 500);
     plt::title(title);
     plt::xlabel("Samples");
     plt::ylabel("Freq");
@@ -50,9 +49,9 @@ int main(int argc, char *argv[]) {
     std::unordered_map<short, int> hist_right_channel = calcHistogram(rightChannel);
     std::unordered_map<short, int> hist_mono = calcHistogram(mono);
 
-    plotHistogram(leftChannel, "Histogram of Left channel", "../src/audio/audioHistograms/Left_channel.png");
-    plotHistogram(rightChannel, "Histogram of Right channel", "../src/audio/audioHistograms/Right_channel.png");
-    plotHistogram(mono, "Histogram of mono", "../src/audio/audioHistograms/Mono.png");
+    plotHistogram(leftChannel, "Histogram of Left channel", "../src/audio/audioHistograms/Left_channel.png", leftChannel.size());
+    plotHistogram(rightChannel, "Histogram of Right channel", "../src/audio/audioHistograms/Right_channel.png", rightChannel.size());
+    plotHistogram(mono, "Histogram of mono", "../src/audio/audioHistograms/Mono.png", mono.size());
 
     // Calculate the corresponding entropy of the audio sample
     auto * entropyCalculator = new EntropyCalculator(&hist_mono, mono.size());

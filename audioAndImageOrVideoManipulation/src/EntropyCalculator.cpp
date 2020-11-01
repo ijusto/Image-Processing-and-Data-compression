@@ -3,7 +3,7 @@
 
 //!  Entropy Calculator class.
 /*!
- *
+ *  @author Inês Justo
   A more elaborate class description.
 */
 
@@ -78,6 +78,7 @@ double EntropyCalculator::getEntropy(){
             h -= pi * log2(pi);
         }
     } else {
+        // video part (@author Bruno Pereira)
         double P, I;
         for(int i = 0; i < histSize; i++){
             P = ((double) histPointer[i])/sampleCount;

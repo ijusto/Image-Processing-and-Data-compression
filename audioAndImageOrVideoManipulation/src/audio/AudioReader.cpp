@@ -1,3 +1,7 @@
+/*!
+ *  @author Inês Justo
+ */
+
 #include    "AudioReader.hpp"
 
 AudioReader::AudioReader(char* sourceFileName){
@@ -42,6 +46,10 @@ void AudioReader::readChannels(){
         rightCh.push_back(samplesFromFrame[1]);
         mono.push_back((samplesFromFrame[0]+samplesFromFrame[1])/2);
     }
+}
+
+void AudioReader::uniformScalarQuantization(){
+
 }
 
 std::vector<short> AudioReader::getLeftCh() {

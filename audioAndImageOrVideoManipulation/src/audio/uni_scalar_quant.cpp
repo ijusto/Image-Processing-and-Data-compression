@@ -4,13 +4,16 @@
  * @author
  */
 
-#include    <sndfile.hh>
 #include    <vector>
-#include    <unordered_map>
-
-#define		FRAMES_BUFFER_LEN		65536
+#include    "AudioReader.cpp"
 
 int main(int argc, char *argv[]) {
 
+    if(argc < 2){
+        std::cout << "Usage: " << argv[0] << " [file path]" << std::endl;
+        return 0;
+    }
 
+    auto * audioReader = new AudioReader(argv[argc - 1]);
+    audioReader->uniformScalarQuantization();
 }
