@@ -49,7 +49,7 @@ void AudioReader::readChannels(){
 }
 
 void AudioReader::uniformScalarQuantization(char* destFileName){
-
+    //TODO
 }
 
 std::vector<short> AudioReader::getLeftCh() {

@@ -33,7 +33,7 @@ cd ..
 
 #### Histograms of an audio sample (left and rigth channel and mono) and corresponding entropy.
 ```
-
+./build/audioEnt ./wav_files/sample01.wav
 ```
 
 #### Histogram of an image/video file (each channel in color and grayscale images) and the corresponding entropy.

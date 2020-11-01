@@ -49,9 +49,9 @@ int main(int argc, char *argv[]) {
     std::unordered_map<short, int> hist_right_channel = calcHistogram(rightChannel);
     std::unordered_map<short, int> hist_mono = calcHistogram(mono);
 
-    plotHistogram(leftChannel, "Histogram of Left channel", "../src/audio/audioHistograms/Left_channel.png", leftChannel.size());
-    plotHistogram(rightChannel, "Histogram of Right channel", "../src/audio/audioHistograms/Right_channel.png", rightChannel.size());
-    plotHistogram(mono, "Histogram of mono", "../src/audio/audioHistograms/Mono.png", mono.size());
+    plotHistogram(leftChannel, "Histogram of Left channel", "./src/audio/audioHistograms/Left_channel.png", leftChannel.size());
+    plotHistogram(rightChannel, "Histogram of Right channel", "./src/audio/audioHistograms/Right_channel.png", rightChannel.size());
+    plotHistogram(mono, "Histogram of mono", "./src/audio/audioHistograms/Mono.png", mono.size());
 
     // Calculate the corresponding entropy of the audio sample
     auto * entropyCalculator = new EntropyCalculator(&hist_mono, mono.size());
@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
     printf("\nentropy of the left channel: %f", entropyCalculator->getEntropy());
 
     entropyCalculator->setParams(&hist_right_channel, rightChannel.size());
-    printf("\nentropy of the right channel: %f", entropyCalculator->getEntropy());
+    printf("\nentropy of the right channel: %f\n", entropyCalculator->getEntropy());
 
     return 0;
 }
