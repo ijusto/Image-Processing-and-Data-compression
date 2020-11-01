@@ -33,12 +33,12 @@ std::unordered_map<short, int> calcHistogram(const std::vector<short>& values){
 
 int main(int argc, char *argv[]) {
 
-    if(argc < 2){
+    if(argc != 2){
         std::cout << "Usage: " << argv[0] << " [file path]" << std::endl;
         return 0;
     }
 
-    auto * audioReader = new AudioReader(argv[argc - 1]);
+    auto * audioReader = new AudioReader(argv[1]);
     audioReader->readChannels();
     std::vector<short> leftChannel = audioReader->getLeftCh();
     std::vector<short> rightChannel = audioReader->getRightCh();

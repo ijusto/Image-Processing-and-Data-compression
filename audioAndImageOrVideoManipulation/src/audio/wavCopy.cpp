@@ -10,13 +10,13 @@
 
 int main(int argc, char *argv[]) {
 
-    if(argc < 3){
+    if(argc != 3){
         std::cout << "Usage: " << argv[0] << " [source file path] [destination file path]" << std::endl;
         return 0;
     }
 
-    auto * audioReader = new AudioReader(argv[argc-2]);
-    audioReader->copySampleBySample(argv[argc-1]);
+    auto * audioReader = new AudioReader(argv[1]);
+    audioReader->copySampleBySample(argv[2]);
 
     return 0;
 }
