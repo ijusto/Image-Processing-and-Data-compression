@@ -1,9 +1,5 @@
 # Audio and Image/Video Manipulation
 
-### Doxyfile.
-```
-file:///home/iotmaster/Image-Processing-and-Data-compression/docs/html/functions_func.html
-```
 
 ### Install dependencies.
 ```
