@@ -19,9 +19,9 @@ void AudioReader::copySampleBySample(char* destFileName){
     SndfileHandle destFile  = SndfileHandle(destFileName, SFM_WRITE, sourceFile.format(),
                                             srcFileChannels,sourceFile.samplerate());
 
-    std::vector<short> audioSample(RESOLUTION*srcFileChannels);
-    for(sf_count_t nFrames = sourceFile.readf(audioSample.data(), RESOLUTION);
-        nFrames != 0; nFrames = sourceFile.readf(audioSample.data(), RESOLUTION)) {
+    std::vector<short> audioSample(srcFileChannels);
+    for(sf_count_t nFrames = sourceFile.readf(audioSample.data(), 1);
+        nFrames != 0; nFrames = sourceFile.readf(audioSample.data(), 1)) {
         destFile.writef(audioSample.data(), nFrames);
     }
 }
@@ -64,13 +64,16 @@ void AudioReader::uniformScalarQuantization(char* destFileName, int nBits){
     std::vector<short> samplesFromFrame(srcFileChannels);
     std::vector<short> samplesShifted(srcFileChannels);
 
-    for(auto frame = sourceFile.readf(samplesFromFrame.data(), 1);
-        frame != 0; frame = sourceFile.readf(samplesFromFrame.data(), 1)) {
+    for(auto nFrames = sourceFile.readf(samplesFromFrame.data(), 1);
+        nFrames != 0; nFrames = sourceFile.readf(samplesFromFrame.data(), 1)) {
 
-        // Shift nBits
-        //TODO
+        // for each channel's sample, set first nBits to 0
+        for(int i = 0; i < samplesShifted.size(); i++){
+            short quantizedSample = (samplesFromFrame.at(i) >> nBits) << nBits;
+            samplesShifted.at(i) = quantizedSample;
+        }
 
-        destFile.writef(samplesShifted.data(), 1);
+        destFile.writef(samplesShifted.data(), nFrames);
     }
 }
 
