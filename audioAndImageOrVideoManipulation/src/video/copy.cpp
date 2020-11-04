@@ -1,6 +1,7 @@
-//
-// Created by bruno on 20/10/20.
-//
+/**
+ * Read src video file and copy it pixel by pixel to dst video file
+ * @author Bruno Pereira
+ */
 
 #include <opencv2/core.hpp>
 #include <opencv2/videoio.hpp>
@@ -9,6 +10,11 @@
 using namespace cv;
 using namespace std;
 
+/**
+ * Copy input frame pixel by pixel and return new frame.
+ * @param frame, Mat reference containing image pixels
+ * @return Mat of the same size as frame parameter
+ */
 Mat copyFrame(const Mat& frame){
     Mat copy(frame.rows, frame.cols, CV_8UC3);
 

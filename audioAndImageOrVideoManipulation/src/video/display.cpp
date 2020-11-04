@@ -1,11 +1,14 @@
-//
-// Created by bruno on 10/22/20.
-//
-// Tested with files:
-// ducks_take_off_444_720p50.y4m (4:4:4)
-// ducks_take_off_422_720p50.y4m (4:2:2)
-// ducks_take_off_420_720p50.y4m (4:2:0)
-//
+/**
+ * Read src YUV video file encoded with a given subsampling
+ * and display it on screen with correct color transformation.
+ *
+ *  Tested using files (from https://media.xiph.org/video/derf/):
+ *  - ducks_take_off_444_720p50.y4m (4:4:4)
+ *  - ducks_take_off_422_720p50.y4m (4:2:2)
+ *  - ducks_take_off_420_720p50.y4m (4:2:0)
+ *
+ * @author Bruno Pereira
+ */
 
 #include <iostream>
 #include <opencv2/opencv.hpp>

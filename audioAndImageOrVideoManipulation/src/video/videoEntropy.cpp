@@ -1,6 +1,11 @@
-//
-// Created by bruno on 10/22/20.
-//
+/**
+ * Read source video or image file, build histograms for each RGB channel
+ * and grayscale, write histograms to .csv files and use histograms to
+ * compute entropy.
+ *
+ * @author Bruno Pereira
+ */
+
 
 #include <opencv2/core.hpp>
 #include <opencv2/videoio.hpp>
@@ -12,9 +17,10 @@ using namespace std;
 
 /**
  * Write histogram to a .csv file
- * @param filename
- * @param hist
- * @param hist_size
+ *
+ * @param filename, name of .csv file to write
+ * @param hist, array containing histogram
+ * @param hist_size, size of histogram
  */
 void hist2csv(string filename, int* hist, int hist_size){
     ofstream outfile;
@@ -24,11 +30,12 @@ void hist2csv(string filename, int* hist, int hist_size){
 }
 
 /**
- * Calculate entropy using histogram of single channel image's pixel values
- * @param hist
- * @param hist_size
- * @param sample_count
- * @return entropy
+ * Calculate entropy using histogram
+ *
+ * @param hist, array containing histogram
+ * @param hist_size, size of histogram
+ * @param sample_count, total number of occurrences in histogram
+ * @return entropy, result calculated entropy
  */
 double calcEntropy(int* hist, int hist_size, int sample_count){
     double H = 0;

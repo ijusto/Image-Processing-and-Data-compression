@@ -1,7 +1,13 @@
-//
-// Created by bruno on 10/28/20.
-// based on: https://en.wikipedia.org/wiki/Signal-to-noise_ratio
-//
+/**
+ * Read 2 source video or image files: original file and
+ * transformed original with added noise. Compute SNR between
+ * original and noisy files. Print results in dB for each RGB channels
+ * and grayscale version.
+ *
+ * reference: https://en.wikipedia.org/wiki/Signal-to-noise_ratio
+ *
+ * @author Bruno Pereira
+ */
 
 #include <opencv2/core.hpp>
 #include <opencv2/videoio.hpp>
@@ -13,9 +19,9 @@ using namespace std;
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
-        cout << "Usage: " << argv[0] << " path1 path2" << endl;
-        cout << "path1:\n\tpath to video/image file" << endl;
-        cout << "path2:\n\tpath to video/image file" << endl;
+        cout << "Usage: " << argv[0] << " original noise" << endl;
+        cout << "original:\n\tpath to original video/image file" << endl;
+        cout << "noise:\n\tpath to noisy version video/image file" << endl;
         return 0;
     }
 
@@ -23,7 +29,7 @@ int main(int argc, char *argv[]) {
     string path2 = argv[2];
 
     VideoCapture video1(path1); // original
-    VideoCapture video2(path2); // other
+    VideoCapture video2(path2); // noisy
 
     // check if we succeeded
     if (!video1.isOpened()) {
@@ -89,10 +95,10 @@ int main(int argc, char *argv[]) {
             }
         }
 
-//        imshow("test", frame2);
-//        double delay = (1.0/30)*1000; // ms
-//        if (waitKey(delay) >= 0)
-//            break;
+        //imshow("test", frame2);
+        //double delay = (1.0/30)*1000; // ms
+        //if (waitKey(delay) >= 0)
+        //    break;
 
         num_pixels += frame1.rows + frame2.cols;
     }
