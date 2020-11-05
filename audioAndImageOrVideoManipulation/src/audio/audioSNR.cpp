@@ -19,9 +19,8 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    auto * audio = new SNR;
-    audio->SaveFiles(argv[argc-2],argv[argc-1]);
+    SNR audio(argv[argc-2],argv[argc-1]);
 
-    cout << "SNR: " << audio->CalculateSNR() << " dB" << endl;
+    cout << "SNR: " << audio.CalculateSNR() << " dB" << endl;
     return 0;
 }

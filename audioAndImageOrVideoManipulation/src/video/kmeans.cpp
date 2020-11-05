@@ -33,7 +33,6 @@ int main(int argc, char *argv[]) {
 
     // OpenCV buffer
     Mat frame;
-    auto *  km = new KM;
     while (true) {
         if (!video.read(frame))
             break;
@@ -41,7 +40,8 @@ int main(int argc, char *argv[]) {
         imshow("RGB", frame);
 
         int Clusters = stoi(argv[argc-1]);
-        Mat Clustered_Image = km->K_Means(frame, Clusters);
+        KM km(frame,Clusters);
+        Mat Clustered_Image = km.K_Means();
 
         imshow("KMEANS", Clustered_Image);
 
