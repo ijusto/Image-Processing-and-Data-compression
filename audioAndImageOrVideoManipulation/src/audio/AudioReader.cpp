@@ -8,6 +8,21 @@
 */
 AudioReader::AudioReader(char* sourceFileName){
     sourceFile = SndfileHandle(sourceFileName, SFM_READ);
+
+    if(sourceFile.error()) {
+        std::cerr << "Error: invalid input file" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    if((sourceFile.format() & SF_FORMAT_TYPEMASK) != SF_FORMAT_WAV) {
+        std::cerr << "Error: file is not in WAV format" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    if((sourceFile.format() & SF_FORMAT_SUBMASK) != SF_FORMAT_PCM_16) {
+        std::cerr << "Error: file is not in PCM_16 format" << std::endl;
+        exit(EXIT_FAILURE);
+    }
 }
 
 //! Copies a wav file, sample by sample
