@@ -1,6 +1,4 @@
-/**
- *  @author Inês Justo
- */
+// @author Inês Justo
 
 #include    "AudioReader.hpp"
 
