@@ -85,13 +85,15 @@ unsigned int EntropyCalculator::getSampleCount() const {
 double EntropyCalculator::getEntropy(){
     double h = 0;
     if(histSize == 0){
+        // for each unique sample value
         for(auto & iter : *histMap){
+            // probability, using the frequency of the sample value
             double pi = ((double) iter.second) / sampleCount;
             if (pi == 0) continue;
             h -= pi * log2(pi);
         }
     } else {
-        // video part (@author Bruno Pereira)
+        // video part (@author Bruno Pereira) (NOT USED)
         double P, I;
         for(int i = 0; i < histSize; i++){
             P = ((double) histPointer[i])/sampleCount;
