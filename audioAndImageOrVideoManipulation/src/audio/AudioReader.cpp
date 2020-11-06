@@ -1,13 +1,21 @@
-/*!
+/**
  *  @author Inês Justo
  */
 
 #include    "AudioReader.hpp"
 
+//! AudioReader constructor.
+/*!
+ * @param sourceFileName, audio file name/path.
+*/
 AudioReader::AudioReader(char* sourceFileName){
     sourceFile = SndfileHandle(sourceFileName, SFM_READ);
 }
 
+//! Copies a wav file, sample by sample
+/*!
+ * @param destFileName, audio file name/path to copy to.
+*/
 void AudioReader::copySampleBySample(char* destFileName){
 
     if (sourceFile.frames() == 0) {
@@ -26,6 +34,8 @@ void AudioReader::copySampleBySample(char* destFileName){
     }
 }
 
+//! Reads a wav file, sample by sample, the left and right channel one's to the leftCh and rightCh vectors,
+//! respectively and calculates the mono and saves in the vecto mono
 void AudioReader::readChannels(){
 
     auto srcFileChannels = sourceFile.channels();

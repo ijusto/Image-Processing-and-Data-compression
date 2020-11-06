@@ -2,7 +2,9 @@
  * Calculates the histogram of an audio sample and corresponding entropy.
  * Calculates the histogram of the left and right channels, as well as the histogram of the average of the channels (the
  * mono version).
- * For visualizing graphically the histograms, it is used the matplotlib library.
+ * For visualizing graphically the histograms, please run the plotHist.py and open the .png files in the audioHistograms
+ * folder.
+ *
  * @author Inês Justo
  */
 
@@ -14,6 +16,7 @@
 #include    "AudioReader.cpp"
 #include    <iostream>
 #include    <fstream>
+
 /*
 namespace plt = matplotlibcpp;
 
@@ -26,7 +29,13 @@ void plotHistogram(const std::vector<short>& histVector, const char* title, cons
 }
 */
 
-void histogramToCsv(const char* fName, std::vector<short>* hitVec){
+/**
+ * Saves the values of the samples in a csv.
+ *
+ * @param fName, csv file name.
+ * @param hitVec, vector containing the sample values.
+ */
+void vectorToCsv(const char* fName, std::vector<short>* hitVec){
     std::ofstream csv;
     csv.open(fName);
     for(auto & value : *hitVec){
@@ -35,6 +44,12 @@ void histogramToCsv(const char* fName, std::vector<short>* hitVec){
     csv.close();
 }
 
+/**
+ * Maps each sample frequency in the audio file.
+ *
+ * @param values, vector containing the sample values.
+ * @return histogram, histogram map with the sample as key and the sample frequency in the audio file as value.
+ */
 std::unordered_map<short, int> calcHistogram(const std::vector<short>& values){
     std::unordered_map<short, int> histogram;
     for(short value : values) {
@@ -61,9 +76,9 @@ int main(int argc, char *argv[]) {
     std::unordered_map<short, int> hist_right_channel = calcHistogram(rightChannel);
     std::unordered_map<short, int> hist_mono = calcHistogram(mono);
 
-    histogramToCsv("./src/audio/audioHistograms/leftChannel.csv", &leftChannel);
-    histogramToCsv("./src/audio/audioHistograms/rightChannel.csv", &rightChannel);
-    histogramToCsv("./src/audio/audioHistograms/mono.csv", &mono);
+    vectorToCsv("./src/audio/audioHistograms/leftChannel.csv", &leftChannel);
+    vectorToCsv("./src/audio/audioHistograms/rightChannel.csv", &rightChannel);
+    vectorToCsv("./src/audio/audioHistograms/mono.csv", &mono);
 
     /*
     plotHistogram(leftChannel, "Histogram of Left channel", "./src/audio/audioHistograms/Left_channel.png", leftChannel.size());
