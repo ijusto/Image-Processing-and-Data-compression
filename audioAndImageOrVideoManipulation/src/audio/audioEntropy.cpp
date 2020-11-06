@@ -4,6 +4,7 @@
  * mono version).
  * For visualizing graphically the histograms, please run the plotHist.py and open the .png files in the audioHistograms
  * folder.
+ *
  * @author Inês Justo
  */
 
@@ -15,6 +16,7 @@
 #include    "AudioReader.cpp"
 #include    <iostream>
 #include    <fstream>
+
 /*
 namespace plt = matplotlibcpp;
 
