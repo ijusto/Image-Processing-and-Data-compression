@@ -19,8 +19,10 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    SNR audio(argv[argc-2],argv[argc-1]);
+    SNR audio;
+    audio.SaveFiles(argv[argc-2],argv[argc-1]);
 
     cout << "SNR: " << audio.CalculateSNR() << " dB" << endl;
+    cout << "Max. absolute error: " << audio.getMax_abs_error() << endl;
     return 0;
 }

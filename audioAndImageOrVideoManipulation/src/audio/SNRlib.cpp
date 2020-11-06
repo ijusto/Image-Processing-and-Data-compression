@@ -6,7 +6,7 @@
 
 void SNR::SaveFiles(char *sourceFileName, char *sourceNoisedFileName) {
     sourceFile = SndfileHandle(sourceFileName, SFM_READ);
-    sourceFileNoised = SndfileHandle(sourceFileName, SFM_READ);
+    sourceFileNoised = SndfileHandle(sourceNoisedFileName, SFM_READ);
 }
 
 
@@ -20,19 +20,17 @@ int SNR::CalculateSNR(void){
         exit(EXIT_FAILURE);
     }
 
-    size_t nFrames;
-    std::vector<short> samples(FRAMES_BUFFER_SIZE * sourceFile.channels());
-    int SNR,SumIn =0;
-    while((nFrames = sourceFile.readf(samples.data(), FRAMES_BUFFER_SIZE))){
-
-        SumIn = SumIn + pow(*samples.data(),2);
-    }
-
-    nFrames = 0;
+    std::vector<short> samples(sourceFile.channels());
     std::vector<short> samplesN(FRAMES_BUFFER_SIZE * sourceFileNoised.channels());
+
+    int SNR,SumIn =0;
     int SumInN=0;
-    while((nFrames = sourceFileNoised.readf(samples.data(), FRAMES_BUFFER_SIZE))){
-        SumInN = SumInN + pow(*samples.data()-*samplesN.data(),2);
+
+    while((sourceFile.readf(samples.data(), 1)) && (sourceFileNoised.readf(samplesN.data(), 1))){
+        for(int i = 0; i < samples.size(); i++){
+            SumIn = SumIn + pow(samples.at(i),2);
+            SumInN = SumInN + pow(samples.at(i)-samplesN.at(i), 2);
+        }
     }
 
     SNR =  10*log10(SumIn/SumInN);

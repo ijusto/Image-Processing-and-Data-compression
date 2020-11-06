@@ -21,8 +21,13 @@ class SNR {
 private:
     SndfileHandle sourceFile;
     SndfileHandle sourceFileNoised;
+    double max_abs_error = 0;
 
 public:
+
+    double getMax_abs_error(){
+        return max_abs_error;
+    }
 
     /*!
       Saves on memory the wav file of original signal
@@ -31,9 +36,9 @@ public:
       @warning you must put the wav files signal in the right position to calculate the SNR
       @see CalculateSNR(void)
     */
-    SNR(const SndfileHandle &_sourceFile, const SndfileHandle &_sourceFileNoised){
-        sourceFile = SndfileHandle(_sourceFile, SFM_READ);
-        sourceFileNoised = SndfileHandle(_sourceFileNoised, SFM_READ);
+    void SaveFiles(char *sourceFileName, char *sourceNoisedFileName) {
+        sourceFile = SndfileHandle(sourceFileName, SFM_READ);
+        sourceFileNoised = SndfileHandle(sourceNoisedFileName, SFM_READ);
     }
 
     /*!
@@ -50,25 +55,27 @@ public:
             exit(EXIT_FAILURE);
         }
 
-        size_t nFrames;
-        std::vector<short> samples(FRAMES_BUFFER_SIZE * sourceFile.channels());
-        int SNR,SumIn =0;
-        while((nFrames = sourceFile.readf(samples.data(), FRAMES_BUFFER_SIZE))){
+        std::vector<short> samples(sourceFile.channels());
+        std::vector<short> samplesN(sourceFileNoised.channels());
 
-            SumIn = SumIn + pow(*samples.data(),2);
-        }
+        double SNR;
+        double SumIn = 0;
+        double SumInN = 0;
 
-        nFrames = 0;
-        std::vector<short> samplesN(FRAMES_BUFFER_SIZE * sourceFileNoised.channels());
-        int SumInN=0;
-        while((nFrames = sourceFileNoised.readf(samples.data(), FRAMES_BUFFER_SIZE))){
-            SumInN = SumInN + pow(*samples.data()-*samplesN.data(),2);
+        while((sourceFile.readf(samples.data(), 1)) && (sourceFileNoised.readf(samplesN.data(), 1))){
+            for(int i = 0; i < sourceFile.channels(); i++){
+                SumIn = SumIn + pow(samples.at(i),2);
+
+                double abs_error = samples.at(i) - samplesN.at(i);
+                if (abs_error > max_abs_error) max_abs_error = abs_error;
+
+                SumInN = SumInN + pow(abs_error, 2);
+            }
         }
 
         SNR =  10*log10(SumIn/SumInN);
         return SNR;
     }
-
 
 };
 #endif //IMAGE_PROCESSING_AND_DATA_COMPRESSION_SNRLIB_HPP

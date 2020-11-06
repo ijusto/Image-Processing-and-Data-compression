@@ -1,8 +1,7 @@
 /**
  * Read 2 source video or image files: original file and
  * transformed original with added noise. Compute SNR between
- * original and noisy files. Print results in dB for each RGB channels
- * and grayscale version.
+ * original and noisy files. Print results in dB for each RGB channels.
  *
  * reference: https://en.wikipedia.org/wiki/Signal-to-noise_ratio
  *
@@ -47,11 +46,9 @@ int main(int argc, char *argv[]) {
     double R_signal = 0;    // sum of R squared signal
     double G_signal = 0;
     double B_signal = 0;
-    double Grayscale_signal = 0;
     double R_error = 0;     // sum of R squared errors
     double G_error = 0;
     double B_error = 0;
-    double Grayscale_error = 0;
 
     int max_abs_error = 0;
     int num_pixels = 0;
@@ -66,12 +63,6 @@ int main(int argc, char *argv[]) {
             for(int j = 0; j < frame1.cols; j++){
                 Vec3b frame1_pixel = frame1.at<Vec3b>(i, j);
                 Vec3b frame2_pixel = frame2.at<Vec3b>(i, j);
-
-                // calc grayscale pixels and update accumulators
-                double grayscale_frame1_pixel = (frame1_pixel[0] + frame1_pixel[1] + frame1_pixel[2])/3;
-                double grayscale_frame2_pixel = (frame2_pixel[0] + frame2_pixel[1] + frame2_pixel[2])/3;
-                Grayscale_signal = pow(grayscale_frame1_pixel, 2);
-                Grayscale_error = pow(grayscale_frame1_pixel - grayscale_frame2_pixel,2);
 
                 // square pixel values and add to accumulator
                 B_signal += pow(frame1_pixel[0], 2);
@@ -116,12 +107,10 @@ int main(int argc, char *argv[]) {
     double R_snr = R_signal/R_error;
     double G_snr = G_signal/G_error;
     double B_snr = B_signal/B_error;
-    double Gr_snr = Grayscale_signal/Grayscale_error;
 
     cout << "R channel SNR: " << 10*log10(R_snr) << " dB" << endl;
     cout << "G channel SNR: " << 10*log10(G_snr) << " dB" << endl;
     cout << "B channel SNR: " << 10*log10(B_snr) << " dB" << endl;
-    cout << "Grayscale SNR: " << 10*log10(Gr_snr) << " dB" << endl;
 
     cout << "Maximum absolute error between pixels: " << max_abs_error << endl;
 
