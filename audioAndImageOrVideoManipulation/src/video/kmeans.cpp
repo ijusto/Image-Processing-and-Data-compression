@@ -13,7 +13,7 @@ using namespace std;
 
 int main(int argc, char *argv[]) {
     // args
-    if (argc < 3){
+    if (argc < 4){
         cout << "Usage: " << argv[0] << " src_path dst_path cluster" << endl;
         cout << "src_path:\n\tpath to video/image file" << endl;
         cout << "dst_path:\n\tpath to video/image file" << endl;
@@ -57,7 +57,6 @@ int main(int argc, char *argv[]) {
 
         imshow("RGB", frame);
 
-        int Clusters = stoi(argv[argc-1]);
         KM km(frame,Clusters);
         Mat Clustered_Image = km.K_Means();
 
