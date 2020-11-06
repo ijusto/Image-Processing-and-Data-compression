@@ -20,18 +20,18 @@ private:
     SndfileHandle sourceFile;
     std::vector<short> leftCh;
     std::vector<short> rightCh;
-    std::vector<short>  ;
+    std::vector<short>  mono;
 
 public:
     //! AudioReader constructor.
     /*!
-     * @param sourceFileName, audio file name/path.
+     * @param sourceFileName audio file name/path.
     */
     explicit AudioReader(char* sourceFileName);
 
     //! Copies a wav file, sample by sample
     /*!
-     * @param destFileName, audio file name/path to copy to.
+     * @param destFileName audio file name/path to copy to.
     */
     void copySampleBySample(char* destFileName);
 
@@ -39,6 +39,11 @@ public:
     //! respectively and calculates the mono and saves in the vecto mono
     void readChannels();
 
+    //! Reduces the number of bits used to represent each audio sample (uniform scalar quantization).
+    /*!
+     * @param destFileName audio file name/path to save the changed audio to.
+     * @param nBits number of bits of reduction.
+    */
     void uniformScalarQuantization(char* destFileName, int nBits);
 
     //! Gets a vector of the values of the samples of the left channel.

@@ -1,7 +1,6 @@
 /*!
  * Program to reduce the number of bits used to represent each audio sample (uniform scalar quantization).
  * @author Inês Justo
- * @author
  */
 
 #include    <vector>

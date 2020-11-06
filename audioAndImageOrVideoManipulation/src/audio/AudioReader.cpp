@@ -60,6 +60,11 @@ void AudioReader::readChannels(){
     }
 }
 
+//! Reduces the number of bits used to represent each audio sample (uniform scalar quantization).
+/*!
+ * @param destFileName audio file name/path to save the changed audio to.
+ * @param nBits number of bits of reduction.
+*/
 void AudioReader::uniformScalarQuantization(char* destFileName, int nBits){
 
     if (sourceFile.frames() == 0) {
@@ -87,14 +92,26 @@ void AudioReader::uniformScalarQuantization(char* destFileName, int nBits){
     }
 }
 
+//! Gets a vector of the values of the samples of the left channel.
+/*!
+  @return Vector of info in the left channel.
+*/
 std::vector<short> AudioReader::getLeftCh() {
     return leftCh;
 }
 
+//! Gets a vector of the values of the samples of the right channel.
+/*!
+  @return Vector of info in the right channel.
+*/
 std::vector<short> AudioReader::getRightCh() {
     return rightCh;
 }
 
+//! Gets a vector of values, being the average info of the left and right channels.
+/*
+  @return Vector of the average info of the channels.
+*/
 std::vector<short> AudioReader::getMono() {
     return mono;
 }
