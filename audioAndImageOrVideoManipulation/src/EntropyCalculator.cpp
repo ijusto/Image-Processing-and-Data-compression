@@ -1,11 +1,10 @@
+/**
+ *  @author Inês Justo
+ */
+
 #include    <unordered_map>
 #include    "../includes/EntropyCalculator.hpp"
 #include    <cmath>
-
-//!  Entropy Calculator class.
-/*!
- *  @author Inês Justo
-*/
 
 //! An Entropy Calculator constructor.
 /*!

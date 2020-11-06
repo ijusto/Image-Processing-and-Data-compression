@@ -4,7 +4,7 @@
 #include    <iostream>
 #include    <unordered_map>
 
-//!  Entropy Calculator interface.
+//!  Entropy Calculator.
 /*!
  *  @author Inês Justo
 */
