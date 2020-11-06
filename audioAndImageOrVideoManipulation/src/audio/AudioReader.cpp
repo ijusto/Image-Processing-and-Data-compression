@@ -6,7 +6,7 @@
 
 //! AudioReader constructor.
 /*!
- * @param sourceFileName, audio file name/path.
+ * @param sourceFileName audio file name/path.
 */
 AudioReader::AudioReader(char* sourceFileName){
     sourceFile = SndfileHandle(sourceFileName, SFM_READ);
@@ -14,7 +14,7 @@ AudioReader::AudioReader(char* sourceFileName){
 
 //! Copies a wav file, sample by sample
 /*!
- * @param destFileName, audio file name/path to copy to.
+ * @param destFileName audio file name/path to copy to.
 */
 void AudioReader::copySampleBySample(char* destFileName){
 

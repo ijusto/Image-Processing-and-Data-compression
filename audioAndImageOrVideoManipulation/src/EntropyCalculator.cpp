@@ -8,24 +8,24 @@
 
 //! An Entropy Calculator constructor.
 /*!
- * @param _histMap, histogram map with the sample as key and the sample frequency in the audio file as value.
- * @param _sampleCount, number of samples in the audio signal.
+ * @param _histMap histogram map with the sample as key and the sample frequency in the audio file as value.
+ * @param _sampleCount number of samples in the audio signal.
 */
 EntropyCalculator::EntropyCalculator(std::unordered_map<short, int>* _histMap, int _sampleCount) : histMap(_histMap),
                                                                             sampleCount(_sampleCount), histSize(0){}
 
 //! An Entropy Calculator constructor.
 /*!
- * @param _histPointer, array containing histogram.
- * @param hist_size, size of histogram.
- * @param _sampleCount, number of samples in the audio signal.
+ * @param _histPointer array containing histogram.
+ * @param hist_size size of histogram.
+ * @param _sampleCount number of samples in the audio signal.
 */
 EntropyCalculator::EntropyCalculator(int* _histPointer, int _histSize, int _sampleCount) : histPointer(_histPointer),
                                                                         histSize(_histSize),sampleCount(_sampleCount){}
 //! Change the parameters passed in the constructor.
 /*!
- * @param _histMap, histogram map with the sample as key and the sample frequency in the audio file as value.
- * @param _sampleCount, number of samples in the audio signal.
+ * @param _histMap histogram map with the sample as key and the sample frequency in the audio file as value.
+ * @param _sampleCount number of samples in the audio signal.
 */
 void EntropyCalculator::setParams(std::unordered_map<short, int>* _histMap, int _sampleCount) {
     histMap = _histMap;
@@ -35,9 +35,9 @@ void EntropyCalculator::setParams(std::unordered_map<short, int>* _histMap, int 
 
 //! Change the parameters passed in the constructor.
 /*!
- * @param _histPointer, array containing histogram.
- * @param hist_size, size of histogram.
- * @param _sampleCount, number of samples in the audio signal.
+ * @param _histPointer array containing histogram.
+ * @param hist_size size of histogram.
+ * @param _sampleCount number of samples in the audio signal.
 */
 void EntropyCalculator::setParams(int* _histPointer, int _histSize, int _sampleCount) {
     histPointer = _histPointer;

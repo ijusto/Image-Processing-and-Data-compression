@@ -19,31 +19,31 @@ private:
 public:
     //! An Entropy Calculator constructor.
     /*!
-     * @param _histMap, histogram map with the sample as key and the sample frequency in the audio file as value.
-     * @param _sampleCount, number of samples in the audio signal.
+     * @param _histMap histogram map with the sample as key and the sample frequency in the audio file as value.
+     * @param _sampleCount number of samples in the audio signal.
     */
     EntropyCalculator(std::unordered_map<short, int> *_histMap, int _sampleCount);
 
     //! An Entropy Calculator constructor.
     /*!
-     * @param _histPointer, array containing histogram.
-     * @param hist_size, size of histogram.
-     * @param _sampleCount, number of samples in the audio signal.
+     * @param _histPointer array containing histogram.
+     * @param hist_size size of histogram.
+     * @param _sampleCount number of samples in the audio signal.
     */
     EntropyCalculator(int *_histPointer, int _histSize, int _sampleCount);
 
     //! Change the parameters passed in the constructor.
     /*!
-     * @param _histMap, histogram map with the sample as key and the sample frequency in the audio file as value.
-     * @param _sampleCount, number of samples in the audio signal.
+     * @param _histMap histogram map with the sample as key and the sample frequency in the audio file as value.
+     * @param _sampleCount number of samples in the audio signal.
     */
     void setParams(std::unordered_map<short, int> *_histMap, int _sampleCount);
 
     //! Change the parameters passed in the constructor.
     /*!
-     * @param _histPointer, array containing histogram.
-     * @param hist_size, size of histogram.
-     * @param _sampleCount, number of samples in the audio signal.
+     * @param _histPointer array containing histogram.
+     * @param hist_size size of histogram.
+     * @param _sampleCount number of samples in the audio signal.
     */
     void setParams(int *_histPointer, int _histSize, int _sampleCount);
 
