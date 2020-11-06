@@ -6,13 +6,15 @@
  * @author Inês Justo
  */
 
-#include    "../thirdparty/matplotlib-cpp-master/matplotlibcpp.h"
+//#include    "../thirdparty/matplotlib-cpp-master/matplotlibcpp.h"
 #include    <vector>
 #include    <cstdio>
 #include    <unordered_map>
 #include    "../EntropyCalculator.cpp"
 #include    "AudioReader.cpp"
-
+#include    <iostream>
+#include    <fstream>
+/*
 namespace plt = matplotlibcpp;
 
 void plotHistogram(const std::vector<short>& histVector, const char* title, const char* savePath, size_t bins) {
@@ -21,6 +23,16 @@ void plotHistogram(const std::vector<short>& histVector, const char* title, cons
     plt::xlabel("Samples");
     plt::ylabel("Freq");
     plt::save(savePath);
+}
+*/
+
+void histogramToCsv(const char* fName, std::vector<short>* hitVec){
+    std::ofstream csv;
+    csv.open(fName);
+    for(auto & value : *hitVec){
+        csv << value << "\n";
+    }
+    csv.close();
 }
 
 std::unordered_map<short, int> calcHistogram(const std::vector<short>& values){
@@ -49,9 +61,15 @@ int main(int argc, char *argv[]) {
     std::unordered_map<short, int> hist_right_channel = calcHistogram(rightChannel);
     std::unordered_map<short, int> hist_mono = calcHistogram(mono);
 
+    histogramToCsv("./src/audio/audioHistograms/leftChannel.csv", &leftChannel);
+    histogramToCsv("./src/audio/audioHistograms/rightChannel.csv", &rightChannel);
+    histogramToCsv("./src/audio/audioHistograms/mono.csv", &mono);
+
+    /*
     plotHistogram(leftChannel, "Histogram of Left channel", "./src/audio/audioHistograms/Left_channel.png", leftChannel.size());
     plotHistogram(rightChannel, "Histogram of Right channel", "./src/audio/audioHistograms/Right_channel.png", rightChannel.size());
     plotHistogram(mono, "Histogram of mono", "./src/audio/audioHistograms/Mono.png", mono.size());
+    */
 
     // Calculate the corresponding entropy of the audio sample
     auto * entropyCalculator = new EntropyCalculator(&hist_mono, mono.size());

@@ -34,7 +34,8 @@ target_link_libraries(kmeans ${OpenCV_LIBS} )
 add_executable(uniscalarquant src/audio/uni_scalar_quant.cpp)
 target_link_libraries(uniscalarquant ${SNDFILE_DIR} ${SNDFILE_LIBRARY})
 
-#dadd_executable(audioEnt src/audio/audioEntropy.cpp)
+add_executable(audioEnt src/audio/audioEntropy.cpp)
+target_link_libraries(audioEnt ${SNDFILE_DIR} ${SNDFILE_LIBRARY})
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 #target_link_libraries(audioEnt "-I/usr/local/include/python3.7m -I/usr/local/lib/python3.7/site-packages/numpy/core/include -lpython3.7m -lpthread -lutil -ldl -Xlinker -export-dynamic")
