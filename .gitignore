@@ -8,3 +8,5 @@ docs/html/
 audioAndImageOrVideoManipulation/build/
 
 audioAndImageOrVideoManipulation/src/audio/copiedwav.wav
+
+audioAndImageOrVideoManipulation/src/audio/audioHistograms/

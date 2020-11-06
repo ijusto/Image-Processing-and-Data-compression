@@ -1,5 +1,6 @@
 #include    <unordered_map>
 #include    "../includes/EntropyCalculator.hpp"
+#include    <cmath>
 
 //!  Entropy Calculator class.
 /*!
