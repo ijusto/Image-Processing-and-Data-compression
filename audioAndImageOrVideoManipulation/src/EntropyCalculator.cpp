@@ -5,52 +5,64 @@
 //!  Entropy Calculator class.
 /*!
  *  @author Inês Justo
-  A more elaborate class description.
 */
 
-//! A constructor.
+//! An Entropy Calculator constructor.
 /*!
-  A more elaborate description of the constructor.
+ * @param _histMap, histogram map with the sample as key and the sample frequency in the audio file as value.
+ * @param _sampleCount, number of samples in the audio signal.
 */
 EntropyCalculator::EntropyCalculator(std::unordered_map<short, int>* _histMap, int _sampleCount) : histMap(_histMap),
                                                                             sampleCount(_sampleCount), histSize(0){}
 
-//! A constructor.
+//! An Entropy Calculator constructor.
 /*!
-  A more elaborate description of the constructor.
+ * @param _histPointer, array containing histogram.
+ * @param hist_size, size of histogram.
+ * @param _sampleCount, number of samples in the audio signal.
 */
 EntropyCalculator::EntropyCalculator(int* _histPointer, int _histSize, int _sampleCount) : histPointer(_histPointer),
                                                                         histSize(_histSize),sampleCount(_sampleCount){}
-
+//! Change the parameters passed in the constructor.
+/*!
+ * @param _histMap, histogram map with the sample as key and the sample frequency in the audio file as value.
+ * @param _sampleCount, number of samples in the audio signal.
+*/
 void EntropyCalculator::setParams(std::unordered_map<short, int>* _histMap, int _sampleCount) {
     histMap = _histMap;
     sampleCount = _sampleCount;
     histSize = 0;
 }
 
+//! Change the parameters passed in the constructor.
+/*!
+ * @param _histPointer, array containing histogram.
+ * @param hist_size, size of histogram.
+ * @param _sampleCount, number of samples in the audio signal.
+*/
 void EntropyCalculator::setParams(int* _histPointer, int _histSize, int _sampleCount) {
     histPointer = _histPointer;
     histSize = _histSize;
     sampleCount = _sampleCount;
 }
 
-//! ....
+//! Gets the array containing histogram.
 /*!
-  @return
+ * @return Array containing histogram.
 */
 int* EntropyCalculator::getHistPointer() const {
     return histPointer;
 }
 
-//! ....
+//! Gets the size of the array containing histogram.
 /*!
-  @return
+ * @return Size of histogram.
 */
 unsigned int EntropyCalculator::getHistSize() const {
     return histSize;
 }
 
-//! ....
+//! Gets the histogram map.
 /*!
   @return Histogram map with the sample as key and the sample frequency in the audio file as value.
 */
@@ -58,7 +70,7 @@ std::unordered_map<short, int>* EntropyCalculator::getHistMap() const {
     return histMap;
 }
 
-//! ....
+//! Gets the number of samples in the audio signal.
 /*!
   @return Number of samples.
 */
@@ -66,7 +78,7 @@ unsigned int EntropyCalculator::getSampleCount() const {
     return sampleCount;
 }
 
-//! ....
+//! Calculates and gets the entropy of the audio signal.
 /*!
   @return The entropy.
 */
