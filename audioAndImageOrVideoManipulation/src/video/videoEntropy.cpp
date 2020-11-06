@@ -11,6 +11,7 @@
 #include <opencv2/videoio.hpp>
 #include <iostream>
 #include <fstream>
+#include <EntropyCalculator.hpp>
 
 using namespace cv;
 using namespace std;
@@ -104,6 +105,18 @@ int main(int argc, char *argv[]) {
     cout << "Calculating entropy..." << endl;
 
     // calc entropy
+
+    /*
+    auto * entropyCalculator = new EntropyCalculator(B_hist, hist_size, sample_count);
+    double H_B = entropyCalculator->getEntropy();
+    entropyCalculator->setParams(G_hist, hist_size, sample_count);
+    double H_G = entropyCalculator->getEntropy();
+    entropyCalculator->setParams(R_hist, hist_size, sample_count);
+    double H_R = entropyCalculator->getEntropy();
+    entropyCalculator->setParams(Gr_hist, hist_size, sample_count);
+    double H_R = entropyCalculator->getEntropy();
+    */
+
     double H_B = calcEntropy(B_hist, hist_size, sample_count);
     double H_G = calcEntropy(G_hist, hist_size, sample_count);
     double H_R = calcEntropy(R_hist, hist_size, sample_count);
