@@ -11,9 +11,17 @@ class Golomb {
 
 private:
     unsigned int m;
-    /* TODO: put here methods for unary and truncated binary codes handling */
+    void encodeUnary(); /* TODO: change return type if necessary */
+    void encodeTruncatedBinary(); /* TODO: change return type if necessary */
+    void decodeUnary(); /* TODO: change return type if necessary */
+    void decodeTruncatedBinary(); /* TODO: change return type if necessary */
 
 public:
+
+    Golomb(unsigned int _m);
+
+    ~Golomb();
+
 
     //! Unsigned encode.
     /*!
