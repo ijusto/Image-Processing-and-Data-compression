@@ -7,7 +7,7 @@ void Golomb::uEncode(unsigned int n) {
     unsigned int q = n / this->m;
     unsigned int r = n % m; /* <=> n-q*m  - TODO: what is more optimal */
     /* TODO: invoke private method to encode unary and truncated binary codes*/
-    char encoded = this->encodeUnary(q) & this->encodeTruncatedBinary(q, r);
+    char encoded = this->encodeUnary(q) & (this->encodeTruncatedBinary(r) >> (q + 1)); /* TODO: resolve possible loss of bits of r, due to the shift*/
 }
 
 void Golomb::sEncode(int n) {
@@ -23,9 +23,7 @@ char Golomb::encodeUnary(unsigned int q) {
     return mask;
 }
 
-void Golomb::encodeTruncatedBinary(unsigned int q, unsigned int r) {
-
-    // define q + 1 first bits to '1'  (shift the result)
+void Golomb::encodeTruncatedBinary(unsigned int r) {
 
     unsigned int b = ceil(log2(m));
     /* Encode the first 2**b − m values of r using the first 2**b−m binary codewords of b−1 bits */
