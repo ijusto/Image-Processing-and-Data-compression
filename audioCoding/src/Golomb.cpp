@@ -6,12 +6,12 @@ Golomb::Golomb(unsigned int _m): m(_m){}
 void Golomb::uEncode(unsigned int n) {
     unsigned int q = n / this->m;
     unsigned int r = n % m; /* <=> n-q*m  - TODO: what is more optimal */
-    /* TODO: invoke private method to encode unary and truncated binary codes*/
-
     // bitStream.writeNBits(unary, q+1)
     char unary = this->encodeUnary(q);
-    // bitStream.writeNBits(binary, ?)
-    char binary = this->encodeTruncatedBinary(r);
+    // bitStream.writeNBits(binary, nBinBits)
+    std::tuple<char,int> binaryRes = this->encodeTruncatedBinary(r);
+    char binary = get<0>(res);
+    int nBinBits = get<1>(res);
 
 }
 
@@ -27,14 +27,25 @@ char Golomb::encodeUnary(unsigned int q) {
     return mask;
 }
 
-void Golomb::encodeTruncatedBinary(unsigned int r) {
-
+std::tuple<char, int> char Golomb::encodeTruncatedBinary(unsigned int r) {
     unsigned int b = ceil(log2(m));
     /* Encode the first 2**b − m values of r using the first 2**b−m binary codewords of b−1 bits */
-    nfirstValR = 2**b - m;
-    nBits = b - 1;
-    /* Encode the remainder values of r by coding the number r+2**b−m in binary codewords of b bits. */
-    nRemainValR = r + 2**b - m;
+    int nBits;
+    char bin = 0x00;
+    int codeNumber;
+    if(r < (2**b - m)){
+        codeNumber = r;
+        nBits = b - 1;
+    } else {
+        /* Encode the remainder values of r by coding the number r+2**b−m in binary codewords of b bits. */
+        codeNumber = r + 2**b - m;
+        nBits = b;
+    }
+
+    for(int i = 0; codeNumber > 0; codeNumber /= 2, i++) {
+        bin |= ((codeNumber % 2) << i);
+    }
+    return std::make_tuple(bin, nBits);
 }
 
 void Golomb::decodeUnary() {

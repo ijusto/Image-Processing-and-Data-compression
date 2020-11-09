@@ -14,6 +14,7 @@
 //!  BitStream
 /*!
  *  This class is useful to read/write bits from/to a file.
+ *  @author Inês Justo
  *  @author ...
 */
 class BitStream {
