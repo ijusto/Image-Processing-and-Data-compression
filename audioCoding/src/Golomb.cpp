@@ -42,9 +42,13 @@ std::tuple<char, int> char Golomb::encodeTruncatedBinary(unsigned int r) {
         nBits = b;
     }
 
+    /* Conversion of decimal code number to binary*/
     for(int i = 0; codeNumber > 0; codeNumber /= 2, i++) {
         bin |= ((codeNumber % 2) << i);
     }
+
+    /* Shift the truncated binary code to the most significant bits */
+    bin <<= (8 - nBits);
     return std::make_tuple(bin, nBits);
 }
 
