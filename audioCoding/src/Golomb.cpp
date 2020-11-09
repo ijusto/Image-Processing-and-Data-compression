@@ -27,7 +27,7 @@ char Golomb::encodeUnary(unsigned int q) {
     return mask;
 }
 
-std::tuple<char, int> char Golomb::encodeTruncatedBinary(unsigned int r) {
+std::tuple<char, int> Golomb::encodeTruncatedBinary(unsigned int r) {
     unsigned int b = ceil(log2(m));
     /* Encode the first 2**b − m values of r using the first 2**b−m binary codewords of b−1 bits */
     int nBits;
@@ -61,7 +61,7 @@ void Golomb::decodeTruncatedBinary() {
      * if the floor(log2(m)) bits are a shift code, then it has to read more bit(s) */
     unsigned int b = floor(log2(m));
 
-    // bitStream.readNBits() -> n = b
+    // bitStream.readNBits(b)
 }
 
 unsigned Golomb::uDecode(unsigned int q, unsigned int r) {

@@ -27,7 +27,7 @@ private:
 public:
     void writeBit();
     void readBit();
-    void writeNBits();
-    void readNBits();
+    void writeNBits(char byte, int nBits);
+    void readNBits(int nBits);
 }
 #endif //AUDIOCODING_BITSTREAM_H
