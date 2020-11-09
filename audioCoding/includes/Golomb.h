@@ -11,8 +11,8 @@ class Golomb {
 
 private:
     unsigned int m;
-    void encodeUnary(); /* TODO: change return type if necessary */
-    void encodeTruncatedBinary(); /* TODO: change return type if necessary */
+    void encodeUnary(unsigned int q); /* TODO: change return type if necessary */
+    void encodeTruncatedBinary(unsigned int r); /* TODO: change return type if necessary */
     void decodeUnary(); /* TODO: change return type if necessary */
     void decodeTruncatedBinary(); /* TODO: change return type if necessary */
 
