@@ -6,33 +6,48 @@ Golomb::Golomb(unsigned int _m): m(_m){}
 void Golomb::uEncode(unsigned int n) {
     unsigned int q = n / this->m;
     unsigned int r = n % m; /* <=> n-q*m  - TODO: what is more optimal */
-    // bitStream.writeNBits(unary, q+1)
-    char unary = this->encodeUnary(q);
-    // bitStream.writeNBits(binary, nBinBits)
-    std::tuple<char,int> binaryRes = this->encodeTruncatedBinary(r);
-    char binary = get<0>(res);
-    int nBinBits = get<1>(res);
+    unsigned char unary = this->encodeUnary(q);
+    std::tuple<unsigned char, unsigned int> binaryRes = this->encodeTruncatedBinary(r);
+    unsigned char binary = get<0>(res);
+    unsigned int nBinBits = get<1>(res);
 
+    /*
+     * bitStream.writeNBits(unary, q + 1);
+     * bitStream.writeNBits(binary, nBinBits);
+     *
+     * OR (if unsigned chars):
+     */
+
+    unsigned char code = unary | (binary>>(q+1));
+    // bitStream.writeNBits(code, q + 1 + nBinBits);
+
+    // number of bits from the truncated binary lost in the shift operation
+    int nLostBits = 8 - (q + 1 + nBinBits);
+    if(nLostBits){
+        unsigned char lostBits = 0x00;
+        unsigned char tempBin = binary;
+        for(int i = q; i >= 0; i--){
+            bool ret = tempBin & 1;
+            tempBin >>= 1;
+            lostBits = (lostBits | (ret<<(7-i)));
+        }
+        // bitStream.writeNBits(lostBits, nLostBits);
+    }
 }
 
 void Golomb::sEncode(int n) {
 
 }
 
-char Golomb::encodeUnary(unsigned int q) {
+unsigned char Golomb::encodeUnary(unsigned int q) {
     /* unary comma code where the end mark is '1'*/
-    // char mask = 0x80 >> q; // Ex: q = 2; mask = 00100000
-    char mask = 0xFF >> q; // Ex: q = 2; mask = 00111111
-
-    return mask;
+    return 0x80 >> q; // Ex: q = 2; mask = 00100000
 }
 
-std::tuple<char, int> Golomb::encodeTruncatedBinary(unsigned int r) {
+std::tuple<unsigned char, unsigned int> Golomb::encodeTruncatedBinary(unsigned int r) {
     unsigned int b = ceil(log2(m));
+    unsigned int nBits, codeNumber;
     /* Encode the first 2**b − m values of r using the first 2**b−m binary codewords of b−1 bits */
-    int nBits;
-    char bin = 0x00;
-    int codeNumber;
     if(r < (2**b - m)){
         codeNumber = r;
         nBits = b - 1;
@@ -43,6 +58,7 @@ std::tuple<char, int> Golomb::encodeTruncatedBinary(unsigned int r) {
     }
 
     /* Conversion of decimal code number to binary*/
+    unsigned  char bin = 0x00;
     for(int i = 0; codeNumber > 0; codeNumber /= 2, i++) {
         bin |= ((codeNumber % 2) << i);
     }
