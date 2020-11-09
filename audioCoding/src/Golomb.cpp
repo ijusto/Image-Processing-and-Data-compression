@@ -7,7 +7,12 @@ void Golomb::uEncode(unsigned int n) {
     unsigned int q = n / this->m;
     unsigned int r = n % m; /* <=> n-q*m  - TODO: what is more optimal */
     /* TODO: invoke private method to encode unary and truncated binary codes*/
-    char encoded = this->encodeUnary(q) & (this->encodeTruncatedBinary(r) >> (q + 1)); /* TODO: resolve possible loss of bits of r, due to the shift*/
+
+    // bitStream.writeNBits(unary, q+1)
+    char unary = this->encodeUnary(q);
+    // bitStream.writeNBits(binary, ?)
+    char binary = this->encodeTruncatedBinary(r);
+
 }
 
 void Golomb::sEncode(int n) {
@@ -19,7 +24,6 @@ char Golomb::encodeUnary(unsigned int q) {
     // char mask = 0x80 >> q; // Ex: q = 2; mask = 00100000
     char mask = 0xFF >> q; // Ex: q = 2; mask = 00111111
 
-    // bitStream.writeNBits(q+1)
     return mask;
 }
 
