@@ -11,10 +11,10 @@ class Golomb {
 
 private:
     unsigned int m;
-    char encodeUnary(unsigned int q); /* TODO: change return type if necessary */
-    std::tuple<char, int> encodeTruncatedBinary(unsigned int r); /* TODO: change return type if necessary */
-    void decodeUnary(); /* TODO: change return type if necessary */
-    void decodeTruncatedBinary(); /* TODO: change return type if necessary */
+    unsigned char encodeUnary(unsigned int q); /* TODO: change return type if necessary */
+    std::tuple<unsigned char, unsigned int> encodeTruncatedBinary(unsigned int r); /* TODO: change return type if necessary */
+    unsigned int decodeUnary(); /* TODO: change return type if necessary */
+    unsigned int decodeTruncatedBinary(); /* TODO: change return type if necessary */
 
 public:
 
@@ -39,13 +39,13 @@ public:
     /*!
      * @param n
     */
-    unsigned uDecode(unsigned int q, unsigned int r);
+    unsigned int uDecode();
 
     //! Signed decode.
     /*!
      * @param n
     */
-    int sDecode(unsigned int q, unsigned int r);
+    int sDecode();
 }
 
 #endif //AUDIOCODING_GOLOMB_H
