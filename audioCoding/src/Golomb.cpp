@@ -48,12 +48,12 @@ std::tuple<unsigned char, unsigned int> Golomb::encodeTruncatedBinary(unsigned i
     unsigned int b = (unsigned int) ceil(log2(this.m));
     unsigned int nBits, codeNumber;
     /* Encode the first 2**b − m values of r using the first 2**b−m binary codewords of b−1 bits */
-    if(r < (2**b - this.m)){
+    if(r < (pow(2,b) - this.m)){
         codeNumber = r;
         nBits = b - 1;
     } else {
         /* Encode the remainder values of r by coding the number r+2**b−m in binary codewords of b bits. */
-        codeNumber = r + 2**b - this.m;
+        codeNumber = r + pow(2,b) - this.m;
         nBits = b;
     }
 
@@ -93,7 +93,7 @@ unsigned int Golomb::decodeTruncatedBinary() {
 
     // bitStream.readNBits(b - 1)
     // convert the b-1 bits read to dec/int (into the variable readInt)
-    // if(readInt < (2**b - this.m)) {
+    // if(readInt < (pow(2,b) - this.m)) {
     //      r = readInt;
     // } else {
     //      bitStream.readBit();
