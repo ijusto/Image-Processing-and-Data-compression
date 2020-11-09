@@ -4,7 +4,7 @@
 Golomb::Golomb(unsigned int _m): m(_m){}
 
 void Golomb::uEncode(unsigned int n) {
-    unsigned int q = n / this.m;
+    unsigned int q = (unsigned int) floor(n / this.m);
     unsigned int r = n % this.m; /* <=> n-q*m  - TODO: what is more optimal */
     unsigned char unary = this.encodeUnary(q);
     std::tuple<unsigned char, unsigned int> binaryRes = this.encodeTruncatedBinary(r);
@@ -45,7 +45,7 @@ unsigned char Golomb::encodeUnary(unsigned int q) {
 }
 
 std::tuple<unsigned char, unsigned int> Golomb::encodeTruncatedBinary(unsigned int r) {
-    unsigned int b = ceil(log2(this.m));
+    unsigned int b = (unsigned int) ceil(log2(this.m));
     unsigned int nBits, codeNumber;
     /* Encode the first 2**b − m values of r using the first 2**b−m binary codewords of b−1 bits */
     if(r < (2**b - this.m)){
@@ -89,11 +89,17 @@ unsigned int Golomb::decodeUnary() {
 
 unsigned int Golomb::decodeTruncatedBinary() {
     unsigned int r = 0;
-    /* In the truncated binary part, the decoder reads floor(log2(m)) bits at once
-     * if the floor(log2(m)) bits are a shift code, then it has to read more bit(s) */
-    unsigned int b = floor(log2(this.m));
+    unsigned int b = (unsigned int) ceil(log2(this.m));
 
-    // bitStream.readNBits(b)
+    // bitStream.readNBits(b - 1)
+    // convert the b-1 bits read to dec/int (into the variable readInt)
+    // if(readInt < (2**b - this.m)) {
+    //      r = readInt;
+    // } else {
+    //      bitStream.readBit();
+    //      covert the b-1 firstly read bits "concatenated" with the last bit read to dec/int (into the variable readInt)
+    //      r = readInt - pow(2,b) - this.m;
+    // }
 
     return r;
 }
