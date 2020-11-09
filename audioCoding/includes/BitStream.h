@@ -6,6 +6,10 @@
  * example, methods to read and write strings, in binary). This class should be optimized, due to its extensive usage
  * during compression / decompression.
  */
+#include    <vector>
+#include    <cstdio>
+#include    <iostream>
+#include    <fstream>
 
 //!  BitStream
 /*!
@@ -15,6 +19,9 @@
 class BitStream {
 
 private:
+
+    /* signed char - 1 byte in size with range -128 to 127 TODO: best??*/
+    std::vector<signed char> buffer;
 
 public:
     void writeBit();

@@ -7,19 +7,26 @@ void Golomb::uEncode(unsigned int n) {
     unsigned int q = n / this->m;
     unsigned int r = n % m; /* <=> n-q*m  - TODO: what is more optimal */
     /* TODO: invoke private method to encode unary and truncated binary codes*/
-    this->encodeUnary(q);
-    this->encodeTruncatedBinary(r);
+    char encoded = this->encodeUnary(q) & this->encodeTruncatedBinary(q, r);
 }
 
 void Golomb::sEncode(int n) {
 
 }
 
-void Golomb::encodeUnary(unsigned int q) {
-    // bitStream.writeNBits()
+char Golomb::encodeUnary(unsigned int q) {
+    /* unary comma code where the end mark is '1'*/
+    // char mask = 0x80 >> q; // Ex: q = 2; mask = 00100000
+    char mask = 0xFF >> q; // Ex: q = 2; mask = 00111111
+
+    // bitStream.writeNBits(q+1)
+    return mask;
 }
 
-void Golomb::encodeTruncatedBinary(unsigned int r) {
+void Golomb::encodeTruncatedBinary(unsigned int q, unsigned int r) {
+
+    // define q + 1 first bits to '1'  (shift the result)
+
     unsigned int b = ceil(log2(m));
     /* Encode the first 2**b − m values of r using the first 2**b−m binary codewords of b−1 bits */
     nfirstValR = 2**b - m;
