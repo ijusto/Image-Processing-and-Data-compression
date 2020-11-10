@@ -12,3 +12,5 @@ audioAndImageOrVideoManipulation/src/audio/copiedwav.wav
 audioAndImageOrVideoManipulation/src/audio/audioHistograms/
 
 audioCoding/build/*
+
+entropyCoding/build/*

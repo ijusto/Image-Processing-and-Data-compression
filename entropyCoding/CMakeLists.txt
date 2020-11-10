@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(audioCoding)
+project(entropyCoding)
 
 set(CMAKE_CXX_STANDARD  17)
 find_package(OpenCV REQUIRED)

@@ -98,7 +98,7 @@ unsigned int Golomb::decodeTruncatedBinary() {
     // } else {
     //      bitStream.readBit();
     //      covert the b-1 firstly read bits "concatenated" with the last bit read to dec/int (into the variable readInt)
-    //      r = readInt - pow(2,b) - this.m;
+    //      r = readInt - pow(2,b) + this.m;
     // }
 
     return r;

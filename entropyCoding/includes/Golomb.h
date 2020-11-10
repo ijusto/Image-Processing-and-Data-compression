@@ -1,5 +1,5 @@
-#ifndef AUDIOCODING_GOLOMB_H
-#define AUDIOCODING_GOLOMB_H
+#ifndef ENTROPYCODING_GOLOMB_H
+#define ENTROPYCODING_GOLOMB_H
 
 //!  Golomb
 /*!
@@ -48,4 +48,4 @@ public:
     int sDecode();
 }
 
-#endif //AUDIOCODING_GOLOMB_H
+#endif //ENTROPYCODING_GOLOMB_H
