@@ -20,16 +20,20 @@ private:
     cv::Mat Input;
     int K;
 public:
+    /*!
+      Constructer the KM class, save the de image frame and the number of clusters
+      @param Input is the frame of the video on that moment, the image that moment
+      @param K is the number if clusters to use
+      @warning you must have attention on that the max number of clusters is 255 and the min
+      is 2
+      @see K_Means()
+    */
     KM(const cv::Mat &_input, int _k): Input(_input), K(_k) {}
 
     /*!
       Aplly k means method, this method is used to quantify the image, reducing the bit
       per pixel, using clusters and the means this method blurred the image according the
       number of clusters used
-      @param Input is the frame of the video on that moment, the image that moment
-      @param K is the number if clusters to use
-      @warning you must have attention on that the max number of clusters is 255 and the min
-      is 2
       @return returns the new image after used the k-method with the image blurred because
       the losing bpp
     */
