@@ -1,7 +1,7 @@
 #ifndef ENTROPYCODING_GOLOMB_H
 #define ENTROPYCODING_GOLOMB_H
 
-#include '../src/BitStream.cpp';
+#include "BitStream.hpp"
 
 //!  Golomb
 /*!
@@ -13,6 +13,7 @@ class Golomb {
 
 private:
     unsigned int m;
+    BitStream bitStream;
     unsigned char encodeUnary(unsigned int q); /* TODO: change return type if necessary */
     std::tuple<unsigned char, unsigned int> encodeTruncatedBinary(unsigned int r); /* TODO: change return type if necessary */
     unsigned int decodeUnary(); /* TODO: change return type if necessary */
