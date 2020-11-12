@@ -14,14 +14,14 @@ class Golomb {
 private:
     unsigned int m;
     BitStream bitStream;
-    unsigned char encodeUnary(unsigned int q); /* TODO: change return type if necessary */
-    std::tuple<unsigned char, unsigned int> encodeTruncatedBinary(unsigned int r); /* TODO: change return type if necessary */
+    static unsigned char encodeUnary(unsigned int q); /* TODO: change return type if necessary */
+    tuple<unsigned char *, unsigned int> encodeTruncatedBinary(unsigned int r); /* TODO: change return type if necessary */
     unsigned int decodeUnary(); /* TODO: change return type if necessary */
     unsigned int decodeTruncatedBinary(); /* TODO: change return type if necessary */
 
 public:
 
-    Golomb(unsigned int _m, Bitstream bitstream);
+    Golomb(unsigned int _m, BitStream _bitStream);
 
     ~Golomb();
 
@@ -49,6 +49,6 @@ public:
      * @param n
     */
     int sDecode();
-}
+};
 
 #endif //ENTROPYCODING_GOLOMB_H
