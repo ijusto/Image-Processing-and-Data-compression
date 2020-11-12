@@ -2,8 +2,8 @@
 // Created by iotmaster on 11/11/20.
 //
 
-#ifndef IMAGE_PROCESSING_AND_DATA_COMPRESSION_BITSTREAM_HPP
-#define IMAGE_PROCESSING_AND_DATA_COMPRESSION_BITSTREAM_HPP
+#ifndef ENTROPYCODING_BITSTREAM_HPP
+#define ENTROPYCODING_BITSTREAM_HPP
 
 /*
  * The resulting file should be binary (not text) and take into consideration that the minimum amount of data that you
@@ -115,4 +115,4 @@ public:
 
 };
 
-#endif //IMAGE_PROCESSING_AND_DATA_COMPRESSION_BITSTREAM_HPP
+#endif //ENTROPYCODING_BITSTREAM_HPP

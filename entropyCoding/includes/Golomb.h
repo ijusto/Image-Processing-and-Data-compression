@@ -1,6 +1,8 @@
 #ifndef ENTROPYCODING_GOLOMB_H
 #define ENTROPYCODING_GOLOMB_H
 
+#include '../src/BitStream.cpp';
+
 //!  Golomb
 /*!
  *  This class is useful to encode and decode with the Golomb Code.
@@ -18,7 +20,7 @@ private:
 
 public:
 
-    Golomb(unsigned int _m);
+    Golomb(unsigned int _m, Bitstream bitstream);
 
     ~Golomb();
 
