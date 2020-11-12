@@ -10,3 +10,4 @@ file(GLOB SOURCES src/*.cpp)
 set(SNDFILE_LIBRARY "-lsndfile")
 set(SNDFILE_DIR "-L/usr/lib/")
 
+add_executable(testGolomb test/testGolomb.cpp)
