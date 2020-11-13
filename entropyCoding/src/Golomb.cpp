@@ -4,7 +4,6 @@
 #include <vector>
 #include <iostream>
 #include <tuple>
-#include <functional>
 
 Golomb::Golomb(unsigned int _m, BitStream _bitStream): m(_m), bitStream(_bitStream){}
 
@@ -60,33 +59,23 @@ std::tuple<unsigned char*, unsigned int> Golomb::encodeTruncatedBinary(unsigned 
 int Golomb::decode() {
     unsigned int q = this->decodeUnary();
     unsigned int r = this->decodeTruncatedBinary();
-    int nMapped = this->m*q + r;
+    unsigned int nMapped = this->m*q + r;
     /* a positive value x is mapped to x'=2|x|=2x,x>0 and a negative value y is mapped to y'=2|y|-1=-2y-1,y<0*/
     int n;
     if((nMapped % 2) == 0){
-        n = nMapped/2;
+        n = (int) nMapped/2;
     } else {
-        n = -(nMapped + 1)/2;
+        n = (int) -(nMapped + 1)/2;
     }
     return n;
 }
 
-
-//! Decodes the quotient of the coded number, that is, the comma code (unary) part of the Golomb code.
-/*!
- * @return q quotient of the coded number by m.
-*/
 unsigned int Golomb::decodeUnary() {
     unsigned int q = 0;
     while(this->bitStream.readBit() == '0'){ q++; }
     return q;
 }
 
-//! Decodes the remainder of the division of the coded number by m, that is, the truncated binary code part of the
-//! Golomb code.
-/*!
- * @return r remainder of the division of the coded number by m.
-*/
 unsigned int Golomb::decodeTruncatedBinary() {
     unsigned int r = 0;
     auto b = (unsigned int) ceil(log2(this->m));

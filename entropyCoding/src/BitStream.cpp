@@ -56,7 +56,7 @@ unsigned char BitStream :: readBit (void){
     return bit+48;
 }
 
-unsigned char* BitStream :: readNbits (int N, unsigned char* bits){
+unsigned char* BitStream :: readNbits (unsigned int N, unsigned char* bits){
 
     for(int i = 0; i<N;i++){
         if(i>len*8){
@@ -83,7 +83,7 @@ void BitStream :: writeBit(unsigned char bit){
     }
 }
 
-void BitStream :: writeNbits(int N, unsigned char* bits){
+void BitStream :: writeNbits(unsigned int N, unsigned char* bits){
     for(int i = 0 ; i<N; i++){
         writeBit(bits[i]);
     }
