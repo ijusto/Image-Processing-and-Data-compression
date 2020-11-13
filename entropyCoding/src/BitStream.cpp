@@ -44,7 +44,7 @@ unsigned char BitStream :: readBit (void){
     int bit, position;
 
     position = pow(2, r_pos);
-    bit =((int)val-48 & position);
+    bit =((int)val & position);
     bit = bit >> r_pos;
     r_pos++;
 
@@ -53,7 +53,7 @@ unsigned char BitStream :: readBit (void){
         cr_pos++;
     }
 
-    return bit+48;
+    return bit;
 }
 
 unsigned char* BitStream :: readNbits (unsigned int N, unsigned char* bits){
@@ -73,7 +73,7 @@ void BitStream :: writeBit(unsigned char bit){
     result = (result | ((int)bit-48) << w_pos);
     w_pos++;
 
-    buffer = result+48;
+    buffer = result;
 
     if(w_pos >7){
         new_file.push_back(buffer);
