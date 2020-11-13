@@ -26,7 +26,7 @@ int main(int argc, char* argv[]) {
     //construct read_N_bits
     for (int i, i < stoi(argv[argc-1], i++ ){
         BS->readNbits(NBITS,bits);
-        cout << "Bits read = "<< bits << endl;
+        //cout << "Bits read = "<< bits << endl;
         BS -> writeNbits(NBITS,bits);
     }
 

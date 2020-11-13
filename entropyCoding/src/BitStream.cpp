@@ -70,7 +70,7 @@ unsigned char* BitStream :: readNbits (unsigned int N, unsigned char* bits){
 
 void BitStream :: writeBit(unsigned char bit){
 
-    result = (result | ((int)bit-48) << w_pos);
+    result = (result | ((int)bit) << w_pos);
     w_pos++;
 
     buffer = result;
