@@ -41,8 +41,6 @@ vector<bool> Golomb::encode(int n) {
     vector<bool> encoded_n = unary;
     encoded_n.insert( encoded_n.end(), truncBin.begin(), truncBin.end() );
 
-    std::cout << "SIZE ENCODED: " << encoded_n.size() << "\n";
-
     return encoded_n;
 }
 
@@ -92,10 +90,8 @@ int Golomb::decode() {
 }
 
 vector<int> Golomb::decode(vector<bool> encoded_n) {
-
     vector<int> numbers;
-    unsigned int q = 0;
-    unsigned int r = 0;
+    unsigned int q, r;
     while(!encoded_n.empty()){
         /* Decode unary */
         q = 0;
@@ -156,7 +152,6 @@ vector<int> Golomb::decode(vector<bool> encoded_n) {
             n = (int) -(nMapped + 1)/2;
         }
 
-        std::cout << "decode number " << n << std::endl;
         numbers.push_back(n);
     }
 
