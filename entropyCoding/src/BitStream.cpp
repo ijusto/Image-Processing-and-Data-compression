@@ -1,10 +1,4 @@
-//! BitStream functions
-/*!
- *  @author Agostinho Pires.
- *  This file have the code of the functions
- */
-
-#include "../includes/BitStream.hpp"
+#include "BitStream.hpp"
 
 BitStream :: BitStream(char *file_r){
 
@@ -44,15 +38,11 @@ unsigned char BitStream :: readBit (void){
     position = pow(2, r_pos);
     bit =((int)val & position);
     bit = bit >> r_pos;
-    //cout << "Bit read = "<< bit << endl;
     r_pos++;
 
     if(r_pos > 7){
-        //cout << "Acabei as contagens" << endl;
         r_pos = 0;
         cr_pos++;
-        //cout << "Read buffer = " <<read_buffer << endl;
-        //write on file, do that on read bit on readBit
     }
     return bit;
 }
@@ -64,13 +54,7 @@ unsigned char* BitStream :: readNbits (int N, unsigned char* bits){
             cout << "ERROR = This file don't have more information"<< endl;
             break;
         }
-
-        //cout << "Buffer position = " <<(int)r_pos << endl;
-
         bits[i]=readBit();
-        //cout << "Bit read = "<< readBit() << endl;
-        //cout << "Read buffer = " << buffer << endl;
-        //r_pos = r_pos<<1;
     }
     return bits;
 }
