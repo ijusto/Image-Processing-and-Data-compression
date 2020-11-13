@@ -8,8 +8,15 @@
 
 Golomb::Golomb(unsigned int _m, BitStream _bitStream): m(_m), bitStream(_bitStream){}
 
-void Golomb::uEncode(unsigned int n) {
-    auto q = (unsigned int) floor(n / this->m);
+void Golomb::encode(int n) {
+    /* a positive value x is mapped to x'=2|x|=2x,x>0 and a negative value y is mapped to y'=2|y|-1=-2y-1,y<0*/
+    int nMapped = 0;
+    if (n >= 0){
+        nMapped = 2 * n;
+    } else {
+        nMapped = -2*n -1;
+    }
+    auto q = (unsigned int) floor(nMapped / this->m);
     unsigned int r = n % this->m; /* <=> n-q*m  - TODO: what is more optimal */
     unsigned char unary = Golomb::encodeUnary(q);
     std::tuple<unsigned char*, unsigned int> binaryRes = this->encodeTruncatedBinary(r);
@@ -18,10 +25,6 @@ void Golomb::uEncode(unsigned int n) {
 
     this->bitStream.writeNbits(q + 1, &unary);
     this->bitStream.writeNbits(nBinBits, binary);
-}
-
-void Golomb::sEncode(int n) {
-
 }
 
 unsigned char Golomb::encodeUnary(unsigned int q) {
@@ -54,15 +57,20 @@ std::tuple<unsigned char*, unsigned int> Golomb::encodeTruncatedBinary(unsigned 
     return std::make_tuple(binChar, nBits);
 }
 
-unsigned int Golomb::uDecode() {
+int Golomb::decode() {
     unsigned int q = this->decodeUnary();
     unsigned int r = this->decodeTruncatedBinary();
-    return this->m*q + r;
+    int nMapped = this->m*q + r;
+    /* a positive value x is mapped to x'=2|x|=2x,x>0 and a negative value y is mapped to y'=2|y|-1=-2y-1,y<0*/
+    int n;
+    if((nMapped % 2) == 0){
+        n = nMapped/2;
+    } else {
+        n = -(nMapped + 1)/2;
+    }
+    return n;
 }
 
-int Golomb::sDecode() {
-
-}
 
 //! Decodes the quotient of the coded number, that is, the comma code (unary) part of the Golomb code.
 /*!
@@ -108,5 +116,13 @@ unsigned int Golomb::decodeTruncatedBinary() {
     return r;
 }
 
-Golomb::~Golomb() {
+void getAlpham(){
+    /* The Golomb code is optimum for an information source following a distribution P(n) = α^n(1 − α), n = 0, 1, 2, . . .
+     * where m = ceil(-1/log2α)*/
+
+}
+
+
+Golomb::~Golomb(){
+    delete this;
 }

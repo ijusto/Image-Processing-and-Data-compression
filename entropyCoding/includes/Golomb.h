@@ -14,41 +14,34 @@ class Golomb {
 private:
     unsigned int m;
     BitStream bitStream;
-    static unsigned char encodeUnary(unsigned int q); /* TODO: change return type if necessary */
-    tuple<unsigned char *, unsigned int> encodeTruncatedBinary(unsigned int r); /* TODO: change return type if necessary */
-    unsigned int decodeUnary(); /* TODO: change return type if necessary */
-    unsigned int decodeTruncatedBinary(); /* TODO: change return type if necessary */
+    static unsigned char encodeUnary(unsigned int q);
+    tuple<unsigned char *, unsigned int> encodeTruncatedBinary(unsigned int r);
+    unsigned int decodeUnary();
+    unsigned int decodeTruncatedBinary();
 
 public:
 
+    //! Golomb constructor.
+    /*!
+     * @param _m Golomb integer parameter.
+     * @param _bitStream BitStream used for reading or writing the encoded or the decoded values.
+    */
     Golomb(unsigned int _m, BitStream _bitStream);
 
+    //! Golomb class destructor.
     ~Golomb();
 
-
-    //! Unsigned encode.
+    //! Encode.
     /*!
      * @param n
     */
-    void uEncode(unsigned int n); /* TODO: return type ?? */
+    void encode(int n);
 
-    //! Signed encode.
+    //! Decode.
     /*!
      * @param n
     */
-    void sEncode(int n); /* TODO: return type ?? */
-
-    //! Unsigned decode.
-    /*!
-     * @param n
-    */
-    unsigned int uDecode();
-
-    //! Signed decode.
-    /*!
-     * @param n
-    */
-    int sDecode();
+    int decode();
 };
 
 #endif //ENTROPYCODING_GOLOMB_H
