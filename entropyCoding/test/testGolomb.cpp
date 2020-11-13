@@ -29,7 +29,7 @@ int main(int argc, char* argv[]) {
     for(int i = 0; i < n; i++){
         original_array.push_back(rand() % size ); // - size/2
     }
-    cout << "Encode this numbers: [";
+    cout << "Encode this numbers: [ ";
     for(int number : original_array) {
         cout << number << " ";
     }
@@ -54,11 +54,11 @@ int main(int argc, char* argv[]) {
     // decode set
     vector<int> decoded_array = golomb->decode(encoded_array);
 
-    cout << "Decoded numbers: [";
+    cout << "Decoded numbers: [ ";
     for(int number : decoded_array) {
         cout << number << " ";
     }
-    cout << "]" << endl;
+    cout << " ]" << endl;
 
     // compare decoded set with original set
     bool equal = true;
@@ -69,6 +69,6 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    cout << "   result: " << equal << endl;
+    cout << "result: " << equal << endl;
 
 }
