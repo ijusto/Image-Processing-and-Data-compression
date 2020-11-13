@@ -82,7 +82,7 @@ public:
         @return returns a char that contain one 1 bit read
         @see readBit()
     */
-    unsigned char* readNbits(unsigned int N, unsigned char* bits);
+    unsigned char* readNbits(int N, unsigned char* bits);
     //! Write 1 bit
     /*!
         This class function have the propose of write just 1 bit
@@ -97,7 +97,7 @@ public:
         @param bits pointer for the buffer of N bits to write
         @see writeNbits(int N, unsigned char* bits)
     */
-    void writeNbits(unsigned int N,unsigned char* bits);
+    void writeNbits(int N,unsigned char* bits);
     //! Get a unsigned char
     /*!
         This class function have the propose of get a unsigned char from the vector

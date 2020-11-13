@@ -4,7 +4,7 @@
  *  This file have the code of the functions
  */
 
-#include "BitStream.hpp"
+#include "../includes/BitStream.hpp"
 
 BitStream :: BitStream(char *file_r){
 
