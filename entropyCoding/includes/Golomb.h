@@ -87,7 +87,7 @@ public:
     //! Decodes the coded number passed as argument as a vector of booleans.
     /*!
      * @param encoded_n vector of bool values representing '0's and '1's of all the coded numbers.
-     * @return vector of bool values representing the decoded numbers.
+     * @return vector of the decoded numbers.
     */
     vector<int> decode(vector<bool> encoded_n);
 
