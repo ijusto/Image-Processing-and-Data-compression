@@ -7,7 +7,9 @@
 
 Golomb::Golomb(unsigned int _m, BitStream _bitStream): m(_m), bitStream(_bitStream){}
 
-void Golomb::encode(int n) {
+Golomb::Golomb(unsigned int _m): m(_m), bitStream(nullptr){}
+
+vector<bool> Golomb::encode(int n) {
     /* a positive value x is mapped to x'=2|x|=2x,x>0 and a negative value y is mapped to y'=2|y|-1=-2y-1,y<0*/
     int nMapped = 0;
     if (n >= 0){
@@ -22,8 +24,29 @@ void Golomb::encode(int n) {
     unsigned char* binary = get<0>(binaryRes);
     unsigned int nBinBits = get<1>(binaryRes);
 
-    this->bitStream.writeNbits(q + 1, unary);
-    this->bitStream.writeNbits(nBinBits, binary);
+    if(this->bitStream != nullptr){
+        this->bitStream.writeNbits(q + 1, unary);
+        this->bitStream.writeNbits(nBinBits, binary);
+    }
+
+    vector<bool> encoded_n;
+    for(int i = 0; i < q + 1; i++){
+        if(*(unary + i) == '1'){
+            encoded_n.push_back(true);
+        } else if(*(unary + i) == '0'){
+            encoded_n.push_back(false);
+        }
+    }
+
+    for(int i = 0; i < nBinBits; i++){
+        if(*(binary + i) == '1'){
+            encoded_n.push_back(true);
+        } else if(*(binary + i) == '0'){
+            encoded_n.push_back(false);
+        }
+    }
+
+    return encoded_n;
 }
 
 unsigned char* Golomb::encodeUnary(unsigned int q) {
@@ -77,6 +100,84 @@ int Golomb::decode() {
     return n;
 }
 
+vector<int> Golomb::decode(vector<bool> encoded_n) {
+    vector<int> numbers;
+    //vector<bool> decoded;
+    unsigned int q = 0;
+    unsigned int r = 0;
+    while(!encoded_n.empty()){
+        /* Decode unary */
+        q = 0;
+        for(auto it=encoded_n.begin(); *it!=true; ++it){
+            q++;
+            //decoded.push_back(*it);
+        }
+        for(int i = 0; i < q; i++){
+            encoded_n.erase(encoded_n.begin());
+        }
+
+        /* Decode truncated binary */
+        r = 0;
+        auto b = (unsigned int) ceil(log2(this->m));
+
+        unsigned char nBitsRead[b - 1];
+
+        for(int i = 0; i < b - 1; i++){
+            if(encoded_n.at(i)){
+                nBitsRead[i] = '1';
+            } else {
+                nBitsRead[i] = '0';
+            }
+            //decoded.push_back(encoded_n.at(i));
+        }
+        for(int i = 0; i < b - 1; i++){
+            encoded_n.erase(encoded_n.begin());
+        }
+
+        // convert the b-1 bits read to dec/int
+        int readInt = 0;
+        for (int i = 0; i < b - 1; i++){
+            if(nBitsRead[b - 2 - i] == '1'){
+                readInt += pow(2,i);
+            }
+        }
+
+        if(readInt < (pow(2,b) - this->m)) {
+            r = readInt;
+        } else {
+            unsigned char bitRead;
+            if(encoded_n.at(0)){
+                bitRead = '1';
+            } else {
+                bitRead = '0';
+            }
+            //decoded.push_back(encoded_n.at(0));
+            encoded_n.erase(encoded_n.begin());
+
+            // covert the b-1 firstly read bits "concatenated" with the last bit read to dec/int
+            unsigned int bitReadInt = 0;
+            if(bitRead == '1'){
+                bitReadInt = 1;
+            }
+            unsigned int newCodeRead = readInt*2 + bitReadInt;
+            r = newCodeRead - (int)pow(2,b) + this->m;
+        }
+
+        /* Get n */
+        unsigned int nMapped = this->m*q + r;
+        /* a positive value x is mapped to x'=2|x|=2x,x>0 and a negative value y is mapped to y'=2|y|-1=-2y-1,y<0*/
+        int n;
+        if((nMapped % 2) == 0){
+            n = (int) nMapped/2;
+        } else {
+            n = (int) -(nMapped + 1)/2;
+        }
+        numbers.push_back(n);
+    }
+
+    return numbers;
+}
+
 unsigned int Golomb::decodeUnary() {
     unsigned int q = 0;
     while(this->bitStream.readBit() == '0'){ q++; }
@@ -122,6 +223,6 @@ Golomb::~Golomb(){
     delete this;
 }
 
-void Golomb::changeM(unsigned int m) {
-    this->m = m;
+void Golomb::changeM(unsigned int _m) {
+    this->m = _m;
 }

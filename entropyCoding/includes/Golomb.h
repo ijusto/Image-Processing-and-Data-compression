@@ -59,26 +59,41 @@ public:
     */
     Golomb(unsigned int _m, BitStream _bitStream);
 
+    //! Golomb constructor.
+    /*!
+     * @param _m Golomb integer parameter.
+    */
+    Golomb(unsigned int _m);
+
     //! Golomb class destructor.
     ~Golomb();
 
-    //! Encode.
+    //! Encodes and writes with the bitStream.
     /*!
-     * @param n
+     * @param n number to encode.
+     * @returns vector of bool values representing '0's and '1's of the coded number.
     */
-    void encode(int n);
+    vector<bool> encode(int n);
 
-    //! Decode.
+    //! Reads with the bitStream and decodes.
     /*!
      * @return Decoded number.
     */
     int decode();
 
+    //! Decodes the coded number passed as argument as a vector of booleans.
+    /*!
+     * @param encoded_n vector of bool values representing '0's and '1's of all the codeded numbers.
+     * @return vector of int values representing the decoded numbers.
+    */
+    vector<int> decode(vector<bool> encoded_n);
+
     //! Changes the Golomb integer parameter.
     /*!
-     * @param m Golomb integer parameter.
+     * @param _m Golomb integer parameter.
     */
-    void changeM(unsigned int m);
+    void changeM(unsigned int _m);
+
 };
 
 #endif //ENTROPYCODING_GOLOMB_H

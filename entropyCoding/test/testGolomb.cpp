@@ -8,6 +8,7 @@
 #include <cmath>
 #include <vector>
 #include <bitset>
+#include <../src/Golomb.cpp>
 
 using namespace std;
 
@@ -32,19 +33,21 @@ int main(int argc, char* argv[]) {
     // encode set
     vector<bool> encoded_array;
 
+    unsigned int m = 5;
+    auto* golomb = new Golomb(m);
     for(int i = 0; i < n; i++){
         // encode
-        vector<bool> encoded_n = {true}; // = Golomb::uEncode(original_array.at(i))
+        vector<bool> encoded_n = golomb->encode(original_array.at(i));
         // append
         encoded_array.insert(encoded_array.end(), encoded_n.begin(), encoded_n.end());
     }
 
-//    for(bool bit : encoded_array)
-//        cout << bit ;
-//    cout << endl;
+    for(bool bit : encoded_array)
+        cout << bit ;
+    cout << endl;
 
     // decode set
-    vector<int> decoded_array = original_array; // = Golomb:uDecode(encoded_array);
+    vector<int> decoded_array = golomb->decode(encoded_array);
 
     // compare decoded set with original set
     bool equal = true;
