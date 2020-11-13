@@ -152,6 +152,7 @@ vector<int> Golomb::decode(vector<bool> encoded_n) {
             n = (int) -(nMapped + 1)/2;
         }
 
+        std::cout << "decode number " << n << std::endl;
         numbers.push_back(n);
     }
 
