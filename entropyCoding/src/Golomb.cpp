@@ -18,7 +18,7 @@ vector<bool> Golomb::encode(int n) {
         nMapped = -2*n -1;
     }
     auto q = (unsigned int) (nMapped / this->m);
-    unsigned int r = n % this->m; /* <=> n-q*m */
+    unsigned int r = nMapped % this->m; /* <=> n-q*m */
     vector<bool> unary = Golomb::encodeUnary(q);
     vector<bool> truncBin = this->encodeTruncatedBinary(r);
 
