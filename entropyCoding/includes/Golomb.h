@@ -16,6 +16,9 @@ class Golomb {
 
 private:
 
+    //! Flag to know if use the bitStream or not.
+    bool useBS;
+
     //! Golomb integer parameter.
     unsigned int m;
 

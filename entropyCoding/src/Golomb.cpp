@@ -5,9 +5,9 @@
 #include <iostream>
 #include <tuple>
 
-Golomb::Golomb(unsigned int _m, BitStream _bitStream): m(_m), bitStream(_bitStream){}
+Golomb::Golomb(unsigned int _m, BitStream _bitStream): m(_m), bitStream(_bitStream), useBS(true){}
 
-Golomb::Golomb(unsigned int _m): m(_m), bitStream(nullptr){}
+Golomb::Golomb(unsigned int _m): m(_m), bitStream(nullptr), useBS(true){}
 
 vector<bool> Golomb::encode(int n) {
     /* a positive value x is mapped to x'=2|x|=2x,x>0 and a negative value y is mapped to y'=2|y|-1=-2y-1,y<0*/
@@ -24,7 +24,7 @@ vector<bool> Golomb::encode(int n) {
     unsigned char* binary = get<0>(binaryRes);
     unsigned int nBinBits = get<1>(binaryRes);
 
-    if(this->bitStream != nullptr){
+    if(this->useBS){
         this->bitStream.writeNbits(q + 1, unary);
         this->bitStream.writeNbits(nBinBits, binary);
     }
