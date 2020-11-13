@@ -28,7 +28,7 @@ private:
     //! Encodes the quotient of the to be coded number, that is, the comma code (unary) part of the Golomb code.
     /*!
      * @param q quotient of the to be coded number by m.
-     * @return quotient in unary code.
+     * @return vector of bool values representing '0's and '1's of the coded quotient.
     */
     static vector<bool> encodeUnary(unsigned int q);
 
@@ -36,7 +36,7 @@ private:
     //! the Golomb code.
     /*!
      * @param remainder of the division of the coded number by m.
-     * @returns tuple with a pointer to the truncated binary code and its the number of bits.
+     * @returns vector of bool values representing '0's and '1's of the truncated binary code.
     */
     vector<bool> encodeTruncatedBinary(unsigned int r);
 
@@ -86,8 +86,8 @@ public:
 
     //! Decodes the coded number passed as argument as a vector of booleans.
     /*!
-     * @param encoded_n vector of bool values representing '0's and '1's of all the codeded numbers.
-     * @return vector of int values representing the decoded numbers.
+     * @param encoded_n vector of bool values representing '0's and '1's of all the coded numbers.
+     * @return vector of bool values representing the decoded numbers.
     */
     vector<int> decode(vector<bool> encoded_n);
 
