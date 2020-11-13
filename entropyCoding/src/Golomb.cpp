@@ -16,7 +16,7 @@ void Golomb::encode(int n) {
         nMapped = -2*n -1;
     }
     auto q = (unsigned int) floor(nMapped / this->m);
-    unsigned int r = n % this->m; /* <=> n-q*m  - TODO: what is more optimal */
+    unsigned int r = n % this->m; /* <=> n-q*m */
     unsigned char* unary = Golomb::encodeUnary(q);
     std::tuple<unsigned char*, unsigned int> binaryRes = this->encodeTruncatedBinary(r);
     unsigned char* binary = get<0>(binaryRes);
@@ -118,7 +118,10 @@ void getAlpham(){
 
 }
 
-
 Golomb::~Golomb(){
     delete this;
+}
+
+void Golomb::changeM(unsigned int m) {
+    this->m = m;
 }

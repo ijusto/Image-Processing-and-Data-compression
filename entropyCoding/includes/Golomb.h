@@ -11,12 +11,15 @@
 /*!
  *  This class is useful to encode and decode with the Golomb Code.
  *  @author Inês Justo
- *  @author ...
 */
 class Golomb {
 
 private:
+
+    //! Golomb integer parameter.
     unsigned int m;
+
+    //! BitStream used for reading or writing the encoded or the decoded values.
     BitStream bitStream;
 
     //! Encodes the quotient of the to be coded number, that is, the comma code (unary) part of the Golomb code.
@@ -67,9 +70,15 @@ public:
 
     //! Decode.
     /*!
-     * @param n
+     * @return Decoded number.
     */
     int decode();
+
+    //! Changes the Golomb integer parameter.
+    /*!
+     * @param m Golomb integer parameter.
+    */
+    void changeM(unsigned int m);
 };
 
 #endif //ENTROPYCODING_GOLOMB_H
