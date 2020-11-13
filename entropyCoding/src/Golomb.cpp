@@ -7,7 +7,7 @@
 
 Golomb::Golomb(unsigned int _m, BitStream _bitStream): m(_m), bitStream(_bitStream), useBS(true){}
 
-Golomb::Golomb(unsigned int _m): m(_m), bitStream(nullptr), useBS(true){}
+Golomb::Golomb(unsigned int _m): m(_m), bitStream(nullptr), useBS(false){}
 
 vector<bool> Golomb::encode(int n) {
     /* a positive value x is mapped to x'=2|x|=2x,x>0 and a negative value y is mapped to y'=2|y|-1=-2y-1,y<0*/
@@ -17,50 +17,45 @@ vector<bool> Golomb::encode(int n) {
     } else {
         nMapped = -2*n -1;
     }
-    auto q = (unsigned int) floor(nMapped / this->m);
+    auto q = (unsigned int) (nMapped / this->m);
     unsigned int r = n % this->m; /* <=> n-q*m */
-    unsigned char* unary = Golomb::encodeUnary(q);
-    std::tuple<unsigned char*, unsigned int> binaryRes = this->encodeTruncatedBinary(r);
-    unsigned char* binary = get<0>(binaryRes);
-    unsigned int nBinBits = get<1>(binaryRes);
+    vector<bool> unary = Golomb::encodeUnary(q);
+    vector<bool> truncBin = this->encodeTruncatedBinary(r);
 
     if(this->useBS){
-        this->bitStream.writeNbits(q + 1, unary);
-        this->bitStream.writeNbits(nBinBits, binary);
+        unsigned char u[unary.size()];
+        for(int i=0; i<unary.size(); i++){
+            if(unary.at(i)){ u[i] = '1';
+            } else { u[i] = '0'; }
+        }
+
+        unsigned char tb[truncBin.size()];
+        for(int i=0; i<truncBin.size(); i++){
+            if(truncBin.at(i)){ tb[i] = '1';
+            } else { tb[i] = '0'; }
+        }
+        this->bitStream.writeNbits(unary.size(), u);
+        this->bitStream.writeNbits(truncBin.size(), tb);
     }
 
-    vector<bool> encoded_n;
-    for(int i = 0; i < q + 1; i++){
-        if(*(unary + i) == '1'){
-            encoded_n.push_back(true);
-        } else if(*(unary + i) == '0'){
-            encoded_n.push_back(false);
-        }
-    }
+    vector<bool> encoded_n = unary;
+    encoded_n.insert( encoded_n.end(), truncBin.begin(), truncBin.end() );
 
-    for(int i = 0; i < nBinBits; i++){
-        if(*(binary + i) == '1'){
-            encoded_n.push_back(true);
-        } else if(*(binary + i) == '0'){
-            encoded_n.push_back(false);
-        }
-    }
+    std::cout << "SIZE ENCODED: " << encoded_n.size() << "\n";
 
     return encoded_n;
 }
 
-unsigned char* Golomb::encodeUnary(unsigned int q) {
+vector<bool> Golomb::encodeUnary(unsigned int q) {
     /* unary comma code where the end mark is '1'*/
-    unsigned char unary[q+1];
-    for(int i=0; i<q; i++){
-        unary[i] = '0';
-    }
-    unary[q] = '1';
-    unsigned char *unaryPtr = unary;
-    return unaryPtr;
+    vector<bool> unary;
+    for(int i=0; i<q; i++){ unary.push_back(false); }
+    unary.push_back(true);
+    return unary;
 }
 
-std::tuple<unsigned char*, unsigned int> Golomb::encodeTruncatedBinary(unsigned int r) {
+vector<bool> Golomb::encodeTruncatedBinary(unsigned int r) {
+    vector<bool> truncatedBin;
     auto b = (unsigned int) ceil(log2(this->m));
     /* Encode the first 2**b − m values of r using the first 2**b−m binary codewords of b−1 bits */
     unsigned int codeNumber = r;
@@ -69,21 +64,17 @@ std::tuple<unsigned char*, unsigned int> Golomb::encodeTruncatedBinary(unsigned 
     if(r >= pow(2, b) - this->m) { codeNumber += (int)pow(2, b) - this->m; nBits += 1; }
 
     /* Conversion of decimal code number to binary*/
-    std::vector<int> binInt;
     for(int i = 0; codeNumber > 0; codeNumber /= 2, i++) {
-        binInt.push_back((codeNumber % 2));
+        truncatedBin.push_back(codeNumber % 2 == 0);
     }
-    unsigned char binChar[binInt.size()];
-    for (int i = 0; i < binInt.size(); i++){
-        if(binInt.at(i) == 0){
-            binChar[binInt.size() -1 - i] = '0';
-        } else{
-            binChar[binInt.size() -1 - i] = '1';
-        }
+    vector<bool> res;
+    while(truncatedBin.size() < nBits){
+        res.push_back(false);
+        nBits--;
     }
-    unsigned char *binCharPtr = binChar;
+    res.insert( res.end(), truncatedBin.begin(), truncatedBin.end() );
 
-    return std::make_tuple(binCharPtr, nBits);
+    return res;
 }
 
 int Golomb::decode() {
@@ -101,8 +92,8 @@ int Golomb::decode() {
 }
 
 vector<int> Golomb::decode(vector<bool> encoded_n) {
+
     vector<int> numbers;
-    //vector<bool> decoded;
     unsigned int q = 0;
     unsigned int r = 0;
     while(!encoded_n.empty()){
@@ -110,7 +101,6 @@ vector<int> Golomb::decode(vector<bool> encoded_n) {
         q = 0;
         for(auto it=encoded_n.begin(); *it!=true; ++it){
             q++;
-            //decoded.push_back(*it);
         }
         for(int i = 0; i < q; i++){
             encoded_n.erase(encoded_n.begin());
@@ -128,7 +118,6 @@ vector<int> Golomb::decode(vector<bool> encoded_n) {
             } else {
                 nBitsRead[i] = '0';
             }
-            //decoded.push_back(encoded_n.at(i));
         }
         for(int i = 0; i < b - 1; i++){
             encoded_n.erase(encoded_n.begin());
@@ -151,7 +140,6 @@ vector<int> Golomb::decode(vector<bool> encoded_n) {
             } else {
                 bitRead = '0';
             }
-            //decoded.push_back(encoded_n.at(0));
             encoded_n.erase(encoded_n.begin());
 
             // covert the b-1 firstly read bits "concatenated" with the last bit read to dec/int

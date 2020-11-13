@@ -33,7 +33,7 @@ int main(int argc, char* argv[]) {
     // encode set
     vector<bool> encoded_array;
 
-    unsigned int m = 5;
+    unsigned int m = 2;
     auto* golomb = new Golomb(m);
     for(int i = 0; i < n; i++){
         // encode
