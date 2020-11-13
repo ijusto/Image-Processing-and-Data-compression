@@ -24,7 +24,7 @@ private:
      * @param q quotient of the to be coded number by m.
      * @return quotient in unary code.
     */
-    static unsigned char encodeUnary(unsigned int q);
+    static unsigned char* encodeUnary(unsigned int q);
 
     //! Encodes the remainder of the division of the to be coded number by m, that is, the truncated binary code part of
     //! the Golomb code.

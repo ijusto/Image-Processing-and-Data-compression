@@ -17,18 +17,24 @@ void Golomb::encode(int n) {
     }
     auto q = (unsigned int) floor(nMapped / this->m);
     unsigned int r = n % this->m; /* <=> n-q*m  - TODO: what is more optimal */
-    unsigned char unary = Golomb::encodeUnary(q);
+    unsigned char* unary = Golomb::encodeUnary(q);
     std::tuple<unsigned char*, unsigned int> binaryRes = this->encodeTruncatedBinary(r);
     unsigned char* binary = get<0>(binaryRes);
     unsigned int nBinBits = get<1>(binaryRes);
 
-    this->bitStream.writeNbits(q + 1, &unary);
+    this->bitStream.writeNbits(q + 1, unary);
     this->bitStream.writeNbits(nBinBits, binary);
 }
 
-unsigned char Golomb::encodeUnary(unsigned int q) {
+unsigned char* Golomb::encodeUnary(unsigned int q) {
     /* unary comma code where the end mark is '1'*/
-    return 0x80 >> q; // Ex: q = 2; mask = 00100000
+    unsigned char unary[q+1];
+    for(int i=0; i<q; i++){
+        unary[i] = '0';
+    }
+    unary[q] = '1';
+    unsigned char *unaryPtr = unary;
+    return unaryPtr;
 }
 
 std::tuple<unsigned char*, unsigned int> Golomb::encodeTruncatedBinary(unsigned int r) {
@@ -44,16 +50,17 @@ std::tuple<unsigned char*, unsigned int> Golomb::encodeTruncatedBinary(unsigned 
     for(int i = 0; codeNumber > 0; codeNumber /= 2, i++) {
         binInt.push_back((codeNumber % 2));
     }
-    unsigned char *binChar = nullptr;
+    unsigned char binChar[binInt.size()];
     for (int i = 0; i < binInt.size(); i++){
         if(binInt.at(i) == 0){
-            *(binChar + binInt.size() -1 - i) = '0';
+            binChar[binInt.size() -1 - i] = '0';
         } else{
-            *(binChar + binInt.size() -1 - i) = '1';
+            binChar[binInt.size() -1 - i] = '1';
         }
     }
+    unsigned char *binCharPtr = binChar;
 
-    return std::make_tuple(binChar, nBits);
+    return std::make_tuple(binCharPtr, nBits);
 }
 
 int Golomb::decode() {
