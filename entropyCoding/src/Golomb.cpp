@@ -99,10 +99,14 @@ vector<int> Golomb::decode(vector<bool> encoded_n) {
     while(!encoded_n.empty()){
         /* Decode unary */
         q = 0;
-        for(auto it=encoded_n.begin(); *it!=true; ++it){
-            q++;
+        for(bool bit : encoded_n){
+            if(!bit){
+                q++;
+            } else {
+                break;
+            }
         }
-        for(int i = 0; i < q; i++){
+        for(int i = 0; i <= q; i++){
             encoded_n.erase(encoded_n.begin());
         }
 
@@ -110,14 +114,10 @@ vector<int> Golomb::decode(vector<bool> encoded_n) {
         r = 0;
         auto b = (unsigned int) ceil(log2(this->m));
 
-        unsigned char nBitsRead[b - 1];
+        vector<bool> nBitsRead;
 
         for(int i = 0; i < b - 1; i++){
-            if(encoded_n.at(i)){
-                nBitsRead[i] = '1';
-            } else {
-                nBitsRead[i] = '0';
-            }
+            nBitsRead.push_back(encoded_n.at(i));
         }
         for(int i = 0; i < b - 1; i++){
             encoded_n.erase(encoded_n.begin());
@@ -126,7 +126,7 @@ vector<int> Golomb::decode(vector<bool> encoded_n) {
         // convert the b-1 bits read to dec/int
         int readInt = 0;
         for (int i = 0; i < b - 1; i++){
-            if(nBitsRead[b - 2 - i] == '1'){
+            if(nBitsRead.at(b - 2 - i)){
                 readInt += pow(2,i);
             }
         }
@@ -134,17 +134,12 @@ vector<int> Golomb::decode(vector<bool> encoded_n) {
         if(readInt < (pow(2,b) - this->m)) {
             r = readInt;
         } else {
-            unsigned char bitRead;
-            if(encoded_n.at(0)){
-                bitRead = '1';
-            } else {
-                bitRead = '0';
-            }
+            bool lastBitRead = encoded_n.at(0);
             encoded_n.erase(encoded_n.begin());
 
             // covert the b-1 firstly read bits "concatenated" with the last bit read to dec/int
             unsigned int bitReadInt = 0;
-            if(bitRead == '1'){
+            if(lastBitRead){
                 bitReadInt = 1;
             }
             unsigned int newCodeRead = readInt*2 + bitReadInt;
@@ -160,6 +155,8 @@ vector<int> Golomb::decode(vector<bool> encoded_n) {
         } else {
             n = (int) -(nMapped + 1)/2;
         }
+
+        std::cout << "decode number " << n << std::endl;
         numbers.push_back(n);
     }
 

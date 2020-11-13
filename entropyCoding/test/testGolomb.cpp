@@ -37,6 +37,7 @@ int main(int argc, char* argv[]) {
     auto* golomb = new Golomb(m);
     for(int i = 0; i < n; i++){
         // encode
+        std::cout << "encode number: " << original_array.at(i) << std::endl;
         vector<bool> encoded_n = golomb->encode(original_array.at(i));
         // append
         encoded_array.insert(encoded_array.end(), encoded_n.begin(), encoded_n.end());
