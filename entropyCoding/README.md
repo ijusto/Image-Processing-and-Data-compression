@@ -14,10 +14,10 @@ Always run the scripts on the project directory (/entropyCoding).
 
 #### Test BitStream
 ``` 
-../build/testsBitStream 
+../build/testsBitStream -s
 ```
 
 #### Test Golomb Code
 ``` 
-../build/testsGolomb 
+../build/testsGolomb -s
 ```

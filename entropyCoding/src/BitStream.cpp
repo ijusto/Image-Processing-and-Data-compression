@@ -12,10 +12,8 @@ BitStream :: BitStream(char *file_r){
 
     ifstream infile (file_r);
 
-    if(infile.is_open()){
-        cout << "SUCCESS : File "<<file_r<<" is Opened " << endl;
-    } else {
-        cout << "FAILED to open file " << endl;
+    if(!infile.is_open()){
+        cout << "FAILED to open file " << file_r << endl;
     }
     unsigned char in;
     while(infile >> in){
@@ -101,10 +99,10 @@ void BitStream :: writeNbits(vector<bool> bits){
 void BitStream :: writeOnfile(char* file_w){
     ofstream openfile (file_w, ofstream::binary);
 
-
-    if(openfile.is_open()){
-        cout << "SUCCESS : File "<<file_w<<" is Opened " << endl;
+    if(!openfile.is_open()){
+        cout << "FAILED to open file " << file_w << endl;
     }
+
     if(w_pos%8!=0){
         // cout << "Entrei aqui "<< endl;
         new_file.push_back(buffer);
