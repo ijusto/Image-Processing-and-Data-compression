@@ -28,10 +28,10 @@ private:
 public:
     //! A constructor.
     /*!
-        This class constructor have the propose of read the entire file and save on a vector structure
-        @param file_r is the pointer of the path where the file to read is located
-        @warning need to be an existing file
-        @see writeOnfile(nt N, char* file_w), getC(void)
+     * This class constructor have the propose of read the entire file and save on a vector structure
+     *  @param file_r is the pointer of the path where the file to read is located
+     *  @warning need to be an existing file
+     *  @see writeOnfile(int N, char* file_w), getC(void)
      */
     explicit BitStream(char *file_r);
 
@@ -73,17 +73,17 @@ public:
 
     //! Get a unsigned char
     /*!
-        This class function have the propose of get a unsigned char from the vector
-        @return returns a char that contain one 8 bits a byte
-        @see  BitStream(char *file_r), writeOnfile(int N, char* file_w)
+     * This class function have the propose of get a unsigned char from the vector
+     * @return returns a char that contain one 8 bits a byte
+     * @see  BitStream(char *file_r), writeOnfile(int N, char* file_w)
     */
     unsigned char getC(void);
 
     //! Write on File
     /*!
-        This class function have the propose write the vector of bits on the file
-        @param  file_w is the pointer of the path where the file to write is located or will be created
-        @see  BitStream(char *file_r), getC(void)
+     * This class function have the propose write the vector of bits on the file
+     * @param  file_w is the pointer of the path where the file to write is located or will be created
+     * @see  BitStream(char *file_r), getC(void)
     */
     void writeOnfile(char* file_w);
 

@@ -1,11 +1,4 @@
-//! BitStream functions
-/*!
- *  @author Agostinho Pires.
- *  @author Inês Justo. (modified some logic of returns)
- *  This file have the code of the functions
- */
-
-#include "../includes/BitStream.hpp"
+#include "BitStream.hpp"
 
 BitStream :: BitStream(char *file_r){
 
@@ -56,8 +49,6 @@ bool BitStream :: readBit(){
         //cout << "Acabei as contagens" << endl;
         r_pos = 7;
         cr_pos++;
-        //cout << "Read buffer = " <<read_buffer << endl;
-        //write on file, do that on read bit on readBit
     }
     return bit != 0;
 }
