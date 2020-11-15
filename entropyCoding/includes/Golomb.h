@@ -39,7 +39,7 @@ public:
      * @param n number to encode.
      * @returns vector of bool values representing 0s and 1s of the coded number.
     */
-    vector<int> encode(int n);
+    vector<bool> encode(int n);
 
     //! Reads with the bitStream and decodes.
     /*!

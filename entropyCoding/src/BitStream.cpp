@@ -32,6 +32,9 @@ unsigned char BitStream :: getC(void){
 
 
 bool BitStream :: readBit(){
+    if(cr_pos >= info_file.size()){
+        throw("Read all file.");
+    }
     unsigned char val = getC();
 
     //cout << "val read = "<< val << endl;
@@ -50,7 +53,6 @@ bool BitStream :: readBit(){
 }
 
 vector<bool> BitStream :: readNbits (unsigned int N){
-    cr_pos = 0;
     vector<bool> bits;
 
     for(int i = 0; i<N;i++){
