@@ -97,6 +97,7 @@ TEST_CASE("BitStream writeNbits") {
     INFO("\n\tWritten bits in the file.");
 
     unsigned int n = cav_2020.size();
+    bitStream = new BitStream(fname);
     vector<bool> readBits = bitStream->readNbits(n);
     string bitsRead;
     for(int i = 0; i < readBits.size(); i++){

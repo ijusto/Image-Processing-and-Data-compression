@@ -4,10 +4,9 @@ BitStream :: BitStream(char *file_r){
 
     //Init var need
     cr_pos = 0;
-    cw_pos = 0;
     len = 0;
     r_pos = 7;
-    w_pos = 0;
+    w_pos = 7;
     result = 0;
 
     ifstream infile (file_r);
@@ -40,7 +39,6 @@ bool BitStream :: readBit(){
     position = pow(2, r_pos);
     bit =((int)val & position);
     bit = bit >> r_pos;
-    // cout << "Bit read = "<< bit << endl;
     r_pos--;
 
     if(r_pos < 0){
@@ -52,6 +50,7 @@ bool BitStream :: readBit(){
 }
 
 vector<bool> BitStream :: readNbits (unsigned int N){
+    cr_pos = 0;
     vector<bool> bits;
 
     for(int i = 0; i<N;i++){
@@ -73,19 +72,14 @@ vector<bool> BitStream :: readNbits (unsigned int N){
 void BitStream :: writeBit(bool bit){
     unsigned int b;
     if(bit){ b = 1; } else { b = 0; }
-
-    result = (result | (b << w_pos));
-    //cout << "Write bit = " << result << endl;
-    w_pos++;
-
+    result |= b << w_pos;
     buffer = result;
+    w_pos--;
 
-    if(w_pos >7){
+    if(w_pos < 0){
         new_file.push_back(buffer);
-        //cout << "Write Buffer = " << buffer << endl;
         result = 0;
-        w_pos = 0;
-        cw_pos++;
+        w_pos = 7;
         //openfile << buffer;
     }
 }
@@ -103,10 +97,11 @@ void BitStream :: writeOnfile(char* file_w){
         cout << "FAILED to open file " << file_w << endl;
     }
 
-    if(w_pos%8!=0){
-        // cout << "Entrei aqui "<< endl;
+    if(((w_pos+1)%8)!=0){
+        cout << w_pos<< endl;
         new_file.push_back(buffer);
     }
+
     for(char inputs : new_file){
         openfile << inputs;
     }
