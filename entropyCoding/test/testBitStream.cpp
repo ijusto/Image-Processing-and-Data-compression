@@ -21,13 +21,12 @@ int main(int argc, char* argv[]) {
 
     auto * BS = new BitStream(argv[argc-3]);
     int NBITS = stoi(argv[argc-1]);
-    unsigned char bits[NBITS];
 
     //construct read_N_bits
-    BS->readNbits(NBITS,bits);
-    BS -> writeNbits(NBITS,bits);
+    vector<bool> readBits = BS->readNbits(NBITS);
+    BS->writeNbits(readBits);
 
-    BS ->writeOnfile( argv[argc-2]);
+    BS->writeOnfile( argv[argc-2]);
 
     return 0;
 }

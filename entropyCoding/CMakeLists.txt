@@ -13,3 +13,5 @@ set(SNDFILE_DIR "-L/usr/lib/")
 add_executable(testBitStream test/testBitStream.cpp)
 add_executable(testGolomb test/testGolomb.cpp)
 
+add_executable(testsGolomb test/testsGolombMain.cpp)
+add_executable(testsBitStream test/testsBitStreamMain.cpp)
