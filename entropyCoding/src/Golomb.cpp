@@ -27,10 +27,12 @@ Golomb::Golomb(unsigned int _m, char *_file, char mode) {
 vector<bool> Golomb::encode(int n) {
     /* a positive value x is mapped to x'=2|x|=2x,x>0 and a negative value y is mapped to y'=2|y|-1=-2y-1,y<0*/
     int nMapped = 2 * n;
+    std::cout << "n: "<<n<<std::endl;
     if (n < 0){ nMapped = -nMapped -1; }
 
-    auto q = (unsigned int) (nMapped / this->m);
-    unsigned int r = nMapped % this->m; /* <=> n-q*m */
+    unsigned int q = nMapped / this->m;
+    unsigned int r = nMapped % this->m; /* <=> nMapped-q*m */
+    std::cout << "r: "<<r<<std::endl;
 
     /* Encode unary */
     vector<bool> unary;
@@ -38,28 +40,49 @@ vector<bool> Golomb::encode(int n) {
     /* unary comma code where the end mark is '1'*/
     unary.push_back(true);
     this->writeBitStream->writeNbits(unary);
+    vector<bool> encoded_n = unary;
 
     /* Encode Truncated Binary */
     vector<bool> truncatedBinTmp;
     auto b = (unsigned int) ceil(log2(this->m));
+
     /* Encode the first 2**b − m values of r using the first 2**b−m binary codewords of b−1 bits */
-    unsigned int codeNumber = r;
+    unsigned int codedR = r;
     unsigned int nBits = b - 1;
+    std::cout << "2**b−m: "<<((int)pow(2, b) - this->m)<<std::endl;
+
+
+
+    std::cout << "r >= 2**b−m "<< (r >= ((int)pow(2, b) - this->m))<<std::endl;
     /* Encode the remainder values of r by coding the number r+2**b−m in binary codewords of b bits. */
-    if(r >= (pow(2, b) - this->m)) { codeNumber += ((int)pow(2, b) - this->m); nBits += 1; }
-    /* Conversion of decimal code number to binary*/
-    for(int i = 0; codeNumber > 0; codeNumber /= 2, i++) {
-        truncatedBinTmp.push_back(codeNumber % 2 == 0);
+    if(r >= ((int)pow(2, b) - this->m)) {
+        codedR += ((int)pow(2, b) - this->m);
+        nBits += 1;
     }
+
+    /* Conversion of decimal code number to binary*/
+    for(int i = 0; codedR > 0; codedR /= 2, i++) {
+        truncatedBinTmp.push_back(codedR % 2);
+    }
+    std::reverse(truncatedBinTmp.begin(),truncatedBinTmp.end());
+
+    std::cout << "truncatedBinTmp: ";
+    for(bool numb : truncatedBinTmp){
+        std::cout << numb;
+    }
+    std::cout << std::endl;
+
     vector<bool> truncatedBin;
     for(;truncatedBinTmp.size() < nBits; nBits--){ truncatedBin.push_back(false); }
     truncatedBin.insert( truncatedBin.end(), truncatedBinTmp.begin(), truncatedBinTmp.end() );
     this->writeBitStream->writeNbits(truncatedBin);
 
-    vector<bool> encoded_n = unary;
     encoded_n.insert( encoded_n.end(), truncatedBin.begin(), truncatedBin.end() );
-    std::cout << "r encoded: " << codeNumber << "nMapped encoded: " << nMapped << ", n: " << n << std::endl;
-
+    std::cout << "encoded: ";
+    for(bool numb : encoded_n){
+        std::cout << numb;
+    }
+    std::cout << std::endl;
     return encoded_n;
 }
 
@@ -68,14 +91,17 @@ void Golomb::closeEncodeFile(){
 }
 
 void Golomb::decode(vector<int> *numbers) {
+    std::cout << "DECODED: ";
     while(true){
+
         /* Decode unary */
         unsigned int q = 0;
         try{
-            while(!this->readBitStream->readBit()){ q++; }
+            while(!this->readBitStream->readBit()){ q++; std::cout << "0"; }
         } catch( string mess){
             break;
         }
+        std::cout << "1";
 
         /* Decode truncated binary */
         unsigned int r = 0;
@@ -88,6 +114,13 @@ void Golomb::decode(vector<int> *numbers) {
             std::cout << mess << std::endl;
             std::exit(0);
         }
+        for(bool bit : nBitsRead){
+            if(bit){
+                std::cout << "1";
+            } else{
+                std::cout << "0";
+            }
+        }
 
         // convert the b-1 bits read to dec/int
         int readInt = 0;
@@ -96,13 +129,18 @@ void Golomb::decode(vector<int> *numbers) {
                 readInt += pow(2, i);
             }
         }
+        r = readInt;
 
-        if(readInt < (pow(2,b) - this->m)) {
-            r = readInt;
-        } else {
+        /* If the bits read are an encoded value less than 2**b-m, decoding is complete.*/
+        if(readInt >= ((int) pow(2,b) - this->m)) {
             bool bitRead;
             try{
                 bitRead = this->readBitStream->readBit();
+                if(bitRead){
+                    std::cout << "1 ";
+                } else{
+                    std::cout << "0 ";
+                }
             } catch( string mess){
                 std::cout << mess << std::endl;
                 std::exit(0);
@@ -111,20 +149,23 @@ void Golomb::decode(vector<int> *numbers) {
             // covert the b-1 firstly read bits "concatenated" with the last bit read to dec/int
             unsigned int bitReadInt = 0;
             if(bitRead){ bitReadInt = 1; }
+
+            /* Otherwise, read an additional bit and subtract 2**b-m from the result. */
             unsigned int newCodeRead = readInt*2 + bitReadInt;
-            r = newCodeRead - (int)pow(2,b) + this->m;
+            r = newCodeRead + this->m - (int)pow(2,b);
+        } else {
+            std::cout << " ";
         }
 
         unsigned int nMapped = this->m*q + r;
 
         /* a positive value x is mapped to x'=2|x|=2x,x>0 and a negative value y is mapped to y'=2|y|-1=-2y-1,y<0*/
         int n = nMapped;
-        if((nMapped % 2) != 0){ n = -(n+1);}
+        if(nMapped % 2){ n = -(n+1);}
         n /= 2;
-
-        std::cout << "r decoded: " << r << "nMapped decoded: " << nMapped << ", n decoded: " << n << std::endl;
         (*numbers).push_back(n);
     }
+    std::cout << std::endl;
 }
 
 /*

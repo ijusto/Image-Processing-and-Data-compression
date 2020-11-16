@@ -9,7 +9,7 @@
 
 TEST_CASE("Golomb Encode"){
 
-    vector<int> original_array { 1, -1, 0, -2, 4, 3};
+    vector<int> original_array {0, -1, 1, -2, 2, -3, 3, -4, 4, -5, 5, -6, 6, -7, 7, -8};
 
     string numbersToEncode = "Numbers to encode: [ ";
     for(int number : original_array) {
@@ -18,7 +18,7 @@ TEST_CASE("Golomb Encode"){
     numbersToEncode += "]";
     INFO(numbersToEncode);
 
-    unsigned int m = 2;
+    unsigned int m = 5;
     CAPTURE(m);
 
     INFO("File: ../test/encoded");
@@ -108,9 +108,9 @@ TEST_CASE("Golomb Decode", "[!throws]"){
     }
     INFO(bitsReadStr);
 
-    vector<int> original_array { 1, -1, 0, -2, 4, 3};
+    vector<int> original_array {0, -1, 1, -2, 2, -3, 3, -4, 4, -5, 5, -6, 6, -7, 7, -8};
 
-    unsigned int m = 2;
+    unsigned int m = 5;
     CAPTURE(m);
 
     remove( "../test/decoded");
@@ -132,7 +132,7 @@ TEST_CASE("Golomb Decode", "[!throws]"){
     decodedNumbers += "]";
     INFO(decodedNumbers);
 
-    REQUIRE(1); /* TODO: change*/
+    CHECK(std::equal(original_array.begin(), original_array.end(), decoded_numbers.begin()));
 }
 
 #endif //ENTROPYCODING_TESTSGOLOMB_HPP

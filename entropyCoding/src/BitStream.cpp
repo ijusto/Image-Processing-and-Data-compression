@@ -15,7 +15,6 @@ BitStream :: BitStream(char *file, char mode){
         }
         infile.close();
     } else if(mode == 'w'){
-        std::cout << "CONSTSVDVOEW" << std::endl;
         outfile.open(file, ofstream::binary);
         if(!outfile.is_open()){
             cout << "FAILED to open file " << file << endl;
@@ -68,7 +67,6 @@ bool BitStream :: readBit(){
 
 vector<bool> BitStream::readNbits(unsigned int N){
     vector<bool> bits;
-    cout << N<< endl;
 
     for(int i = 0; i < N; i++){
         if(i>len*8){
@@ -108,7 +106,6 @@ void BitStream :: writeNbits(vector<bool> bits){
 
 void BitStream::endWriteFile(){
     if(w_pos != 7){
-        std::cout << "FINAL BUFFER" << buffer << std::endl;
         this->outfile.put(buffer);
     }
     this->outfile.close();
