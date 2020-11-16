@@ -28,7 +28,6 @@ vector<bool> Golomb::encode(int n) {
     /* a positive value x is mapped to x'=2|x|=2x,x>0 and a negative value y is mapped to y'=2|y|-1=-2y-1,y<0*/
     int nMapped = 2 * n;
     if (n < 0){ nMapped = -nMapped -1; }
-    std::cout << "number: " << n << ", nMapped: " << nMapped << std::endl;
 
     auto q = (unsigned int) (nMapped / this->m);
     unsigned int r = nMapped % this->m; /* <=> n-q*m */
@@ -47,7 +46,7 @@ vector<bool> Golomb::encode(int n) {
     unsigned int codeNumber = r;
     unsigned int nBits = b - 1;
     /* Encode the remainder values of r by coding the number r+2**b−m in binary codewords of b bits. */
-    if(r >= pow(2, b) - this->m) { codeNumber += (int)pow(2, b) - this->m; nBits += 1; }
+    if(r >= (pow(2, b) - this->m)) { codeNumber += ((int)pow(2, b) - this->m); nBits += 1; }
     /* Conversion of decimal code number to binary*/
     for(int i = 0; codeNumber > 0; codeNumber /= 2, i++) {
         truncatedBinTmp.push_back(codeNumber % 2 == 0);
@@ -59,6 +58,8 @@ vector<bool> Golomb::encode(int n) {
 
     vector<bool> encoded_n = unary;
     encoded_n.insert( encoded_n.end(), truncatedBin.begin(), truncatedBin.end() );
+    std::cout << "r encoded: " << codeNumber << "nMapped encoded: " << nMapped << ", n: " << n << std::endl;
+
     return encoded_n;
 }
 
@@ -116,15 +117,12 @@ void Golomb::decode(vector<int> *numbers) {
 
         unsigned int nMapped = this->m*q + r;
 
-        std::cout << "nMapped decoded: " << nMapped;
         /* a positive value x is mapped to x'=2|x|=2x,x>0 and a negative value y is mapped to y'=2|y|-1=-2y-1,y<0*/
-        int n;
-        if((nMapped % 2) == 0){
-            n = (int) nMapped/2;
-        } else {
-            n = (int) -(nMapped + 1)/2;
-        }
-        std::cout  << ", n decoded: " << n << std::endl;
+        int n = nMapped;
+        if((nMapped % 2) != 0){ n = -(n+1);}
+        n /= 2;
+
+        std::cout << "r decoded: " << r << "nMapped decoded: " << nMapped << ", n decoded: " << n << std::endl;
         (*numbers).push_back(n);
     }
 }
