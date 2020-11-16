@@ -56,9 +56,9 @@ public:
 
     //! Reads with the bitStream and decodes.
     /*!
-     * @return vector of decoded numbers.
+     * @param numbers pointer to vector of decoded numbers.
     */
-    vector<int> decode();
+    void decode(vector<int> *numbers);
 
     void setEncodeFile(char *_encodeFile);
 

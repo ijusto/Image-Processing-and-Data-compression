@@ -28,6 +28,7 @@ vector<bool> Golomb::encode(int n) {
     /* a positive value x is mapped to x'=2|x|=2x,x>0 and a negative value y is mapped to y'=2|y|-1=-2y-1,y<0*/
     int nMapped = 2 * n;
     if (n < 0){ nMapped = -nMapped -1; }
+    std::cout << "number: " << n << ", nMapped: " << nMapped << std::endl;
 
     auto q = (unsigned int) (nMapped / this->m);
     unsigned int r = nMapped % this->m; /* <=> n-q*m */
@@ -65,13 +66,12 @@ void Golomb::closeEncodeFile(){
     this->writeBitStream->endWriteFile();
 }
 
-vector<int> Golomb::decode() {
-    vector<int> numbers;
+void Golomb::decode(vector<int> *numbers) {
     while(true){
         /* Decode unary */
         unsigned int q = 0;
         try{
-            while(this->readBitStream->readBit()){ q++; }
+            while(!this->readBitStream->readBit()){ q++; }
         } catch( string mess){
             break;
         }
@@ -80,7 +80,14 @@ vector<int> Golomb::decode() {
         unsigned int r = 0;
         auto b = (unsigned int) ceil(log2(this->m));
 
-        vector<bool> nBitsRead = this->readBitStream->readNbits(b - 1);
+        vector<bool> nBitsRead;
+        try{
+            nBitsRead = this->readBitStream->readNbits(b - 1);
+        } catch( string mess){
+            std::cout << mess << std::endl;
+            std::exit(0);
+        }
+
         // convert the b-1 bits read to dec/int
         int readInt = 0;
         for(int i = 0; i < b - 1; i++){
@@ -92,7 +99,14 @@ vector<int> Golomb::decode() {
         if(readInt < (pow(2,b) - this->m)) {
             r = readInt;
         } else {
-            bool bitRead = this->readBitStream->readBit();
+            bool bitRead;
+            try{
+                bitRead = this->readBitStream->readBit();
+            } catch( string mess){
+                std::cout << mess << std::endl;
+                std::exit(0);
+            }
+
             // covert the b-1 firstly read bits "concatenated" with the last bit read to dec/int
             unsigned int bitReadInt = 0;
             if(bitRead){ bitReadInt = 1; }
@@ -101,6 +115,8 @@ vector<int> Golomb::decode() {
         }
 
         unsigned int nMapped = this->m*q + r;
+
+        std::cout << "nMapped decoded: " << nMapped;
         /* a positive value x is mapped to x'=2|x|=2x,x>0 and a negative value y is mapped to y'=2|y|-1=-2y-1,y<0*/
         int n;
         if((nMapped % 2) == 0){
@@ -108,9 +124,9 @@ vector<int> Golomb::decode() {
         } else {
             n = (int) -(nMapped + 1)/2;
         }
-        numbers.push_back(n);
+        std::cout  << ", n decoded: " << n << std::endl;
+        (*numbers).push_back(n);
     }
-    return numbers;
 }
 
 /*
@@ -182,6 +198,7 @@ vector<int> Golomb::decode(vector<bool> encoded_n) {
     return numbers;
 }
 */
+
 Golomb::~Golomb(){
     delete this;
 }

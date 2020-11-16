@@ -70,7 +70,7 @@ TEST_CASE("Golomb Encode"){
         CHECK_NOTHROW(bitsRead.push_back(rbs->readBit()));
         nBitsInFile++;
     }
-    REQUIRE_THROWS(bitsRead.push_back(rbs->readBit()));
+    CHECK_THROWS(bitsRead.push_back(rbs->readBit()));
 
     string bitsReadStr = "Bits read from the file: ";
     for(int i = 0; i < bitsRead.size(); i++){
@@ -89,12 +89,12 @@ TEST_CASE("Golomb Encode"){
 }
 
 
-TEST_CASE("Golomb Decode"){
+TEST_CASE("Golomb Decode", "[!throws]"){
 
     INFO("File: ../test/encoded");
     char *fname = strdup("../test/encoded");
     auto *rbs = new BitStream(fname, 'r');
-    vector<bool> bitsRead = rbs->readNbits(21);
+    vector<bool> bitsRead = rbs->readNbits(24);
     string bitsReadStr = "Bits (read from the file) to decode: ";
     for(int i = 0; i < bitsRead.size(); i++){
         if(bitsRead.at(i)){
@@ -120,10 +120,11 @@ TEST_CASE("Golomb Decode"){
     file.close();
     INFO("\n\tCreated file decoded");
 
-    fname = strdup("../test/decoded");
+    fname = strdup("../test/encoded");
     auto *golomb = new Golomb(m, fname, 'd');
 
-    vector<int> decoded_numbers = golomb->decode();
+    vector<int> decoded_numbers{};
+    CHECK_THROWS(golomb->decode(&decoded_numbers));
     string decodedNumbers = "Decoded numbers: [ ";
     for(int number : decoded_numbers) {
         decodedNumbers += std::to_string(number) + " ";
