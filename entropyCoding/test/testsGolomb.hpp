@@ -66,7 +66,6 @@ TEST_CASE("Golomb Encode"){
     auto *rbs = new BitStream(fname, 'r');
     vector<bool> bitsRead = rbs->readNbits(encoded_array.size());
     int nBitsInFile = encoded_array.size();
-    std::cout << ((nBitsInFile % 8) != 0) << std::endl;
     while((nBitsInFile % 8) != 0){
         CHECK_NOTHROW(bitsRead.push_back(rbs->readBit()));
         nBitsInFile++;
@@ -89,5 +88,50 @@ TEST_CASE("Golomb Encode"){
     REQUIRE(1); /* TODO: change*/
 }
 
+
+TEST_CASE("Golomb Decode"){
+
+    INFO("File: ../test/encoded");
+    char *fname = strdup("../test/encoded");
+    auto *rbs = new BitStream(fname, 'r');
+    vector<bool> bitsRead = rbs->readNbits(21);
+    string bitsReadStr = "Bits (read from the file) to decode: ";
+    for(int i = 0; i < bitsRead.size(); i++){
+        if(bitsRead.at(i)){
+            bitsReadStr += "1";
+        } else {
+            bitsReadStr += "0";
+        }
+        if(((i+1)%8)==0 && i != 0){
+            bitsReadStr += "   ";
+        }
+    }
+    INFO(bitsReadStr);
+
+    vector<int> original_array { 1, -1, 0, -2, 4, 3};
+
+    unsigned int m = 2;
+    CAPTURE(m);
+
+    remove( "../test/decoded");
+    INFO("\n\tDeleted file decoded");
+
+    ofstream file("../test/decoded");
+    file.close();
+    INFO("\n\tCreated file decoded");
+
+    fname = strdup("../test/decoded");
+    auto *golomb = new Golomb(m, fname, 'd');
+
+    vector<int> decoded_numbers = golomb->decode();
+    string decodedNumbers = "Decoded numbers: [ ";
+    for(int number : decoded_numbers) {
+        decodedNumbers += std::to_string(number) + " ";
+    }
+    decodedNumbers += "]";
+    INFO(decodedNumbers);
+
+    REQUIRE(1); /* TODO: change*/
+}
 
 #endif //ENTROPYCODING_TESTSGOLOMB_HPP

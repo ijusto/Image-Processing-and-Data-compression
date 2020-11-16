@@ -71,7 +71,7 @@ vector<int> Golomb::decode() {
         /* Decode unary */
         unsigned int q = 0;
         try{
-            while(this->readBitStream->readBit() == '0'){ q++; }
+            while(this->readBitStream->readBit()){ q++; }
         } catch( string mess){
             break;
         }
@@ -80,25 +80,22 @@ vector<int> Golomb::decode() {
         unsigned int r = 0;
         auto b = (unsigned int) ceil(log2(this->m));
 
-        unsigned char nBitsRead[b - 1];
-        this->readBitStream->readNbits(b - 1);
+        vector<bool> nBitsRead = this->readBitStream->readNbits(b - 1);
         // convert the b-1 bits read to dec/int
         int readInt = 0;
-        for (int i = 0; i < b - 1; i++){
-            if(nBitsRead[b - 2 - i] == '1'){
-                readInt += pow(2,i);
+        for(int i = 0; i < b - 1; i++){
+            if(nBitsRead.at(b - 2 - i)){
+                readInt += pow(2, i);
             }
         }
 
         if(readInt < (pow(2,b) - this->m)) {
             r = readInt;
         } else {
-            unsigned char bitRead = this->readBitStream->readBit();
+            bool bitRead = this->readBitStream->readBit();
             // covert the b-1 firstly read bits "concatenated" with the last bit read to dec/int
             unsigned int bitReadInt = 0;
-            if(bitRead == '1'){
-                bitReadInt = 1;
-            }
+            if(bitRead){ bitReadInt = 1; }
             unsigned int newCodeRead = readInt*2 + bitReadInt;
             r = newCodeRead - (int)pow(2,b) + this->m;
         }
