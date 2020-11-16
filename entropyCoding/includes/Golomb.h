@@ -19,6 +19,9 @@ private:
     //! Golomb integer parameter.
     unsigned int m;
 
+    //! Mode on to operate: encode and/or decode ('e', 'd', 'b')
+    char mode;
+
     //! BitStream used for reading the decoded values.
     BitStream *readBitStream;
 

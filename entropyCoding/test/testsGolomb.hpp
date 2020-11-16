@@ -7,9 +7,12 @@
 
 #include    "../src/Golomb.cpp"
 
-TEST_CASE("Golomb Encode"){
+int nBitsInDecodedFile;
+vector<int> original_array {0, -1, 1, -2, 2, -3, 3, -4, 4, -5, 5, -6, 6, -7, 7, -8};
+unsigned int m = 5;
+char *encodeFileName = strdup("../test/encoded");
 
-    vector<int> original_array {0, -1, 1, -2, 2, -3, 3, -4, 4, -5, 5, -6, 6, -7, 7, -8};
+TEST_CASE("Golomb Encode"){
 
     string numbersToEncode = "Numbers to encode: [ ";
     for(int number : original_array) {
@@ -18,12 +21,10 @@ TEST_CASE("Golomb Encode"){
     numbersToEncode += "]";
     INFO(numbersToEncode);
 
-    unsigned int m = 5;
     CAPTURE(m);
 
     INFO("File: ../test/encoded");
-    char *fname = strdup("../test/encoded");
-    auto *golomb = new Golomb(m, fname, 'e');
+    auto *golomb = new Golomb(m, encodeFileName, 'e');
 
     vector<bool> encoded_array;
     vector<bool> encoded_number;
@@ -63,7 +64,7 @@ TEST_CASE("Golomb Encode"){
     }
     INFO(encodedArray);
 
-    auto *rbs = new BitStream(fname, 'r');
+    auto *rbs = new BitStream(encodeFileName, 'r');
     vector<bool> bitsRead = rbs->readNbits(encoded_array.size());
     int nBitsInFile = encoded_array.size();
     while((nBitsInFile % 8) != 0){
@@ -71,6 +72,8 @@ TEST_CASE("Golomb Encode"){
         nBitsInFile++;
     }
     CHECK_THROWS(bitsRead.push_back(rbs->readBit()));
+
+    nBitsInDecodedFile = bitsRead.size();
 
     string bitsReadStr = "Bits read from the file: ";
     for(int i = 0; i < bitsRead.size(); i++){
@@ -92,9 +95,8 @@ TEST_CASE("Golomb Encode"){
 TEST_CASE("Golomb Decode", "[!throws]"){
 
     INFO("File: ../test/encoded");
-    char *fname = strdup("../test/encoded");
-    auto *rbs = new BitStream(fname, 'r');
-    vector<bool> bitsRead = rbs->readNbits(24);
+    auto *rbs = new BitStream(encodeFileName, 'r');
+    vector<bool> bitsRead = rbs->readNbits(nBitsInDecodedFile);
     string bitsReadStr = "Bits (read from the file) to decode: ";
     for(int i = 0; i < bitsRead.size(); i++){
         if(bitsRead.at(i)){
@@ -108,23 +110,22 @@ TEST_CASE("Golomb Decode", "[!throws]"){
     }
     INFO(bitsReadStr);
 
-    vector<int> original_array {0, -1, 1, -2, 2, -3, 3, -4, 4, -5, 5, -6, 6, -7, 7, -8};
-
-    unsigned int m = 5;
     CAPTURE(m);
 
+    /*
     remove( "../test/decoded");
     INFO("\n\tDeleted file decoded");
 
     ofstream file("../test/decoded");
     file.close();
     INFO("\n\tCreated file decoded");
+     */
 
-    fname = strdup("../test/encoded");
-    auto *golomb = new Golomb(m, fname, 'd');
+    auto *golomb = new Golomb(m, encodeFileName, 'd');
 
     vector<int> decoded_numbers{};
     CHECK_THROWS(golomb->decode(&decoded_numbers));
+
     string decodedNumbers = "Decoded numbers: [ ";
     for(int number : decoded_numbers) {
         decodedNumbers += std::to_string(number) + " ";

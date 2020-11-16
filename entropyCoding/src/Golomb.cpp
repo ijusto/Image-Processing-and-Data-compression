@@ -9,14 +9,17 @@ Golomb::Golomb(unsigned int _m, char *_encodeFile, char *_decodeFile){
     this->m = _m;
     this->readBitStream = new BitStream(_decodeFile, 'r');
     this->writeBitStream = new BitStream(_encodeFile,'w');
+    this->mode = 'b';
 }
 
 Golomb::Golomb(unsigned int _m, char *_file, char mode) {
     this->m = _m;
     if(mode == 'e'){
         this->writeBitStream = new BitStream(_file,'w');
+        this->mode = 'e';
     } else if(mode == 'd'){
         this->readBitStream = new BitStream(_file, 'r');
+        this->mode = 'd';
     } else {
         throw "Mode not allowed. Modes available: e (encode) or d (decode).\nIf you want the two modes use Golomb::"
               "Golomb(unsigned int _m, char *_encodeFile, char *_decodeFile);";
