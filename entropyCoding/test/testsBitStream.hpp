@@ -9,10 +9,10 @@
 #include    <string>
 
 TEST_CASE("BitStream readBit") {
-    char *fname = strdup("../test/testReadNBits.txt");
-    auto * bitStream = new BitStream(fname);
+    char *fname = strdup("../test/testReadBits.txt");
+    auto * bitStream = new BitStream(fname, 'r');
     bool readBit = bitStream->readBit();
-    INFO("File: ../test/testReadNBits.txt");
+    INFO("File: ../test/testReadBits.txt");
     INFO("First bit from the file: 0");
     CAPTURE(readBit);
     INFO("Bit read from the file: " << ((int) readBit));
@@ -40,10 +40,10 @@ TEST_CASE("BitStream readNbits") {
         }
     }
     unsigned int n = cav_2020.size();
-    char *fname = strdup("../test/testReadNBits.txt");
-    INFO("  File: ../test/testReadNBits.txt");
+    char *fname = strdup("../test/testReadBits.txt");
+    INFO("  File: ../test/testReadBits.txt");
     INFO("\n\tBits to read from the file:\n\t"+bitsToRead+"\n");
-    auto * bitStream = new BitStream(fname);
+    auto * bitStream = new BitStream(fname, 'r');
     vector<bool> readBits = bitStream->readNbits(n);
     string bitsRead;
     for(int i = 0; i < readBits.size(); i++){
@@ -57,7 +57,7 @@ TEST_CASE("BitStream readNbits") {
         }
     }
     INFO("\n\tBits read from the file:\n\t"+bitsRead);
-    REQUIRE(std::equal(cav_2020.begin(), cav_2020.end(), readBits.begin()));
+    CHECK(std::equal(cav_2020.begin(), cav_2020.end(), readBits.begin()));
 }
 
 TEST_CASE("BitStream writeNbits") {
@@ -80,25 +80,26 @@ TEST_CASE("BitStream writeNbits") {
             bitsToWrite += "   ";
         }
     }
-    char *fname = strdup("../test/testWriteNBits.txt");
-    INFO("File: ../test/testWriteNBits.txt");
+    INFO("File: ../test/testWriteNBits");
     INFO("  Bits to write in the file:\n\t"+bitsToWrite+"\n");
 
-    remove( "../test/testWriteNBits.txt");
-    INFO("\n\tDeleted file testWriteNBits.txt");
+    remove( "../test/testWriteNBits");
+    INFO("\n\tDeleted file testWriteNBits");
 
-    ofstream file("../test/testWriteNBits.txt");
+    ofstream file("../test/testWriteNBits");
     file.close();
-    INFO("\n\tCreated file testWriteNBits.txt");
+    INFO("\n\tCreated file testWriteNBits");
 
-    auto * bitStream = new BitStream(fname);
-    bitStream->writeNbits(cav_2020);
-    bitStream->writeOnfile(fname);
+    char *fname = strdup("../test/testWriteNBits");
+    auto * wbs = new BitStream(fname, 'w');
+    wbs->writeNbits(cav_2020);
+    wbs->endWriteFile();
     INFO("\n\tWritten bits in the file.");
 
     unsigned int n = cav_2020.size();
-    bitStream = new BitStream(fname);
-    vector<bool> readBits = bitStream->readNbits(n);
+    auto* rbs = new BitStream(fname, 'r');
+    vector<bool> readBits = rbs->readNbits(n);
+    REQUIRE_THROWS(rbs->readBit());
     string bitsRead;
     for(int i = 0; i < readBits.size(); i++){
         if(readBits.at(i)){
@@ -111,7 +112,6 @@ TEST_CASE("BitStream writeNbits") {
         }
     }
     INFO("\n\tBits read from the file:\n\t"+bitsRead);
-
     CHECK(std::equal(cav_2020.begin(), cav_2020.end(), readBits.begin()));
 }
 

@@ -5,7 +5,24 @@
 #include <iostream>
 #include <tuple>
 
-Golomb::Golomb(unsigned int _m, BitStream _bitStream): m(_m), bitStream(_bitStream){}
+Golomb::Golomb(unsigned int _m, char *_encodeFile, char *_decodeFile){
+    this->m = _m;
+    this->readBitStream = new BitStream(_decodeFile, 'r');
+    this->writeBitStream = new BitStream(_encodeFile,'w');
+}
+
+Golomb::Golomb(unsigned int _m, char *_file, char mode) {
+    this->m = _m;
+    if(mode == 'e'){
+        this->writeBitStream = new BitStream(_file,'w');
+    } else if(mode == 'd'){
+        this->readBitStream = new BitStream(_file, 'r');
+    } else {
+        throw "Mode not allowed. Modes available: e (encode) or d (decode).\nIf you want the two modes use Golomb::"
+              "Golomb(unsigned int _m, char *_encodeFile, char *_decodeFile);";
+    }
+}
+
 
 vector<bool> Golomb::encode(int n) {
     /* a positive value x is mapped to x'=2|x|=2x,x>0 and a negative value y is mapped to y'=2|y|-1=-2y-1,y<0*/
@@ -20,7 +37,7 @@ vector<bool> Golomb::encode(int n) {
     for(int i=0; i<q; i++){ unary.push_back(false); }
     /* unary comma code where the end mark is '1'*/
     unary.push_back(true);
-    this->bitStream.writeNbits(unary);
+    this->writeBitStream->writeNbits(unary);
 
     /* Encode Truncated Binary */
     vector<bool> truncatedBinTmp;
@@ -37,12 +54,15 @@ vector<bool> Golomb::encode(int n) {
     vector<bool> truncatedBin;
     for(;truncatedBinTmp.size() < nBits; nBits--){ truncatedBin.push_back(false); }
     truncatedBin.insert( truncatedBin.end(), truncatedBinTmp.begin(), truncatedBinTmp.end() );
-    this->bitStream.writeNbits(truncatedBin);
+    this->writeBitStream->writeNbits(truncatedBin);
 
     vector<bool> encoded_n = unary;
     encoded_n.insert( encoded_n.end(), truncatedBin.begin(), truncatedBin.end() );
-
     return encoded_n;
+}
+
+void Golomb::closeEncodeFile(){
+    this->writeBitStream->endWriteFile();
 }
 
 vector<int> Golomb::decode() {
@@ -51,20 +71,17 @@ vector<int> Golomb::decode() {
         /* Decode unary */
         unsigned int q = 0;
         try{
-
+            while(this->readBitStream->readBit() == '0'){ q++; }
         } catch( string mess){
-            if(mess == "Read all file."){
-                break;
-            }
+            break;
         }
-        while(this->bitStream.readBit() == '0'){ q++; }
 
         /* Decode truncated binary */
         unsigned int r = 0;
         auto b = (unsigned int) ceil(log2(this->m));
 
         unsigned char nBitsRead[b - 1];
-        this->bitStream.readNbits(b - 1);
+        this->readBitStream->readNbits(b - 1);
         // convert the b-1 bits read to dec/int
         int readInt = 0;
         for (int i = 0; i < b - 1; i++){
@@ -76,7 +93,7 @@ vector<int> Golomb::decode() {
         if(readInt < (pow(2,b) - this->m)) {
             r = readInt;
         } else {
-            unsigned char bitRead = this->bitStream.readBit();
+            unsigned char bitRead = this->readBitStream->readBit();
             // covert the b-1 firstly read bits "concatenated" with the last bit read to dec/int
             unsigned int bitReadInt = 0;
             if(bitRead == '1'){
@@ -98,6 +115,7 @@ vector<int> Golomb::decode() {
     }
     return numbers;
 }
+
 /*
 vector<int> Golomb::decode(vector<bool> encoded_n) {
     vector<int> numbers;
@@ -169,4 +187,12 @@ vector<int> Golomb::decode(vector<bool> encoded_n) {
 */
 Golomb::~Golomb(){
     delete this;
+}
+
+void Golomb::setEncodeFile(char *_encodeFile) {
+    this->writeBitStream = new BitStream(_encodeFile,'w');
+}
+
+void Golomb::setDecodeFile(char *_decodeFile) {
+    this->readBitStream = new BitStream(_decodeFile, 'r');
 }

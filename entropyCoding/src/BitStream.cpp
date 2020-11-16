@@ -1,41 +1,54 @@
 #include "BitStream.hpp"
 
-BitStream :: BitStream(char *file_r){
+BitStream :: BitStream(char *file, char mode){
 
+    if(mode == 'r'){
+        ifstream infile (file);
+
+        if(!infile.is_open()){
+            throw("FAILED to open file ");
+        }
+        unsigned char in;
+        while(infile >> in){
+            readFileInfo.push_back(in);
+            len++;
+        }
+        infile.close();
+    } else if(mode == 'w'){
+        std::cout << "CONSTSVDVOEW" << std::endl;
+        outfile.open(file, ofstream::binary);
+        if(!outfile.is_open()){
+            cout << "FAILED to open file " << file << endl;
+        }
+    } else {
+        throw "Mode not allowed. Modes available: r (read) or w (write).";
+    }
     //Init var need
     cr_pos = 0;
-    len = 0;
     r_pos = 7;
     w_pos = 7;
     result = 0;
-
-    ifstream infile (file_r);
-
-    if(!infile.is_open()){
-        cout << "FAILED to open file " << file_r << endl;
-    }
-    unsigned char in;
-    while(infile >> in){
-        info_file.push_back(in);
-        len++;
-    }
-
-    infile.close();
-
 }
 
-unsigned char BitStream :: getC(void){
-    unsigned char in;
-    in = info_file[cr_pos];
-    return in;
+unsigned char BitStream::getC(char mode){
+    unsigned char c;
+    if(mode == 'r'){
+        c = readFileInfo[cr_pos];
+    } else if(mode == 'w'){
+        c = writeFileInfo[w_pos];
+    } else {
+        throw "BitStream::getC(char mode): mode not allowed.";
+    }
+    return c;
 }
 
 
 bool BitStream :: readBit(){
-    if(cr_pos >= info_file.size()){
+
+    if(cr_pos >= readFileInfo.size()){
         throw("Read all file.");
     }
-    unsigned char val = getC();
+    unsigned char val = getC('r');
 
     //cout << "val read = "<< val << endl;
     int bit, position;
@@ -49,24 +62,26 @@ bool BitStream :: readBit(){
         r_pos = 7;
         cr_pos++;
     }
+
     return bit != 0;
 }
 
-vector<bool> BitStream :: readNbits (unsigned int N){
+vector<bool> BitStream::readNbits(unsigned int N){
     vector<bool> bits;
+    cout << N<< endl;
 
-    for(int i = 0; i<N;i++){
+    for(int i = 0; i < N; i++){
         if(i>len*8){
             cout << "ERROR = This file don't have more information"<< endl;
             break;
         }
 
-        //cout << "Buffer position = " <<(int)r_pos << endl;
-
-        bits.push_back(readBit());
-        //cout << "Bit read = "<< readBit() << endl;
-        //cout << "Read buffer = " << buffer << endl;
-        //r_pos = r_pos<<1;
+        try {
+            bits.push_back(readBit());
+        } catch (string mess){
+            cout << mess << endl;
+            break;
+        }
     }
     return bits;
 }
@@ -79,36 +94,24 @@ void BitStream :: writeBit(bool bit){
     w_pos--;
 
     if(w_pos < 0){
-        new_file.push_back(buffer);
+        this->outfile.put(buffer);
         result = 0;
         w_pos = 7;
-        //openfile << buffer;
     }
 }
 
 void BitStream :: writeNbits(vector<bool> bits){
-    for(int i = 0 ; i<bits.size(); i++){
+    for(int i = 0 ; i < bits.size(); i++){
         writeBit(bits.at(i));
     }
 }
 
-void BitStream :: writeOnfile(char* file_w){
-    ofstream openfile (file_w, ofstream::binary);
-
-    if(!openfile.is_open()){
-        cout << "FAILED to open file " << file_w << endl;
+void BitStream::endWriteFile(){
+    if(w_pos != 7){
+        std::cout << "FINAL BUFFER" << buffer << std::endl;
+        this->outfile.put(buffer);
     }
-
-    if(((w_pos+1)%8)!=0){
-        cout << w_pos<< endl;
-        new_file.push_back(buffer);
-    }
-
-    for(char inputs : new_file){
-        openfile << inputs;
-    }
-
-    openfile.close();
+    this->outfile.close();
 }
 
 BitStream::~BitStream(){

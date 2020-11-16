@@ -19,17 +19,30 @@ private:
     //! Golomb integer parameter.
     unsigned int m;
 
-    //! BitStream used for reading or writing the encoded or the decoded values.
-    BitStream bitStream;
+    //! BitStream used for reading the decoded values.
+    BitStream *readBitStream;
+
+    //! BitStream used for writing the encoded values.
+    BitStream *writeBitStream;
 
 public:
 
-    //! Golomb constructor.
+    //! Golomb constructor for encoding and decoding.
     /*!
      * @param _m Golomb integer parameter.
-     * @param _bitStream BitStream used for reading or writing the encoded or the decoded values.
+     * @param _encodeFile Path to the file where the values to decode are read from.
+     * @param _decodeFile Path to the file where the encoded values are written.
     */
-    Golomb(unsigned int _m, BitStream _bitStream);
+    Golomb(unsigned int _m, char *_encodeFile, char *_decodeFile);
+
+
+    //! Golomb constructor for only encoding or only decoding.
+    /*!
+     * @param _m Golomb integer parameter.
+     * @param _file Path to the file used to get the values for the operation performed.
+     * @param mode encode or decode ("e" or "d")
+    */
+    Golomb(unsigned int _m, char *_file, char mode);
 
     //! Golomb class destructor.
     ~Golomb();
@@ -47,6 +60,11 @@ public:
     */
     vector<int> decode();
 
+    void setEncodeFile(char *_encodeFile);
+
+    void setDecodeFile(char *_decodeFile);
+
+    void closeEncodeFile();
 };
 
 #endif //ENTROPYCODING_GOLOMB_H

@@ -9,16 +9,7 @@
 
 TEST_CASE("Golomb Encode"){
 
-    // generate random set of ints
-    srand (time(0));    // init seed
-    int size = 10000;    // interval
-    int n = 5;          // number of symbols to generate
-
-    vector<int> original_array;
-
-    for(int i = 0; i < n; i++){
-        original_array.push_back(rand() % size ); // - size/2
-    }
+    vector<int> original_array { 1, -1, 0, -2, 4, 3};
 
     string numbersToEncode = "Numbers to encode: [ ";
     for(int number : original_array) {
@@ -30,34 +21,58 @@ TEST_CASE("Golomb Encode"){
     unsigned int m = 2;
     CAPTURE(m);
 
-    INFO("File: ../test/encoded.txt");
-    char *fname = strdup("../test/encoded.txt");
-    auto *bitStream = new BitStream(fname);
-    auto *golomb = new Golomb(m, *bitStream);
+    INFO("File: ../test/encoded");
+    char *fname = strdup("../test/encoded");
+    auto *golomb = new Golomb(m, fname, 'e');
 
     vector<bool> encoded_array;
-    for(int i = 0; i < n; i++){
+    vector<bool> encoded_number;
+    string encodedNumbers = "Encoded numbers:\t";
+    for(int i = 0; i < original_array.size(); i++){
         // encode
-        vector<bool> encoded_number = golomb->encode(original_array.at(i));
+        encoded_number = golomb->encode(original_array.at(i));
+        for(bool bit : encoded_number){
+            if(bit){
+                encodedNumbers += "1";
+            } else {
+                encodedNumbers += "0";
+            }
+        }
+        encodedNumbers += "\t";
         // append
-        encoded_array.insert(encoded_array.end(), encoded_number.begin(), encoded_number.end());
-    }
-
-    string encodedNumbers = "Encoded numbers:";
-    for(int i = 0; i < encoded_array.size(); i++){
-        if(encoded_array.at(i)){
-            encodedNumbers += "1";
+        if(i == 0){
+            encoded_array = encoded_number;
         } else {
-            encodedNumbers += "0";
-        }
-        if(((i+1)%8)==0 && i != 0){
-            encodedNumbers += "   ";
+            encoded_array.insert(encoded_array.end(), encoded_number.begin(), encoded_number.end());
         }
     }
+    golomb->closeEncodeFile();
     INFO(encodedNumbers);
 
-    auto *bs = new BitStream(fname);
-    vector<bool> bitsRead = bs->readNbits(encodedNumbers.size());
+
+    string encodedArray = "Encoded array:\t";
+    for(int i = 0; i < encoded_array.size(); i++){
+        if(encoded_array.at(i)){
+            encodedArray += "1";
+        } else {
+            encodedArray += "0";
+        }
+        if(((i + 1) % 8)==0) {
+            encodedArray += " ";
+        }
+    }
+    INFO(encodedArray);
+
+    auto *rbs = new BitStream(fname, 'r');
+    vector<bool> bitsRead = rbs->readNbits(encoded_array.size());
+    int nBitsInFile = encoded_array.size();
+    std::cout << ((nBitsInFile % 8) != 0) << std::endl;
+    while((nBitsInFile % 8) != 0){
+        CHECK_NOTHROW(bitsRead.push_back(rbs->readBit()));
+        nBitsInFile++;
+    }
+    REQUIRE_THROWS(bitsRead.push_back(rbs->readBit()));
+
     string bitsReadStr = "Bits read from the file: ";
     for(int i = 0; i < bitsRead.size(); i++){
         if(bitsRead.at(i)){
@@ -71,7 +86,7 @@ TEST_CASE("Golomb Encode"){
     }
     INFO(bitsReadStr);
 
-    CHECK(1); // first bit is 0
+    REQUIRE(1); /* TODO: change*/
 }
 
 

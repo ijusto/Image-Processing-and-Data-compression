@@ -21,19 +21,21 @@ using namespace std;
 
 class BitStream{
 private:
-    vector<unsigned char> info_file, new_file;
+    vector<unsigned char> readFileInfo, writeFileInfo;
     unsigned char  buffer;
-    int cr_pos ,cw_pos , len,r_pos ,w_pos,result;
+    int cr_pos, cw_pos, len,r_pos ,w_pos,result;
+    ofstream outfile;
 
 public:
     //! A constructor.
     /*!
      * This class constructor have the propose of read the entire file and save on a vector structure
-     *  @param file_r is the pointer of the path where the file to read is located
+     *  @param file is the pointer of the path where the file is located
+     *  @param mode read or write ("r" or "w")
      *  @warning need to be an existing file
      *  @see writeOnfile(int N, char* file_w), getC(void)
      */
-    explicit BitStream(char *file_r);
+    explicit BitStream(char *file, char mode);
 
     //! BitStream class destructor.
     ~BitStream();
@@ -74,19 +76,13 @@ public:
     //! Get a unsigned char
     /*!
      * This class function have the propose of get a unsigned char from the vector
+     * @param mode read or write ("r" or "w")
      * @return returns a char that contain one 8 bits a byte
      * @see  BitStream(char *file_r), writeOnfile(int N, char* file_w)
     */
-    unsigned char getC(void);
+    unsigned char getC(char mode);
 
-    //! Write on File
-    /*!
-     * This class function have the propose write the vector of bits on the file
-     * @param  file_w is the pointer of the path where the file to write is located or will be created
-     * @see  BitStream(char *file_r), getC(void)
-    */
-    void writeOnfile(char* file_w);
-
+    void endWriteFile();
 };
 
 #endif //ENTROPYCODING_BITSTREAM_HPP
