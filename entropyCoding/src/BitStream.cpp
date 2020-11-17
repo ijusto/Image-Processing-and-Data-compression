@@ -49,7 +49,6 @@ bool BitStream :: readBit(){
     }
     unsigned char val = getC('r');
 
-    //cout << "val read = "<< val << endl;
     int bit, position;
     position = pow(2, r_pos);
     bit =((int)val & position);
@@ -57,7 +56,6 @@ bool BitStream :: readBit(){
     r_pos--;
 
     if(r_pos < 0){
-        //cout << "Acabei as contagens" << endl;
         r_pos = 7;
         cr_pos++;
     }
@@ -69,11 +67,6 @@ vector<bool> BitStream::readNbits(unsigned int N){
     vector<bool> bits;
 
     for(int i = 0; i < N; i++){
-        if(i>len*8){
-            cout << "ERROR = This file don't have more information"<< endl;
-            break;
-        }
-
         try {
             bits.push_back(readBit());
         } catch (string mess){
@@ -92,6 +85,15 @@ void BitStream :: writeBit(bool bit){
     w_pos--;
 
     if(w_pos < 0){
+        std::cout << "writed buffer to file: ";
+        for(int i = 7; i >= 0; i--){
+            int bit = 0;
+            if(buffer & (0x1 << i)){
+                bit = 1;
+            }
+            std::cout << bit;
+        }
+        std::cout << std::endl;
         this->outfile.put(buffer);
         result = 0;
         w_pos = 7;
@@ -105,7 +107,14 @@ void BitStream :: writeNbits(vector<bool> bits){
 }
 
 void BitStream::endWriteFile(){
+    std::cout << std::endl;
+    std::cout << "endWriteFile w_pos: " << w_pos << std::endl;
     if(w_pos != 7){
+        std::cout << "writed buffer to file: ";
+        for(int i = 7; i >= 0; i--){
+            std::cout << (buffer & (0x1 << i));
+        }
+        std::cout << std::endl;
         this->outfile.put(buffer);
     }
     this->outfile.close();

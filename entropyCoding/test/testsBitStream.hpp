@@ -8,6 +8,30 @@
 #include    "../src/BitStream.cpp"
 #include    <string>
 
+vector<bool> cav_2020 {0,1,0,0,0,0,1,1, // C
+                       0,1,0,0,0,0,0,1, // A
+                       0,1,0,1,0,1,1,0, // V
+                       0,0,1,0,1,1,0,1, // -
+                       0,0,1,1,0,0,1,0, // 2
+                       0,0,1,1,0,0,0,0, // 0
+                       0,0,1,1,0,0,1,0, // 2
+                       0,0,1,1,0,0,0,0}; // 0
+
+string boolVecToString(vector<bool> vec){
+    string bits;
+    for(int i = 0; i < vec.size(); i++){
+        if(vec.at(i)){
+            bits += "1";
+        } else {
+            bits += "0";
+        }
+        if(((i+1)%8)==0 && i != 0){
+            bits += "   ";
+        }
+    }
+    return bits;
+}
+
 TEST_CASE("BitStream readBit") {
     char *fname = strdup("../test/testReadBits.txt");
     auto * bitStream = new BitStream(fname, 'r');
@@ -20,66 +44,23 @@ TEST_CASE("BitStream readBit") {
 }
 
 TEST_CASE("BitStream readNbits") {
-    vector<bool> cav_2020 {0,1,0,0,0,0,1,1, // C
-                           0,1,0,0,0,0,0,1, // A
-                           0,1,0,1,0,1,1,0, // V
-                           0,0,1,0,1,1,0,1, // -
-                           0,0,1,1,0,0,1,0, // 2
-                           0,0,1,1,0,0,0,0, // 0
-                           0,0,1,1,0,0,1,0, // 2
-                           0,0,1,1,0,0,0,0}; // 0
-    string bitsToRead;
-    for(int i = 0; i < cav_2020.size(); i++){
-        if(cav_2020.at(i)){
-            bitsToRead += "1";
-        } else {
-            bitsToRead += "0";
-        }
-        if(((i+1)%8)==0 && i != 0){
-            bitsToRead += "   ";
-        }
-    }
+
+    string bitsToRead = boolVecToString(cav_2020);
+
     unsigned int n = cav_2020.size();
     char *fname = strdup("../test/testReadBits.txt");
     INFO("  File: ../test/testReadBits.txt");
     INFO("\n\tBits to read from the file:\n\t"+bitsToRead+"\n");
     auto * bitStream = new BitStream(fname, 'r');
     vector<bool> readBits = bitStream->readNbits(n);
-    string bitsRead;
-    for(int i = 0; i < readBits.size(); i++){
-        if(readBits.at(i)){
-            bitsRead += "1";
-        } else {
-            bitsRead += "0";
-        }
-        if(((i+1)%8)==0 && i != 0){
-            bitsRead += "   ";
-        }
-    }
+
+    string bitsRead = boolVecToString(readBits);
     INFO("\n\tBits read from the file:\n\t"+bitsRead);
     CHECK(std::equal(cav_2020.begin(), cav_2020.end(), readBits.begin()));
 }
 
 TEST_CASE("BitStream writeNbits") {
-    vector<bool> cav_2020 {0,1,0,0,0,0,1,1, // C
-                           0,1,0,0,0,0,0,1, // A
-                           0,1,0,1,0,1,1,0, // V
-                           0,0,1,0,1,1,0,1, // -
-                           0,0,1,1,0,0,1,0, // 2
-                           0,0,1,1,0,0,0,0, // 0
-                           0,0,1,1,0,0,1,0, // 2
-                           0,0,1,1,0,0,0,0}; // 0
-    string bitsToWrite;
-    for(int i = 0; i < cav_2020.size(); i++){
-        if(cav_2020.at(i)){
-            bitsToWrite += "1";
-        } else {
-            bitsToWrite += "0";
-        }
-        if(((i+1)%8)==0 && i != 0){
-            bitsToWrite += "   ";
-        }
-    }
+    string bitsToWrite = boolVecToString(cav_2020);
     INFO("File: ../test/testWriteNBits");
     INFO("  Bits to write in the file:\n\t"+bitsToWrite+"\n");
 
@@ -100,17 +81,7 @@ TEST_CASE("BitStream writeNbits") {
     auto* rbs = new BitStream(fname, 'r');
     vector<bool> readBits = rbs->readNbits(n);
     REQUIRE_THROWS(rbs->readBit());
-    string bitsRead;
-    for(int i = 0; i < readBits.size(); i++){
-        if(readBits.at(i)){
-            bitsRead += "1";
-        } else {
-            bitsRead += "0";
-        }
-        if(((i+1)%8)==0 && i != 0){
-            bitsRead += "   ";
-        }
-    }
+    string bitsRead = boolVecToString(readBits);
     INFO("\n\tBits read from the file:\n\t"+bitsRead);
     CHECK(std::equal(cav_2020.begin(), cav_2020.end(), readBits.begin()));
 }

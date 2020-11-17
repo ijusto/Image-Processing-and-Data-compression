@@ -84,7 +84,6 @@ public:
 
     void endWriteFile();
 
-    void endReadFile();
 };
 
 #endif //ENTROPYCODING_BITSTREAM_HPP

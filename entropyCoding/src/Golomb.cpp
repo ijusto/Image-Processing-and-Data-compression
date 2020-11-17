@@ -30,18 +30,18 @@ Golomb::Golomb(unsigned int _m, char *_file, char mode) {
 vector<bool> Golomb::encode(int n) {
     /* a positive value x is mapped to x'=2|x|=2x,x>0 and a negative value y is mapped to y'=2|y|-1=-2y-1,y<0*/
     int nMapped = 2 * n;
-    std::cout << "n: "<<n<<std::endl;
+    std::cout << "n: " << n << std::endl;
     if (n < 0){ nMapped = -nMapped -1; }
 
     unsigned int q = nMapped / this->m;
     unsigned int r = nMapped % this->m; /* <=> nMapped-q*m */
-    std::cout << "r: "<<r<<std::endl;
 
     /* Encode unary */
     vector<bool> unary;
     for(int i=0; i<q; i++){ unary.push_back(false); }
     /* unary comma code where the end mark is '1'*/
     unary.push_back(true);
+    std::cout << "writing unary " << unary.size() << " bits" << std::endl;
     this->writeBitStream->writeNbits(unary);
     vector<bool> encoded_n = unary;
 
@@ -52,11 +52,7 @@ vector<bool> Golomb::encode(int n) {
     /* Encode the first 2**b − m values of r using the first 2**b−m binary codewords of b−1 bits */
     unsigned int codedR = r;
     unsigned int nBits = b - 1;
-    std::cout << "2**b−m: "<<((int)pow(2, b) - this->m)<<std::endl;
 
-
-
-    std::cout << "r >= 2**b−m "<< (r >= ((int)pow(2, b) - this->m))<<std::endl;
     /* Encode the remainder values of r by coding the number r+2**b−m in binary codewords of b bits. */
     if(r >= ((int)pow(2, b) - this->m)) {
         codedR += ((int)pow(2, b) - this->m);
@@ -69,23 +65,13 @@ vector<bool> Golomb::encode(int n) {
     }
     std::reverse(truncatedBinTmp.begin(),truncatedBinTmp.end());
 
-    std::cout << "truncatedBinTmp: ";
-    for(bool numb : truncatedBinTmp){
-        std::cout << numb;
-    }
-    std::cout << std::endl;
-
     vector<bool> truncatedBin;
     for(;truncatedBinTmp.size() < nBits; nBits--){ truncatedBin.push_back(false); }
     truncatedBin.insert( truncatedBin.end(), truncatedBinTmp.begin(), truncatedBinTmp.end() );
+    std::cout << "writing truncatedBin " << truncatedBin.size() << " bits" << std::endl;
     this->writeBitStream->writeNbits(truncatedBin);
 
     encoded_n.insert( encoded_n.end(), truncatedBin.begin(), truncatedBin.end() );
-    std::cout << "encoded: ";
-    for(bool numb : encoded_n){
-        std::cout << numb;
-    }
-    std::cout << std::endl;
     return encoded_n;
 }
 
