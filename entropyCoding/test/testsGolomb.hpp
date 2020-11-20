@@ -54,7 +54,6 @@ TEST_CASE("Golomb Encode"){
         encNumStr += " ";
         // append
         encNumVec.insert(encNumVec.end(), encodedNumber.begin(), encodedNumber.end());
-        std::cout << boolVecToString(encNumVec);
     }
     golomb->closeEncodeFile();
     INFO("Written all encoded bits in the file.");
