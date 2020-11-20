@@ -3,19 +3,19 @@
 BitStream :: BitStream(char *file, char mode){
 
     if(mode == 'r'){
-        ifstream infile (file);
+        ifstream infile(file, std::ios::binary);
 
         if(!infile.is_open()){
             throw("FAILED to open file ");
         }
         unsigned char in;
-        while(infile >> in){
+        while(infile >> noskipws >> in){ /* reads whitespaces in file*/
             readFileInfo.push_back(in);
             len++;
         }
         infile.close();
     } else if(mode == 'w'){
-        outfile.open(file, ofstream::binary);
+        outfile.open(file, std::ios::binary);
         if(!outfile.is_open()){
             cout << "FAILED to open file " << file << endl;
         }
@@ -112,7 +112,7 @@ void BitStream::endWriteFile(){
     if(w_pos != 7){
         std::cout << "writed buffer to file: ";
         for(int i = 7; i >= 0; i--){
-            std::cout << (buffer & (0x1 << i));
+            std::cout << ((buffer & (0x1 << i)) >> i);
         }
         std::cout << std::endl;
         this->outfile.put(buffer);

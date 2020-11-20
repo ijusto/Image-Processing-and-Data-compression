@@ -10,7 +10,8 @@
 int nBitsInDecodedFile;
 vector<int> original_array {0, -1, 1, -2, 2, -3, 3, -4, 4, -5, 5, -6, 6, -7, 7, -8};
 unsigned int m = 5;
-char *encodeFileName = strdup("../test/encoded");
+string filename = "../test/encoded_m" + std::to_string(m);
+char *encodeFileName = const_cast<char *>(filename.c_str());
 
 string boolVecToString(vector<bool> vec){
     string bits;
@@ -56,27 +57,46 @@ TEST_CASE("Golomb Encode"){
         std::cout << boolVecToString(encNumVec);
     }
     golomb->closeEncodeFile();
+    INFO("Written all encoded bits in the file.");
 
     encNumStr += "]";
     INFO(encNumStr);
     INFO("Encoded bytes:\n\t\t[" + boolVecToString(encNumVec)+"]");
-    // Require() /* Encode numbers test */
+    vector<bool> bitsCheck;
+    if(m == 5) {
+        bitsCheck = {1,0,0,1,0,1,1,1,0,1,1,1,0,1,1,1,1,0,1,0,0,0,1,0,1,0,1,1,0,0,1,1,1,0,0,1,1,1,1,0,0,1,0,0,0,0,1,0,1,
+                     0,0,1,1,0,0,0,1,1,1,0,0,0,1,1,1,1,0,0,0,1,0,0};
+    } else if(m==7){
+        bitsCheck = {1,0,0,1,0,1,0,1,0,1,1,1,1,0,0,1,1,0,1,1,1,1,0,1,1,1,1,0,1,0,0,0,1,0,1,0,0,1,0,1,1,0,1,1,0,0,0,1,1,
+                     0,1,0,1,1,1,0,0,1,1,1,1,0,0,1,0,0,0,0,1,0,1,0};
 
+    }
+    CHECK(std::equal(encNumVec.begin(), encNumVec.end(), bitsCheck.begin()));
+}
+
+TEST_CASE("Golomb Encode Write in file"){
+    vector<bool> bitsCheck;
+    if(m == 5) {
+        bitsCheck = {1,0,0,1,0,1,1,1,0,1,1,1,0,1,1,1,1,0,1,0,0,0,1,0,1,0,1,1,0,0,1,1,1,0,0,1,1,1,1,0,0,1,0,0,0,0,1,0,1,
+                     0,0,1,1,0,0,0,1,1,1,0,0,0,1,1,1,1,0,0,0,1,0,0};
+    } else if(m==7){
+        bitsCheck = {1,0,0,1,0,1,0,1,0,1,1,1,1,0,0,1,1,0,1,1,1,1,0,1,1,1,1,0,1,0,0,0,1,0,1,0,0,1,0,1,1,0,1,1,0,0,0,1,1,
+                     0,1,0,1,1,1,0,0,1,1,1,1,0,0,1,0,0,0,0,1,0,1,0};
+
+    }
+
+    unsigned int n = bitsCheck.size();
 
     /* Encode write on file test */
     auto *rbs = new BitStream(encodeFileName, 'r');
-    vector<bool> bitsRead = rbs->readNbits(encNumVec.size());
-    int nBitsInFile = encNumVec.size();
-    while((nBitsInFile % 8) != 0){
-        CHECK_NOTHROW(bitsRead.push_back(rbs->readBit()));
-        nBitsInFile++;
-    }
-    CHECK_THROWS(bitsRead.push_back(rbs->readBit()));
-    nBitsInDecodedFile = nBitsInFile;
-    INFO("Bits in file:\n\t\t" + boolVecToString(bitsRead));
-    // REQUIRE() /* Encode write on file test */
-}
+    vector<bool> bitsRead;
 
+    CHECK_NOTHROW(bitsRead = rbs->readNbits(n));
+
+    nBitsInDecodedFile = bitsCheck.size();
+    INFO("Bits in file:\n\t\t" + boolVecToString(bitsRead));
+    CHECK(std::equal(bitsRead.begin(), bitsRead.end(), bitsCheck.begin()));
+}
 
 TEST_CASE("Golomb Decode", "[!throws]"){
 
