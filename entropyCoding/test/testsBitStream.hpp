@@ -43,7 +43,7 @@ TEST_CASE("BitStream readBit") {
     CHECK(!readBit); // first bit is 0
 }
 
-TEST_CASE("BitStream readNbits") {
+TEST_CASE("BitStream readNbits: CAV-2020") {
 
     string bitsToRead = boolVecToString(cav_2020);
 
@@ -59,31 +59,43 @@ TEST_CASE("BitStream readNbits") {
     CHECK(std::equal(cav_2020.begin(), cav_2020.end(), readBits.begin()));
 }
 
-TEST_CASE("BitStream writeNbits") {
-    string bitsToWrite = boolVecToString(cav_2020);
-    INFO("File: ../test/testWriteNBits");
+TEST_CASE("BitStream writeNbits - write last byte: 2020") {
+
+    vector<bool> bits = { 0,0,1,1,0,0,1,0, // 2
+                          0,0,1,1,0,0,0,0, // 0
+                          0,0,1,1,0,0,1,0, // 2
+                          0,0,1,1}; // 0 - Check!
+
+
+    vector<bool> checkBits = { 0,0,1,1,0,0,1,0, // 2
+                               0,0,1,1,0,0,0,0, // 0
+                               0,0,1,1,0,0,1,0, // 2
+                               0,0,1,1,0,0,0,0}; // 0
+    string bitsToWrite = boolVecToString(bits);
+    INFO("File: ../test/testWriteNBits2");
     INFO("  Bits to write in the file:\n\t"+bitsToWrite+"\n");
 
-    remove( "../test/testWriteNBits");
-    INFO("\n\tDeleted file testWriteNBits");
+    remove( "../test/testWriteNBits2");
+    INFO("\n\tDeleted file testWriteNBits2");
 
-    ofstream file("../test/testWriteNBits");
+    ofstream file("../test/testWriteNBits2");
     file.close();
-    INFO("\n\tCreated file testWriteNBits");
+    INFO("\n\tCreated file testWriteNBits2");
 
-    char *fname = strdup("../test/testWriteNBits");
+    char *fname = strdup("../test/testWriteNBits2");
     auto * wbs = new BitStream(fname, 'w');
-    wbs->writeNbits(cav_2020);
+    wbs->writeNbits(bits);
     wbs->endWriteFile();
     INFO("\n\tWritten bits in the file.");
 
-    unsigned int n = cav_2020.size();
+    unsigned int n = 4*8;
     auto* rbs = new BitStream(fname, 'r');
     vector<bool> readBits = rbs->readNbits(n);
     REQUIRE_THROWS(rbs->readBit());
     string bitsRead = boolVecToString(readBits);
     INFO("\n\tBits read from the file:\n\t"+bitsRead);
-    CHECK(std::equal(cav_2020.begin(), cav_2020.end(), readBits.begin()));
+    CHECK(std::equal(checkBits.begin(), checkBits.end(), readBits.begin()));
 }
+
 
 #endif //ENTROPYCODING_TESTSBITSTREAM_HPP
