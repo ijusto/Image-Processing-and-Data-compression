@@ -29,6 +29,11 @@ private:
     BitStream *writeBitStream;
 
 public:
+    //! Golomb constructor for encoding and decoding without writing to file
+    /*!
+     * @param _m Golomb integer parameter.
+     */
+    Golomb(unsigned int _m);
 
     //! Golomb constructor for encoding and decoding.
     /*!
@@ -57,11 +62,24 @@ public:
     */
     vector<bool> encode(int n);
 
+    //! Encodes and returns bits.
+    /*!
+     * @param n number to encode.
+     * @returns vector of bool values representing 0s and 1s of the coded number.
+    */
+    vector<bool> encode2(int n);
+
     //! Reads with the bitStream and decodes.
     /*!
      * @param numbers pointer to vector of decoded numbers.
     */
     void decode(vector<int> *numbers);
+
+    //! Reads with the bitStream and decodes.
+    /*!
+     * @param numbers pointer to vector of decoded numbers.
+    */
+    vector<int> decode2(vector<bool> encodedBits);
 
     void setEncodeFile(char *_encodeFile);
 

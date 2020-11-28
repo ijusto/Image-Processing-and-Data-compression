@@ -11,8 +11,7 @@
 class AudioEncoder {
 private:
     SndfileHandle sourceFile;
-    std::vector<short> leftChRes;
-    std::vector<short> rightChRes;
+    std::vector<bool> encodedRes;
 
 public:
 

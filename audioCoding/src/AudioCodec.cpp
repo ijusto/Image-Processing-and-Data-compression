@@ -25,6 +25,7 @@ int main(int argc, char* argv[]) {
         // encode
         encoder->encode();
         // write compressed file
+        encoder->write(dst);
     }else if (op == "decode"){
         // init decoder with compressed file
         // decode

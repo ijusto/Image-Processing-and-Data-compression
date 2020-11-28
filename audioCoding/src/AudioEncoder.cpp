@@ -4,8 +4,7 @@
  */
 
 #include "../includes/AudioEncoder.hpp"
-#include "../includes/BitStream.hpp"
-#include "../includes/Golomb.h"
+#include "Golomb.cpp"
 #include <iostream>
 
 using namespace std;
@@ -39,7 +38,7 @@ void AudioEncoder::encode(){
         exit(EXIT_FAILURE);
     }
 
-    int srcFileChannels = 2; ;
+    int srcFileChannels = 2;
     int framesRead = 65536;
     std::vector<short> audioSample(srcFileChannels*framesRead);
 
@@ -48,40 +47,48 @@ void AudioEncoder::encode(){
     // predictor: equal to last sample
     short predLeftSample = 0;
     short predRightSample = 0;
+    // residuals
+    short leftRes = 0;
+    short rightRes = 0;
+    // residual encoded with Golomb
+    vector<bool> encodedNumber;
+    // Golomb parameter
+    int m = 2000; // find good estimate as residuals are computed
 
+    int totalframes = 0;
     for(sf_count_t nFrames = sourceFile.readf(audioSample.data(), framesRead); nFrames != 0; nFrames = sourceFile.readf(audioSample.data(), framesRead)) {
+        cout << "totalframes: " << totalframes << endl;
+        totalframes += nFrames;
+
         for (int fr = 0; fr < nFrames; fr++) {
             leftSample = audioSample.at(fr + 0);
-            rightSample = audioSample.at(fr + 0);
+            rightSample = audioSample.at(fr + 1);
 
-            leftChRes.push_back(leftSample - predLeftSample);
-            rightChRes.push_back(rightSample - predRightSample);
+            leftRes = leftSample - predLeftSample;
+            rightRes = rightSample - predRightSample;
 
             predLeftSample = leftSample;
             predRightSample = rightSample;
+
+            auto *golomb = new Golomb(m);
+            // encode left
+            encodedNumber = golomb->encode2(leftRes);
+            // append
+            encodedRes.insert(encodedRes.end(), encodedNumber.begin(), encodedNumber.end());
+
+            // encode right
+            encodedNumber = golomb->encode2(rightRes);
+            // append
+            encodedRes.insert(encodedRes.end(), encodedNumber.begin(), encodedNumber.end());
         }
     }
-
-    cout << leftChRes.size() << endl;
-    cout << rightChRes.size() << endl;
 }
 
 void AudioEncoder::write(char* filename){
+    cout << "writing" << endl;
     auto * wbs = new BitStream(filename, 'w');
+    int srcFileChannels = 2;
 
-    vector<bool> golombEncodedBits;
-
-    /* Encode numbers test */
-    auto *golomb = new Golomb(m, encodeFileName, 'e');
-
-    vector<bool> encNumVec, encodedNumber;
-    for(short number: original_array){
-        // encode
-        encodedNumber = golomb->encode(number);
-        // append
-        encNumVec.insert(encNumVec.end(), encodedNumber.begin(), encodedNumber.end());
-    }
-
-    wbs->writeNbits(golombEncodedBits);
+    wbs->writeNbits(encodedRes);
     wbs->endWriteFile();
 }
