@@ -8,14 +8,14 @@
 #include    <sndfile.hh>
 #include    <vector>
 
-
 class AudioEncoder {
 private:
     SndfileHandle sourceFile;
-    std::vector<short> rightChRes;
     std::vector<short> leftChRes;
+    std::vector<short> rightChRes;
 
 public:
+
     /**
      * Constructor
      * @param filename
