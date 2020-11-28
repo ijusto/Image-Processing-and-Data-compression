@@ -16,57 +16,36 @@ class Golomb {
 
 private:
 
-    //! Flag to know if use the bitStream or not.
-    bool useBS;
-
     //! Golomb integer parameter.
     unsigned int m;
 
-    //! BitStream used for reading or writing the encoded or the decoded values.
-    BitStream bitStream;
+    //! Mode on to operate: encode and/or decode ('e', 'd', 'b')
+    char mode;
 
-    //! Encodes the quotient of the to be coded number, that is, the comma code (unary) part of the Golomb code.
-    /*!
-     * @param q quotient of the to be coded number by m.
-     * @return vector of bool values representing '0's and '1's of the coded quotient.
-    */
-    static vector<bool> encodeUnary(unsigned int q);
+    //! BitStream used for reading the decoded values.
+    BitStream *readBitStream;
 
-    //! Encodes the remainder of the division of the to be coded number by m, that is, the truncated binary code part of
-    //! the Golomb code.
-    /*!
-     * @param remainder of the division of the coded number by m.
-     * @returns vector of bool values representing '0's and '1's of the truncated binary code.
-    */
-    vector<bool> encodeTruncatedBinary(unsigned int r);
-
-    //! Decodes the quotient of the coded number, that is, the comma code (unary) part of the Golomb code.
-    /*!
-     * @return quotient of the coded number by m.
-    */
-    unsigned int decodeUnary();
-
-    //! Decodes the remainder of the division of the coded number by m, that is, the truncated binary code part of the
-    //! Golomb code.
-    /*!
-     * @return remainder of the division of the coded number by m.
-    */
-    unsigned int decodeTruncatedBinary();
+    //! BitStream used for writing the encoded values.
+    BitStream *writeBitStream;
 
 public:
 
-    //! Golomb constructor.
+    //! Golomb constructor for encoding and decoding.
     /*!
      * @param _m Golomb integer parameter.
-     * @param _bitStream BitStream used for reading or writing the encoded or the decoded values.
+     * @param _encodeFile Path to the file where the values to decode are read from.
+     * @param _decodeFile Path to the file where the encoded values are written.
     */
-    Golomb(unsigned int _m, BitStream _bitStream);
+    Golomb(unsigned int _m, char *_encodeFile, char *_decodeFile);
 
-    //! Golomb constructor.
+
+    //! Golomb constructor for only encoding or only decoding.
     /*!
      * @param _m Golomb integer parameter.
+     * @param _file Path to the file used to get the values for the operation performed.
+     * @param mode encode or decode ("e" or "d")
     */
-    Golomb(unsigned int _m);
+    Golomb(unsigned int _m, char *_file, char mode);
 
     //! Golomb class destructor.
     ~Golomb();
@@ -74,29 +53,21 @@ public:
     //! Encodes and writes with the bitStream.
     /*!
      * @param n number to encode.
-     * @returns vector of bool values representing '0's and '1's of the coded number.
+     * @returns vector of bool values representing 0s and 1s of the coded number.
     */
     vector<bool> encode(int n);
 
     //! Reads with the bitStream and decodes.
     /*!
-     * @return Decoded number.
+     * @param numbers pointer to vector of decoded numbers.
     */
-    int decode();
+    void decode(vector<int> *numbers);
 
-    //! Decodes the coded number passed as argument as a vector of booleans.
-    /*!
-     * @param encoded_n vector of bool values representing '0's and '1's of all the coded numbers.
-     * @return vector of the decoded numbers.
-    */
-    vector<int> decode(vector<bool> encoded_n);
+    void setEncodeFile(char *_encodeFile);
 
-    //! Changes the Golomb integer parameter.
-    /*!
-     * @param _m Golomb integer parameter.
-    */
-    void changeM(unsigned int _m);
+    void setDecodeFile(char *_decodeFile);
 
+    void closeEncodeFile();
 };
 
 #endif //ENTROPYCODING_GOLOMB_H
