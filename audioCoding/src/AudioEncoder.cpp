@@ -10,6 +10,18 @@
 
 using namespace std;
 
+vector<bool> AudioEncoder::int2boolvec(int n){
+    vector<bool> bool_vec_res;
+
+    unsigned int mask = 0x00000001;
+    for(int i = 0; i < sizeof(n)*8; i++){
+        bool bit = ((n & (mask << i)) >> i) == 1;
+        bool_vec_res.push_back(bit);
+    }
+
+    return bool_vec_res;
+}
+
 AudioEncoder::AudioEncoder(char* filename, int m){
     initial_m = m;
     sourceFile = SndfileHandle(filename, SFM_READ);
@@ -124,18 +136,6 @@ void AudioEncoder::encode(){
             encodedRes.insert(encodedRes.end(), encodedResidual.begin(), encodedResidual.end());
         }
     }
-}
-
-vector<bool> AudioEncoder::int2boolvec(int n){
-    vector<bool> bool_vec_res;
-
-    unsigned int mask = 0x00000001;
-    for(int i = 0; i < sizeof(n)*8; i++){
-        bool bit = ((n & (mask << i)) >> i) == 1;
-        bool_vec_res.push_back(bit);
-    }
-
-    return bool_vec_res;
 }
 
 void AudioEncoder::write(char* filename){

@@ -5,14 +5,21 @@
 #ifndef AUDIOCODING_AUDIOENCODER_H
 #define AUDIOCODING_AUDIOENCODER_H
 
-#include    <sndfile.hh>
-#include    <vector>
+#include <sndfile.hh>
+#include <vector>
 
 class AudioEncoder {
 private:
     SndfileHandle sourceFile;
     std::vector<bool> encodedRes;
     int initial_m;
+
+    /**
+     * Converts integer to bool vector representing bits.
+     * @param n
+     * @return
+     */
+    std::vector<bool> int2boolvec(int n);
 
 public:
 
@@ -27,13 +34,6 @@ public:
      * Computes residuals for each channel using predictor.
      */
     void encode();
-
-    /**
-     * Converts integer to bool vector representing bits.
-     * @param n
-     * @return
-     */
-    std::vector<bool> int2boolvec(int n);
 
     /**
      * Use BitStream to write Golomb encoded residuals to file.

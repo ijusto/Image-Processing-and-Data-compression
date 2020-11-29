@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include "AudioEncoder.cpp"
+#include "AudioDecoder.cpp"
 
 using namespace std;
 
@@ -29,7 +30,10 @@ int main(int argc, char* argv[]) {
         encoder->write(dst);
     }else if (op == "decode"){
         // init decoder with compressed file
+        AudioDecoder* decoder = new AudioDecoder(src);
         // decode
+        decoder->decode();
         // write sound file
+        decoder->write(dst);
     }
 }
