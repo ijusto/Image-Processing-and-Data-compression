@@ -55,6 +55,12 @@ public:
     //! Golomb class destructor.
     ~Golomb();
 
+    /*!
+     * Setter for m parameter.
+     * @param _m Golomb integer parameter.
+     */
+    void setM(unsigned int _m);
+
     //! Encodes and writes with the bitStream.
     /*!
      * @param n number to encode.

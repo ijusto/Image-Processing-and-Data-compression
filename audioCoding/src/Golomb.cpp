@@ -33,6 +33,9 @@ Golomb::Golomb(unsigned int _m, char *_file, char mode) {
     }
 }
 
+void Golomb::setM(unsigned int _m){
+    this->m = _m;
+}
 
 vector<bool> Golomb::encode(int n) {
     vector<bool> encoded_n = encode2(n);
