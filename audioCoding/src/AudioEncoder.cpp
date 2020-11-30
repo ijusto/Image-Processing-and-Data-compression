@@ -142,8 +142,9 @@ void AudioEncoder::write(char* filename){
     cout << "writing..." << endl;
     auto * wbs = new BitStream(filename, 'w');
 
-    // add 16 byte file header (initial_m, format, channels, samplerate)
     vector<bool> file;
+
+    // add 20 byte file header (initial_m, format, channels, samplerate, frames)
     // initial_m
     vector<bool> m = int2boolvec(initial_m);
     file.insert(file.cend(), m.begin(), m.end());
@@ -156,6 +157,9 @@ void AudioEncoder::write(char* filename){
     // samplerate
     vector<bool> samplerate = int2boolvec(sourceFile.samplerate());
     file.insert(file.end(), samplerate.begin(), samplerate.end());
+    // frames
+    vector<bool> frames = int2boolvec(sourceFile.frames());
+    file.insert(file.end(), frames.begin(), frames.end());
 
     // add data
     file.insert(file.end(), encodedRes.begin(), encodedRes.end());

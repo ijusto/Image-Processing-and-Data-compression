@@ -85,9 +85,12 @@ public:
 
     //! Reads bits of bool vector until it decodes a number and updates pointer.
     /*!
-     * @param decoded number.
-    */
-    int decode2(vector<bool> encodedBits, unsigned int *index);
+     * @param encodedBits vector containing bits to decode
+     * @param index next bit pointer
+     * @param count number of numbers to decode
+     * @return
+     */
+    vector<int> decode2(vector<bool> encodedBits, unsigned int *index, unsigned int count);
 
     void setEncodeFile(char *_encodeFile);
 

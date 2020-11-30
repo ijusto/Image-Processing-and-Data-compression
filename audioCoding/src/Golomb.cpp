@@ -154,60 +154,68 @@ void Golomb::decode(vector<int> *numbers) {
     }
 }
 
-int Golomb::decode2(vector<bool> encodedBits, unsigned int *index) {
-    /* Decode unary */
-    unsigned int q = 0;
-    while(!encodedBits.at(*index + q)){
-        q++;
-    }
+vector<int> Golomb::decode2(vector<bool> encodedBits, unsigned int *index, unsigned int count) {
+    vector<int> decoded;
 
-    // update index
-    *index = *index + (q+1);
-
-    /* Decode truncated binary */
-    unsigned int r = 0;
-    // auto b = (unsigned int) ceil(log2(this->m));
-
-    vector<bool> nBitsRead;
-    for(int i = 0; i < this->b - 1; i++){
-        bool val = encodedBits.at(*index + i);
-        nBitsRead.push_back(val);
-    }
-
-    // update index
-    *index = *index + (b - 1);
-
-    // convert the b-1 bits read to dec/int
-    int readInt = 0;
-    for(int i = 0; i < this->b - 1; i++){
-        if(nBitsRead.at(this->b - 2 - i)){
-            readInt += pow(2, i);
+    int n_decoded = 0;
+    while(n_decoded < count) {
+        /* Decode unary */
+        unsigned int q = 0;
+        while (!encodedBits.at(*index + q)) {
+            q++;
         }
-    }
-    r = readInt;
 
-    /* If the bits read are an encoded value less than 2**b-m, decoding is complete.*/
-    if(readInt >= ((int) pow(2, this->b) - this->m)) {
-        bool bitRead = encodedBits.at(*index);
         // update index
-        *index = *index + 1;
+        *index = *index + (q + 1);
 
-        // covert the b-1 firstly read bits "concatenated" with the last bit read to dec/int
-        unsigned int bitReadInt = 0;
-        if(bitRead){ bitReadInt = 1; }
+        /* Decode truncated binary */
+        unsigned int r = 0;
+        // auto b = (unsigned int) ceil(log2(this->m));
 
-        /* Otherwise, read an additional bit and subtract 2**b-m from the result. */
-        unsigned int newCodeRead = readInt*2 + bitReadInt;
-        r = newCodeRead + this->m - (int)pow(2, this->b);
+        vector<bool> nBitsRead;
+        for (int i = 0; i < this->b - 1; i++) {
+            bool val = encodedBits.at(*index + i);
+            nBitsRead.push_back(val);
+        }
+
+        // update index
+        *index = *index + (b - 1);
+
+        // convert the b-1 bits read to dec/int
+        int readInt = 0;
+        for (int i = 0; i < this->b - 1; i++) {
+            if (nBitsRead.at(this->b - 2 - i)) {
+                readInt += pow(2, i);
+            }
+        }
+        r = readInt;
+
+        /* If the bits read are an encoded value less than 2**b-m, decoding is complete.*/
+        if (readInt >= ((int) pow(2, this->b) - this->m)) {
+            bool bitRead = encodedBits.at(*index);
+            // update index
+            *index = *index + 1;
+
+            // covert the b-1 firstly read bits "concatenated" with the last bit read to dec/int
+            unsigned int bitReadInt = 0;
+            if (bitRead) { bitReadInt = 1; }
+
+            /* Otherwise, read an additional bit and subtract 2**b-m from the result. */
+            unsigned int newCodeRead = readInt * 2 + bitReadInt;
+            r = newCodeRead + this->m - (int) pow(2, this->b);
+        }
+
+        unsigned int nMapped = this->m * q + r;
+        /* a positive value x is mapped to x'=2|x|=2x,x>0 and a negative value y is mapped to y'=2|y|-1=-2y-1,y<0*/
+        int n = nMapped;
+        if (nMapped % 2) { n = -(n + 1); }
+        n /= 2;
+
+        decoded.push_back(n);
+
+        n_decoded++;
     }
-
-    unsigned int nMapped = this->m*q + r;
-    /* a positive value x is mapped to x'=2|x|=2x,x>0 and a negative value y is mapped to y'=2|y|-1=-2y-1,y<0*/
-    int n = nMapped;
-    if(nMapped % 2){ n = -(n+1);}
-    n /= 2;
-
-    return n;
+    return decoded;
 }
 
 /*

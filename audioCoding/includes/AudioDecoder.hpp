@@ -17,6 +17,14 @@ private:
     int format;
     int channels;
     int samplerate;
+    int frames;
+
+    /**
+     * Asserts that vector contains bits stored as least significant bit at the biggest address.
+     * @param vec
+     * @return
+     */
+    int boolvec2int(vector<bool> vec);
 
 public:
 
