@@ -4,7 +4,6 @@
 
 #include "../includes/AudioDecoder.hpp"
 #include <sndfile.hh>
-#include <numeric>
 
 using namespace std;
 
@@ -62,7 +61,32 @@ void AudioDecoder::decode(){
     float right_res_sum = 0;
     int numRes = 0;
 
+    // read all data
+    vector<bool> data = sourceFile->readNbits((3847369 - 16)*8); //  for sample01.wav
     // decode sample by sample (to update m)
+    unsigned int index = 0;
+
+    int frames = 0;
+    while(index < data.size()){
+        int leftRes = golomb->decode2(data, &index);
+        int rightRes = golomb->decode2(data, &index);
+
+        int predLeftSample = 3*leftSample_1 - 3*leftSample_2 + leftSample_3;
+        int predRightSample = 3*rightSample_1 - 3*rightSample_2 + rightSample_3;
+        leftSample = predLeftSample - leftRes;
+        rightSample = predRightSample - rightRes;
+
+        // update
+        leftSample_3 = leftSample_2;
+        leftSample_2 = leftSample_1;
+        leftSample_1 = leftSample;
+        rightSample_3 = rightSample_2;
+        rightSample_2 = rightSample_1;
+        rightSample_1 = rightSample;
+
+        decodedRes.push_back(leftSample);
+        decodedRes.push_back(rightSample);
+    }
 }
 
 void AudioDecoder::write(char* filename){

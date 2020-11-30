@@ -19,6 +19,8 @@ private:
     //! Golomb integer parameter.
     unsigned int m;
 
+    unsigned int b;
+
     //! Mode on to operate: encode and/or decode ('e', 'd', 'b')
     char mode;
 
@@ -81,11 +83,11 @@ public:
     */
     void decode(vector<int> *numbers);
 
-    //! Reads with the bitStream and decodes.
+    //! Reads bits of bool vector until it decodes a number and updates pointer.
     /*!
-     * @param numbers pointer to vector of decoded numbers.
+     * @param decoded number.
     */
-    vector<int> decode2(vector<bool> encodedBits);
+    int decode2(vector<bool> encodedBits, unsigned int *index);
 
     void setEncodeFile(char *_encodeFile);
 

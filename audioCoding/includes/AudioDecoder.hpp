@@ -17,7 +17,6 @@ private:
     int format;
     int channels;
     int samplerate;
-    int frames;
 
 public:
 
@@ -33,7 +32,7 @@ public:
     void decode();
 
     /**
-     * Use BitStream to write decoded residuals to wav file.
+     * Use SndfileHandle to write decoded residuals to wav file.
      * @param filename
      */
     void write(char* filename);

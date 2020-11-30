@@ -5,15 +5,17 @@
 #include <iostream>
 #include <tuple>
 #include <algorithm>
-#include <queue>
-#include <deque>
+
+using namespace std;
 
 Golomb::Golomb(unsigned int _m){
     this->m = _m;
+    this->b = (unsigned int) ceil(log2(this->m));
 }
 
 Golomb::Golomb(unsigned int _m, char *_encodeFile, char *_decodeFile){
     this->m = _m;
+    this->b = (unsigned int) ceil(log2(this->m));
     this->readBitStream = new BitStream(_decodeFile, 'r');
     this->writeBitStream = new BitStream(_encodeFile,'w');
     this->mode = 'b';
@@ -21,6 +23,7 @@ Golomb::Golomb(unsigned int _m, char *_encodeFile, char *_decodeFile){
 
 Golomb::Golomb(unsigned int _m, char *_file, char mode) {
     this->m = _m;
+    this->b = (unsigned int) ceil(log2(this->m));
     if(mode == 'e'){
         this->writeBitStream = new BitStream(_file,'w');
         this->mode = 'e';
@@ -35,6 +38,7 @@ Golomb::Golomb(unsigned int _m, char *_file, char mode) {
 
 void Golomb::setM(unsigned int _m){
     this->m = _m;
+    this->b = (unsigned int) ceil(log2(this->m));
 }
 
 vector<bool> Golomb::encode(int n) {
@@ -150,62 +154,60 @@ void Golomb::decode(vector<int> *numbers) {
     }
 }
 
-vector<int> Golomb::decode2(vector<bool> encodedBits) {
-    vector<int> numbers;
-    queue<bool> encodedBitsQ;
-    for(bool val:encodedBits)
-        encodedBitsQ.push(val);
-
-    while(!encodedBitsQ.empty()){
-        cout << encodedBitsQ.size() << endl;
-        /* Decode unary */
-        unsigned int q = 0;
-        while(!encodedBitsQ.front()){ q++; encodedBitsQ.pop();}
-
-        /* Decode truncated binary */
-        unsigned int r = 0;
-        auto b = (unsigned int) ceil(log2(this->m));
-
-        vector<bool> nBitsRead;
-        for(int i = 0; i < b - 1; i++){
-            bool val = encodedBitsQ.front();
-            encodedBitsQ.pop();
-            nBitsRead.push_back(val);
-        }
-
-        // convert the b-1 bits read to dec/int
-        int readInt = 0;
-        for(int i = 0; i < b - 1; i++){
-            if(nBitsRead.at(b - 2 - i)){
-                readInt += pow(2, i);
-            }
-        }
-        r = readInt;
-
-        /* If the bits read are an encoded value less than 2**b-m, decoding is complete.*/
-        if(readInt >= ((int) pow(2,b) - this->m)) {
-            bool bitRead = encodedBitsQ.front();
-            encodedBitsQ.pop();
-
-            // covert the b-1 firstly read bits "concatenated" with the last bit read to dec/int
-            unsigned int bitReadInt = 0;
-            if(bitRead){ bitReadInt = 1; }
-
-            /* Otherwise, read an additional bit and subtract 2**b-m from the result. */
-            unsigned int newCodeRead = readInt*2 + bitReadInt;
-            r = newCodeRead + this->m - (int)pow(2,b);
-        }
-
-        unsigned int nMapped = this->m*q + r;
-
-        /* a positive value x is mapped to x'=2|x|=2x,x>0 and a negative value y is mapped to y'=2|y|-1=-2y-1,y<0*/
-        int n = nMapped;
-        if(nMapped % 2){ n = -(n+1);}
-        n /= 2;
-        numbers.push_back(n);
+int Golomb::decode2(vector<bool> encodedBits, unsigned int *index) {
+    /* Decode unary */
+    unsigned int q = 0;
+    while(!encodedBits.at(*index + q)){
+        q++;
     }
 
-    return numbers;
+    // update index
+    *index = *index + (q+1);
+
+    /* Decode truncated binary */
+    unsigned int r = 0;
+    // auto b = (unsigned int) ceil(log2(this->m));
+
+    vector<bool> nBitsRead;
+    for(int i = 0; i < this->b - 1; i++){
+        bool val = encodedBits.at(*index + i);
+        nBitsRead.push_back(val);
+    }
+
+    // update index
+    *index = *index + (b - 1);
+
+    // convert the b-1 bits read to dec/int
+    int readInt = 0;
+    for(int i = 0; i < this->b - 1; i++){
+        if(nBitsRead.at(this->b - 2 - i)){
+            readInt += pow(2, i);
+        }
+    }
+    r = readInt;
+
+    /* If the bits read are an encoded value less than 2**b-m, decoding is complete.*/
+    if(readInt >= ((int) pow(2, this->b) - this->m)) {
+        bool bitRead = encodedBits.at(*index);
+        // update index
+        *index = *index + 1;
+
+        // covert the b-1 firstly read bits "concatenated" with the last bit read to dec/int
+        unsigned int bitReadInt = 0;
+        if(bitRead){ bitReadInt = 1; }
+
+        /* Otherwise, read an additional bit and subtract 2**b-m from the result. */
+        unsigned int newCodeRead = readInt*2 + bitReadInt;
+        r = newCodeRead + this->m - (int)pow(2, this->b);
+    }
+
+    unsigned int nMapped = this->m*q + r;
+    /* a positive value x is mapped to x'=2|x|=2x,x>0 and a negative value y is mapped to y'=2|y|-1=-2y-1,y<0*/
+    int n = nMapped;
+    if(nMapped % 2){ n = -(n+1);}
+    n /= 2;
+
+    return n;
 }
 
 /*
