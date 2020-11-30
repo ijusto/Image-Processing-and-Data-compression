@@ -19,8 +19,6 @@ private:
     //! Golomb integer parameter.
     unsigned int m;
 
-    unsigned int b;
-
     //! Mode on to operate: encode and/or decode ('e', 'd', 'b')
     char mode;
 

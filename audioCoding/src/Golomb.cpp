@@ -10,12 +10,10 @@ using namespace std;
 
 Golomb::Golomb(unsigned int _m){
     this->m = _m;
-    this->b = (unsigned int) ceil(log2(this->m));
 }
 
 Golomb::Golomb(unsigned int _m, char *_encodeFile, char *_decodeFile){
     this->m = _m;
-    this->b = (unsigned int) ceil(log2(this->m));
     this->readBitStream = new BitStream(_decodeFile, 'r');
     this->writeBitStream = new BitStream(_encodeFile,'w');
     this->mode = 'b';
@@ -23,7 +21,6 @@ Golomb::Golomb(unsigned int _m, char *_encodeFile, char *_decodeFile){
 
 Golomb::Golomb(unsigned int _m, char *_file, char mode) {
     this->m = _m;
-    this->b = (unsigned int) ceil(log2(this->m));
     if(mode == 'e'){
         this->writeBitStream = new BitStream(_file,'w');
         this->mode = 'e';
@@ -38,7 +35,6 @@ Golomb::Golomb(unsigned int _m, char *_file, char mode) {
 
 void Golomb::setM(unsigned int _m){
     this->m = _m;
-    this->b = (unsigned int) ceil(log2(this->m));
 }
 
 vector<bool> Golomb::encode(int n) {
@@ -156,6 +152,7 @@ void Golomb::decode(vector<int> *numbers) {
 
 vector<int> Golomb::decode2(vector<bool> encodedBits, unsigned int *index, unsigned int count) {
     vector<int> decoded;
+    unsigned int b = (unsigned int) ceil(log2(this->m));
 
     int n_decoded = 0;
     while(n_decoded < count) {
@@ -173,7 +170,7 @@ vector<int> Golomb::decode2(vector<bool> encodedBits, unsigned int *index, unsig
         // auto b = (unsigned int) ceil(log2(this->m));
 
         vector<bool> nBitsRead;
-        for (int i = 0; i < this->b - 1; i++) {
+        for (int i = 0; i < b - 1; i++) {
             bool val = encodedBits.at(*index + i);
             nBitsRead.push_back(val);
         }
@@ -183,15 +180,15 @@ vector<int> Golomb::decode2(vector<bool> encodedBits, unsigned int *index, unsig
 
         // convert the b-1 bits read to dec/int
         int readInt = 0;
-        for (int i = 0; i < this->b - 1; i++) {
-            if (nBitsRead.at(this->b - 2 - i)) {
+        for (int i = 0; i < b - 1; i++) {
+            if (nBitsRead.at(b - 2 - i)) {
                 readInt += pow(2, i);
             }
         }
         r = readInt;
 
         /* If the bits read are an encoded value less than 2**b-m, decoding is complete.*/
-        if (readInt >= ((int) pow(2, this->b) - this->m)) {
+        if (readInt >= ((int) pow(2, b) - this->m)) {
             bool bitRead = encodedBits.at(*index);
             // update index
             *index = *index + 1;
@@ -202,7 +199,7 @@ vector<int> Golomb::decode2(vector<bool> encodedBits, unsigned int *index, unsig
 
             /* Otherwise, read an additional bit and subtract 2**b-m from the result. */
             unsigned int newCodeRead = readInt * 2 + bitReadInt;
-            r = newCodeRead + this->m - (int) pow(2, this->b);
+            r = newCodeRead + this->m - (int) pow(2, b);
         }
 
         unsigned int nMapped = this->m * q + r;

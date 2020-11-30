@@ -75,11 +75,11 @@ void AudioDecoder::decode(){
             nFrames = frames - framesRead;
         }
 
-        auto start = high_resolution_clock::now();
+        //auto start = high_resolution_clock::now();
         vector<int> samples = golomb->decode2(data, &index, nFrames*channels);
-        auto stop = high_resolution_clock::now();
-        auto duration = duration_cast<microseconds>(stop - start);
-        cout << "elapsed time: " << duration.count() << "micro seconds" << endl;
+        //auto stop = high_resolution_clock::now();
+        //auto duration = duration_cast<microseconds>(stop - start);
+        //cout << "elapsed time: " << duration.count() << "micro seconds" << endl;
 
         for (int fr = 0; fr < nFrames; fr++) {
             int leftRes = samples.at(fr*channels + 0);
@@ -103,11 +103,11 @@ void AudioDecoder::decode(){
         }
 
         framesRead += nFrames;
+        cout << "frames decoded: " << framesRead << "/" << frames << endl;
     }
 }
 
 void AudioDecoder::write(char* filename){
     SndfileHandle destFile  = SndfileHandle(filename, SFM_WRITE, format, channels, samplerate);
-    int frames = decodedRes.size()/channels;
-    destFile.write(decodedRes.data(), frames);
+    destFile.write(decodedRes.data(), decodedRes.size());
 }
