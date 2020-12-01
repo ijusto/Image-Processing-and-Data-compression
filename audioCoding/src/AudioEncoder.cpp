@@ -22,8 +22,9 @@ vector<bool> AudioEncoder::int2boolvec(int n){
     return bool_vec_res;
 }
 
-AudioEncoder::AudioEncoder(char* filename, int m){
+AudioEncoder::AudioEncoder(char* filename, int m, bool calcHist){
     initial_m = m;
+    calcHistogram = calcHist;
     sourceFile = SndfileHandle(filename, SFM_READ);
     if(sourceFile.error()) {
         std::cerr << "Error: invalid input file" << std::endl;
@@ -89,10 +90,22 @@ void AudioEncoder::encode(){
             leftSample = audioSample.at(sourceFile.channels()*fr + 0);
             rightSample = audioSample.at(sourceFile.channels()*fr + 1);
 
+            if (calcHistogram){
+                // add to samples list (for histogram)
+                leftSamples.push_back(leftSample);
+                rightSamples.push_back(rightSample);
+            }
+
             int predLeftSample = 3*leftSample_1 - 3*leftSample_2 + leftSample_3;
             int predRightSample = 3*rightSample_1 - 3*rightSample_2 + rightSample_3;
             leftRes = leftSample - predLeftSample;
             rightRes = rightSample - predRightSample;
+
+            if (calcHistogram){
+                // add to residuals list (for histogram)
+                leftResiduals.push_back(leftRes);
+                rightResiduals.push_back(rightRes);
+            }
 
             // update
             leftSample_3 = leftSample_2;

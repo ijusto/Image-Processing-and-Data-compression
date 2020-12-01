@@ -20,10 +20,11 @@ int main(int argc, char* argv[]) {
     char* src = argv[2];
     char* dst = argv[3];
     int initial_m = 500;
+    bool calcHist = false;
 
     if (op == "encode"){
         // init encoder with sound file
-        AudioEncoder* encoder = new AudioEncoder(src, initial_m);
+        AudioEncoder* encoder = new AudioEncoder(src, initial_m, calcHist);
         // encode
         encoder->encode();
         // write compressed file

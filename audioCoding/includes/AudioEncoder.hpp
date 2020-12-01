@@ -8,11 +8,18 @@
 #include <sndfile.hh>
 #include <vector>
 
+using namespace std;
+
 class AudioEncoder {
 private:
     SndfileHandle sourceFile;
-    std::vector<bool> encodedRes;
+    vector<bool> encodedRes;
     int initial_m;
+    bool calcHistogram;
+    vector<short> leftResiduals;
+    vector<short> rightResiduals;
+    vector<short> leftSamples;
+    vector<short> rightSamples;
 
     /**
      * Converts integer to bool vector representing bits.
@@ -28,7 +35,7 @@ public:
      * @param filename
      * @param m, initial m golomb parameter
      */
-    AudioEncoder(char* filename, int m);
+    AudioEncoder(char* filename, int m, bool calcHist);
 
     /**
      * Computes residuals for each channel using predictor.
