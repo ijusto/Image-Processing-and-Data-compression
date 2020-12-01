@@ -13,7 +13,7 @@ int main(int argc, char* argv[]) {
         cout << "usage: " << argv[0] << " <operation> SOURCE DEST" << endl;
         cout << "operations:" << endl;
         cout << "\t encode\t encode SOURCE .wav sound file into DEST compressed file" << endl;
-        cout << "\t decode\t decode SOURCE compressed file into SOURCE .wav sound file" << endl;
+        cout << "\t decode\t decode SOURCE compressed file into DEST .wav sound file" << endl;
         return 0;
     }
     string op = argv[1];

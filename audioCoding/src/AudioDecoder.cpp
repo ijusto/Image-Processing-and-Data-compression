@@ -4,9 +4,8 @@
 
 #include "../includes/AudioDecoder.hpp"
 #include <sndfile.hh>
-
-#include <chrono>
-using namespace std::chrono;
+//#include <chrono>
+//using namespace std::chrono;
 
 using namespace std;
 
@@ -38,11 +37,6 @@ AudioDecoder::AudioDecoder(char* filename){
 }
 
 void AudioDecoder::decode(){
-    int left_m = initial_m;
-    int right_m = initial_m;
-    // Golomb decoder
-    auto *golomb = new Golomb(initial_m);
-
     int leftSample = 0;
     int rightSample = 0;
 
@@ -54,35 +48,36 @@ void AudioDecoder::decode(){
     int rightSample_2 = 0;
     int rightSample_3 = 0;
 
-    // residuals
-    int leftRes = 0;
-    int rightRes = 0;
-    // used to compute mean of residuals
-    float left_res_sum = 0;
-    float right_res_sum = 0;
-    int numRes = 0;
+    // Golomb decoder
+    auto *golomb = new Golomb(initial_m);
+    int framesToDecode = 1000;
 
     // read all data
     int header_size = 20; // bytes
     vector<bool> data = sourceFile->readNbits((sourceFile->size() - header_size) * 8);
-
     unsigned int index = 0;
-    int framesRead = 0;
-    // decode sample by sample (to update m)
-    while(framesRead < frames){
-        int nFrames = 20000;
+
+    // used to compute mean of mapped residuals
+    float left_res_sum = 0;
+    float right_res_sum = 0;
+
+    int totalframes = 0;
+    while(totalframes < frames){
         // to not read more than available
-        if (framesRead+ nFrames > frames){
-            nFrames = frames - framesRead;
+        if (totalframes + framesToDecode > frames){
+            framesToDecode = frames - totalframes;
         }
 
+        totalframes += framesToDecode;
+        cout << "decoded frames: " << totalframes << "/" << frames << endl;
+
         //auto start = high_resolution_clock::now();
-        vector<int> samples = golomb->decode2(data, &index, nFrames*channels);
+        vector<int> samples = golomb->decode2(data, &index, framesToDecode * channels);
         //auto stop = high_resolution_clock::now();
         //auto duration = duration_cast<microseconds>(stop - start);
         //cout << "elapsed time: " << duration.count() << "micro seconds" << endl;
 
-        for (int fr = 0; fr < nFrames; fr++) {
+        for (int fr = 0; fr < framesToDecode; fr++) {
             int leftRes = samples.at(fr*channels + 0);
             int rightRes = samples.at(fr*channels + 1);
 
@@ -101,10 +96,34 @@ void AudioDecoder::decode(){
 
             decodedRes.push_back(leftSample);
             decodedRes.push_back(rightSample);
+
+            // update sum used for mean when computing m
+            // first map sin residuals to geometric dist used in golomb encoding
+            int leftnMapped = 2 * leftRes;
+            if (leftRes < 0){ leftnMapped = -leftnMapped - 1; }
+            int rightnMapped = 2 * rightRes;
+            if (rightRes < 0){ rightnMapped = -rightnMapped - 1; }
+            left_res_sum += leftnMapped;
+            right_res_sum += rightnMapped;
         }
 
-        framesRead += nFrames;
-        cout << "decoded frames: " << framesRead << "/" << frames << endl;
+        // compute m
+        // calc mean from last framesToDecode mapped samples
+        float left_res_mean = left_res_sum/framesToDecode;
+        float right_res_mean = right_res_sum/framesToDecode;
+        // calc alpha of geometric dist
+        // mu = alpha/(1 - alpha) <=> alpha = mu/(1 + mu)
+        float left_alpha = left_res_mean/(1 + left_res_mean);
+        float right_alpha = right_res_mean/(1 + right_res_mean);
+
+        int left_m = ceil(-1/log2(left_alpha));
+        int right_m = ceil(-1/log2(right_alpha));
+        int new_m = (left_m + right_m)/2;
+        golomb->setM(new_m);
+
+        // reset
+        left_res_sum = 0;
+        right_res_sum = 0;
     }
 }
 

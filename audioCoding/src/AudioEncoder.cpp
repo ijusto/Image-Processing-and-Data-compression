@@ -53,8 +53,8 @@ void AudioEncoder::encode(){
         exit(EXIT_FAILURE);
     }
 
-    int framesRead = 65536;
-    std::vector<short> audioSample(sourceFile.channels()*framesRead);
+    int framesToRead = 65536;
+    std::vector<short> audioSample(sourceFile.channels() * framesToRead);
 
     int leftSample = 0;
     int rightSample = 0;
@@ -67,22 +67,22 @@ void AudioEncoder::encode(){
     int rightSample_2 = 0;
     int rightSample_3 = 0;
 
-    // Golomb parameters
-    int left_m = initial_m;
-    int right_m = initial_m;
     // Golomb encoder
     auto *golomb = new Golomb(initial_m);
 
     // residuals
     int leftRes = 0;
     int rightRes = 0;
-    // used to compute mean of residuals
+    // used to compute mean of mapped residuals
     float left_res_sum = 0;
     float right_res_sum = 0;
     int numRes = 0;
 
     int totalframes = 0;
-    for(sf_count_t nFrames = sourceFile.readf(audioSample.data(), framesRead); nFrames != 0; nFrames = sourceFile.readf(audioSample.data(), framesRead)) {
+    for(sf_count_t nFrames = sourceFile.readf(audioSample.data(), framesToRead);
+        nFrames != 0;
+        nFrames = sourceFile.readf(audioSample.data(), framesToRead)) {
+
         totalframes += nFrames;
         cout << "encoded frames: " << totalframes << "/" << sourceFile.frames() << endl;
 
@@ -115,38 +115,45 @@ void AudioEncoder::encode(){
             rightSample_2 = rightSample_1;
             rightSample_1 = rightSample;
 
-            // compute estimate of m
-//            left_res_sum += leftRes;
-//            right_res_sum += rightRes;
-//            numRes++;
-//            if(numRes == 1000){
-//                float left_res_mean = left_res_sum/numRes;
-//                float right_res_mean = right_res_sum/numRes;
-//                float left_alpha = (-1 + sqrt(1+4*left_res_mean))/(2*left_res_mean);
-//                float right_alpha = (-1 + sqrt(1+4*right_res_mean))/(2*right_res_mean);
-//
-//                left_m = ceil(-1/log2(left_alpha));
-//                right_m = ceil(-1/log2(right_alpha));
-//
-//                cout << "left_m " << left_m << endl;
-//                cout << "left_res_mean " << left_res_mean << endl;
-//
-//                left_res_sum = 0;
-//                right_res_sum = 0;
-//                numRes = 0;
-//            }
-
             // encode left
-            golomb->setM(left_m);
             vector<bool> encodedResidual = golomb->encode2(leftRes);
             // append
             encodedRes.insert(encodedRes.end(), encodedResidual.begin(), encodedResidual.end());
 
             // encode right
-            golomb->setM(right_m);
             encodedResidual = golomb->encode2(rightRes);
             // append
             encodedRes.insert(encodedRes.end(), encodedResidual.begin(), encodedResidual.end());
+
+            // compute m
+            // first map sin residuals to geometric dist used in golomb encoding
+            int leftnMapped = 2 * leftRes;
+            if (leftRes < 0){ leftnMapped = -leftnMapped - 1; }
+            int rightnMapped = 2 * rightRes;
+            if (rightRes < 0){ rightnMapped = -rightnMapped - 1; }
+            left_res_sum += leftnMapped;
+            right_res_sum += rightnMapped;
+
+            numRes++;
+            if(numRes == 1000){
+                // calc mean from last 100 mapped samples
+                float left_res_mean = left_res_sum/numRes;
+                float right_res_mean = right_res_sum/numRes;
+                // calc alpha of geometric dist
+                // mu = alpha/(1 - alpha) <=> alpha = mu/(1 + mu)
+                float left_alpha = left_res_mean/(1 + left_res_mean);
+                float right_alpha = right_res_mean/(1 + right_res_mean);
+
+                int left_m = ceil(-1/log2(left_alpha));
+                int right_m = ceil(-1/log2(right_alpha));
+                int new_m = (left_m + right_m)/2;
+                golomb->setM(new_m);
+
+                // reset
+                left_res_sum = 0;
+                right_res_sum = 0;
+                numRes = 0;
+            }
         }
     }
 }
