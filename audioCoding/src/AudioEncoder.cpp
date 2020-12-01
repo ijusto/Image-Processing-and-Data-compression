@@ -69,6 +69,8 @@ void AudioEncoder::encode(){
 
     // Golomb encoder
     auto *golomb = new Golomb(initial_m);
+    // calc m every m_rate frames
+    int m_rate = 1000;
 
     // residuals
     int leftRes = 0;
@@ -135,7 +137,7 @@ void AudioEncoder::encode(){
             right_res_sum += rightnMapped;
 
             numRes++;
-            if(numRes == 1000){
+            if(numRes == m_rate){
                 // calc mean from last 100 mapped samples
                 float left_res_mean = left_res_sum/numRes;
                 float right_res_mean = right_res_sum/numRes;
@@ -146,7 +148,7 @@ void AudioEncoder::encode(){
 
                 int left_m = ceil(-1/log2(left_alpha));
                 int right_m = ceil(-1/log2(right_alpha));
-                int new_m = (left_m + right_m)/2;
+                int new_m = (left_m + right_m)/2 + 2; // off set by 2 if both alphas are 0
                 golomb->setM(new_m);
 
                 // reset

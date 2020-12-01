@@ -50,7 +50,7 @@ void AudioDecoder::decode(){
 
     // Golomb decoder
     auto *golomb = new Golomb(initial_m);
-    int framesToDecode = 1000;
+    int framesToDecode = 1000; // must be equal to Encoder's m_rate
 
     // read all data
     int header_size = 20; // bytes
@@ -118,7 +118,7 @@ void AudioDecoder::decode(){
 
         int left_m = ceil(-1/log2(left_alpha));
         int right_m = ceil(-1/log2(right_alpha));
-        int new_m = (left_m + right_m)/2;
+        int new_m = (left_m + right_m)/2 + 2; // off set by 2 if both alphas are 0
         golomb->setM(new_m);
 
         // reset
