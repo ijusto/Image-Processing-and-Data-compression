@@ -104,6 +104,10 @@ void BitStream::endWriteFile(){
     this->outfile.close();
 }
 
+unsigned int BitStream::size(){
+    return len;
+}
+
 BitStream::~BitStream(){
     delete this;
 }

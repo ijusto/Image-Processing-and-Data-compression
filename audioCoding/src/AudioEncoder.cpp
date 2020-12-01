@@ -152,7 +152,6 @@ void AudioEncoder::encode(){
 }
 
 void AudioEncoder::write(char* filename){
-    cout << "writing..." << endl;
     auto * wbs = new BitStream(filename, 'w');
 
     vector<bool> file;

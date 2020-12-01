@@ -28,6 +28,7 @@ int main(int argc, char* argv[]) {
         // encode
         encoder->encode();
         // write compressed file
+        cout << "writing..." << endl;
         encoder->write(dst);
     }else if (op == "decode"){
         // init decoder with compressed file
@@ -35,6 +36,7 @@ int main(int argc, char* argv[]) {
         // decode
         decoder->decode();
         // write sound file
+        cout << "writing..." << endl;
         decoder->write(dst);
     }
 }

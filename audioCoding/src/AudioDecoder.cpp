@@ -63,7 +63,8 @@ void AudioDecoder::decode(){
     int numRes = 0;
 
     // read all data
-    vector<bool> data = sourceFile->readNbits((3847369 - 16)*8); //  for sample01.wav
+    int header_size = 20; // bytes
+    vector<bool> data = sourceFile->readNbits((sourceFile->size() - header_size) * 8);
 
     unsigned int index = 0;
     int framesRead = 0;
@@ -87,8 +88,8 @@ void AudioDecoder::decode(){
 
             int predLeftSample = 3 * leftSample_1 - 3 * leftSample_2 + leftSample_3;
             int predRightSample = 3 * rightSample_1 - 3 * rightSample_2 + rightSample_3;
-            leftSample = predLeftSample - leftRes;
-            rightSample = predRightSample - rightRes;
+            leftSample = leftRes + predLeftSample;
+            rightSample = rightRes + predRightSample;
 
             // update
             leftSample_3 = leftSample_2;
@@ -103,7 +104,7 @@ void AudioDecoder::decode(){
         }
 
         framesRead += nFrames;
-        cout << "frames decoded: " << framesRead << "/" << frames << endl;
+        cout << "decoded frames: " << framesRead << "/" << frames << endl;
     }
 }
 

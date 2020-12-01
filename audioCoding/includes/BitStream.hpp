@@ -84,6 +84,12 @@ public:
 
     void endWriteFile();
 
+    /**
+     * Returns size of file in number of bytes.
+     * @return number of bytes.
+     */
+    unsigned int size();
+
 };
 
 #endif //ENTROPYCODING_BITSTREAM_HPP
