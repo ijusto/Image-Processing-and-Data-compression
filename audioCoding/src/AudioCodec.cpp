@@ -5,8 +5,28 @@
 #include <iostream>
 #include "AudioEncoder.cpp"
 #include "AudioDecoder.cpp"
+#include "EntropyCalculator.cpp"
+#include  <unordered_map>
+#include  <vector>
 
 using namespace std;
+
+std::unordered_map<short, int> calcHistogram(const std::vector<short>& values){
+    std::unordered_map<short, int> histogram;
+    for(short value : values) {
+        histogram[value] = (histogram.find(value) != histogram.end()) ? histogram[value] + 1 : 1;
+    }
+    return histogram;
+}
+
+void vectorToCsv(const char* fName, std::vector<short>* hitVec){
+    std::ofstream csv;
+    csv.open(fName);
+    for(auto & value : *hitVec){
+        csv << value << "\n";
+    }
+    csv.close();
+}
 
 int main(int argc, char* argv[]) {
     if((argc < 4) || (string(argv[1]) != "encode" && string(argv[1]) != "decode")){
@@ -22,9 +42,11 @@ int main(int argc, char* argv[]) {
     int initial_m = 500;
     bool calcHist = false;
 
+    // init encoder with sound file
+    AudioEncoder* encoder = new AudioEncoder(src, initial_m, calcHist);
+
     if (op == "encode"){
-        // init encoder with sound file
-        AudioEncoder* encoder = new AudioEncoder(src, initial_m, calcHist);
+
         // encode
         encoder->encode();
         // write compressed file
@@ -38,5 +60,37 @@ int main(int argc, char* argv[]) {
         // write sound file
         cout << "writing..." << endl;
         decoder->write(dst);
+    }else if(op == "hist/entropy"){
+
+        // read audio to calculate Histogram of the audio sample (left and right  residuals channels)
+        std::vector<short> leftResidualsChannel = encoder->getLeftResiduals();
+        std::vector<short> rightResidualsChannel = encoder->getRightResiduals();
+
+        std::unordered_map<short, int> hist_left_residuals_channel = calcHistogram(leftResidualsChannel);
+        std::unordered_map<short, int> hist_right_residuals_channel = calcHistogram(rightResidualsChannel);
+        vectorToCsv("./src/audioHistograms/leftResidualsChannel.csv", &leftResidualsChannel);
+        vectorToCsv("./src/audio/audioHistograms/rightResidualsChannel.csv", &rightResidualsChannel);
+
+        auto * entropyCalculatorLeftResiduals = new EntropyCalculator(&hist_left_residuals_channel, leftResidualsChannel.size());
+        printf("\nentropy of the residuals of left channel: %f", entropyCalculatorLeftResiduals->getEntropy());
+        auto * entropyCalculatorRightResiduals = new EntropyCalculator(&hist_right_residuals_channel, rightResidualsChannel.size());
+        printf("\nentropy of the residuals of right channel: %f", entropyCalculatorRightResiduals->getEntropy());
+
+        // read audio to calculate Histogram of the audio sample (left and right channels)
+        std::vector<short> leftChannel = encoder->getLeftSamples();
+        std::vector<short> rightChannel = encoder->getRightSamples();
+
+        std::unordered_map<short, int> hist_left_channel = calcHistogram(leftChannel);
+        std::unordered_map<short, int> hist_right_channel = calcHistogram(rightChannel);
+
+        auto * entropyCalculatorLeft = new EntropyCalculator(&hist_left_residuals_channel, leftResidualsChannel.size());
+        printf("\nentropy of the left channel: %f", entropyCalculatorLeft->getEntropy());
+        auto * entropyCalculatorRight = new EntropyCalculator(&hist_right_residuals_channel, rightResidualsChannel.size());
+        printf("\nentropy of the right channel: %f", entropyCalculatorRight->getEntropy());
+
+    }else{
+        printf("\n ERROR : This option doesn't exist!!");
     }
+
 }
+

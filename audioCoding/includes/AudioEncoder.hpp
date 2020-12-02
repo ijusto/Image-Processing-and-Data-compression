@@ -47,6 +47,23 @@ public:
      * @param filename
      */
     void write(char* filename);
+
+    /**
+    * Returns the Residuals of the left channel
+    */
+    const vector<short> &getLeftResiduals() const;
+    /**
+    * Returns the Residuals of the Right channel
+    */
+    const vector<short> &getRightResiduals() const;
+    /**
+    * Returns the Samples of the Left channel
+    */
+    const vector<short> &getLeftSamples() const;
+    /**
+    * Returns the Samples of the Right channel
+    */
+    const vector<short> &getRightSamples() const;
 };
 
 

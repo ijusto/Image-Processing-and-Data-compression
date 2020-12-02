@@ -188,3 +188,20 @@ void AudioEncoder::write(char* filename){
     wbs->writeNbits(file);
     wbs->endWriteFile();
 }
+
+const vector<short> &AudioEncoder::getLeftResiduals() const {
+    return leftResiduals;
+}
+
+const vector<short> &AudioEncoder::getRightResiduals() const {
+    return rightResiduals;
+}
+
+const vector<short> &AudioEncoder::getLeftSamples() const {
+    return leftSamples;
+}
+
+const vector<short> &AudioEncoder::getRightSamples() const {
+    return rightSamples;
+}
+
