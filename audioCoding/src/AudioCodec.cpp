@@ -12,7 +12,7 @@
 using namespace std;
 
 std::unordered_map<short, int> calcHistogram(const std::vector<short>& values){
-    std::unordered_map<short, int> histogram;
+    unordered_map<short, int> histogram;
     for(short value : values) {
         histogram[value] = (histogram.find(value) != histogram.end()) ? histogram[value] + 1 : 1;
     }
@@ -20,7 +20,7 @@ std::unordered_map<short, int> calcHistogram(const std::vector<short>& values){
 }
 
 void vectorToCsv(const char* fName, std::vector<short>* hitVec){
-    std::ofstream csv;
+    ofstream csv;
     csv.open(fName);
     for(auto & value : *hitVec){
         csv << value << "\n";
@@ -63,11 +63,11 @@ int main(int argc, char* argv[]) {
     }else if(op == "hist/entropy"){
 
         // read audio to calculate Histogram of the audio sample (left and right  residuals channels)
-        std::vector<short> leftResidualsChannel = encoder->getLeftResiduals();
-        std::vector<short> rightResidualsChannel = encoder->getRightResiduals();
+        vector<short> leftResidualsChannel = encoder->getLeftResiduals();
+        vector<short> rightResidualsChannel = encoder->getRightResiduals();
 
-        std::unordered_map<short, int> hist_left_residuals_channel = calcHistogram(leftResidualsChannel);
-        std::unordered_map<short, int> hist_right_residuals_channel = calcHistogram(rightResidualsChannel);
+        unordered_map<short, int> hist_left_residuals_channel = calcHistogram(leftResidualsChannel);
+        unordered_map<short, int> hist_right_residuals_channel = calcHistogram(rightResidualsChannel);
         vectorToCsv("./src/audioHistograms/leftResidualsChannel.csv", &leftResidualsChannel);
         vectorToCsv("./src/audio/audioHistograms/rightResidualsChannel.csv", &rightResidualsChannel);
 
@@ -77,11 +77,11 @@ int main(int argc, char* argv[]) {
         printf("\nentropy of the residuals of right channel: %f", entropyCalculatorRightResiduals->getEntropy());
 
         // read audio to calculate Histogram of the audio sample (left and right channels)
-        std::vector<short> leftChannel = encoder->getLeftSamples();
-        std::vector<short> rightChannel = encoder->getRightSamples();
+        vector<short> leftChannel = encoder->getLeftSamples();
+        vector<short> rightChannel = encoder->getRightSamples();
 
-        std::unordered_map<short, int> hist_left_channel = calcHistogram(leftChannel);
-        std::unordered_map<short, int> hist_right_channel = calcHistogram(rightChannel);
+        unordered_map<short, int> hist_left_channel = calcHistogram(leftChannel);
+        unordered_map<short, int> hist_right_channel = calcHistogram(rightChannel);
 
         auto * entropyCalculatorLeft = new EntropyCalculator(&hist_left_residuals_channel, leftResidualsChannel.size());
         printf("\nentropy of the left channel: %f", entropyCalculatorLeft->getEntropy());
