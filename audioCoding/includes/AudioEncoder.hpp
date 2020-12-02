@@ -15,6 +15,7 @@ private:
     SndfileHandle sourceFile;
     vector<bool> encodedRes;
     int initial_m;
+    bool useLossy;
     bool calcHistogram;
     vector<short> leftResiduals;
     vector<short> rightResiduals;
@@ -35,7 +36,7 @@ public:
      * @param filename
      * @param m, initial m golomb parameter
      */
-    AudioEncoder(char* filename, int m, bool calcHist);
+    AudioEncoder(char* filename, int m, bool lossy, bool calcHist);
 
     /**
      * Computes residuals for each channel using predictor.

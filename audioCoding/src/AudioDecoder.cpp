@@ -37,16 +37,16 @@ AudioDecoder::AudioDecoder(char* filename){
 }
 
 void AudioDecoder::decode(){
-    int leftSample = 0;
-    int rightSample = 0;
+    short leftSample = 0;
+    short rightSample = 0;
 
     // predictor: 3*sample_1 - 3*sample_2 + sample_3
-    int leftSample_1 = 0;
-    int leftSample_2 = 0;
-    int leftSample_3 = 0;
-    int rightSample_1 = 0;
-    int rightSample_2 = 0;
-    int rightSample_3 = 0;
+    short leftSample_1 = 0;
+    short leftSample_2 = 0;
+    short leftSample_3 = 0;
+    short rightSample_1 = 0;
+    short rightSample_2 = 0;
+    short rightSample_3 = 0;
 
     // Golomb decoder
     auto *golomb = new Golomb(initial_m);
@@ -78,13 +78,13 @@ void AudioDecoder::decode(){
         //cout << "elapsed time: " << duration.count() << "micro seconds" << endl;
 
         for (int fr = 0; fr < framesToDecode; fr++) {
-            int leftRes = samples.at(fr*channels + 0);
-            int rightRes = samples.at(fr*channels + 1);
+            short leftRes = samples.at(fr*channels + 0);
+            short rightRes = samples.at(fr*channels + 1);
 
-            int predLeftSample = 3 * leftSample_1 - 3 * leftSample_2 + leftSample_3;
-            int predRightSample = 3 * rightSample_1 - 3 * rightSample_2 + rightSample_3;
-            leftSample = leftRes + predLeftSample;
-            rightSample = rightRes + predRightSample;
+            short predLeftSample = 3 * leftSample_1 - 3 * leftSample_2 + leftSample_3;
+            short predRightSample = 3 * rightSample_1 - 3 * rightSample_2 + rightSample_3;
+            leftSample = predLeftSample + leftRes;
+            rightSample = predRightSample + rightRes;
 
             // update
             leftSample_3 = leftSample_2;

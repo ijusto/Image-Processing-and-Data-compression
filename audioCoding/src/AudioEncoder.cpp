@@ -22,9 +22,11 @@ vector<bool> AudioEncoder::int2boolvec(int n){
     return bool_vec_res;
 }
 
-AudioEncoder::AudioEncoder(char* filename, int m, bool calcHist){
+AudioEncoder::AudioEncoder(char* filename, int m, bool lossy, bool calcHist){
     initial_m = m;
+    useLossy = lossy;
     calcHistogram = calcHist;
+
     sourceFile = SndfileHandle(filename, SFM_READ);
     if(sourceFile.error()) {
         std::cerr << "Error: invalid input file" << std::endl;
@@ -56,25 +58,22 @@ void AudioEncoder::encode(){
     int framesToRead = 65536;
     std::vector<short> audioSample(sourceFile.channels() * framesToRead);
 
-    int leftSample = 0;
-    int rightSample = 0;
+    short leftSample = 0;
+    short rightSample = 0;
 
     // predictor: 3*sample_1 - 3*sample_2 + sample_3
-    int leftSample_1 = 0;
-    int leftSample_2 = 0;
-    int leftSample_3 = 0;
-    int rightSample_1 = 0;
-    int rightSample_2 = 0;
-    int rightSample_3 = 0;
+    short leftSample_1 = 0;
+    short leftSample_2 = 0;
+    short leftSample_3 = 0;
+    short rightSample_1 = 0;
+    short rightSample_2 = 0;
+    short rightSample_3 = 0;
 
     // Golomb encoder
     auto *golomb = new Golomb(initial_m);
     // calc m every m_rate frames
     int m_rate = 1000;
 
-    // residuals
-    int leftRes = 0;
-    int rightRes = 0;
     // used to compute mean of mapped residuals
     float left_res_sum = 0;
     float right_res_sum = 0;
@@ -92,18 +91,27 @@ void AudioEncoder::encode(){
             leftSample = audioSample.at(sourceFile.channels()*fr + 0);
             rightSample = audioSample.at(sourceFile.channels()*fr + 1);
 
+            // use predictor
+            short predLeftSample = 3*leftSample_1 - 3*leftSample_2 + leftSample_3;
+            short predRightSample = 3*rightSample_1 - 3*rightSample_2 + rightSample_3;
+            // calc residuals
+            short leftRes = leftSample - predLeftSample;
+            short rightRes = rightSample - predRightSample;
+
+            // quantize residuals
+            // must not remove gaussian distribution
+            if(useLossy){
+                int shift = 4;
+                leftRes >>= shift;                   // r~
+                rightRes >>= shift;                 // r~
+                leftSample = predLeftSample + leftRes;        // x~
+                rightSample = predRightSample + rightRes;     // x~
+            }
+
             if (calcHistogram){
                 // add to samples list (for histogram)
                 leftSamples.push_back(leftSample);
                 rightSamples.push_back(rightSample);
-            }
-
-            int predLeftSample = 3*leftSample_1 - 3*leftSample_2 + leftSample_3;
-            int predRightSample = 3*rightSample_1 - 3*rightSample_2 + rightSample_3;
-            leftRes = leftSample - predLeftSample;
-            rightRes = rightSample - predRightSample;
-
-            if (calcHistogram){
                 // add to residuals list (for histogram)
                 leftResiduals.push_back(leftRes);
                 rightResiduals.push_back(rightRes);
