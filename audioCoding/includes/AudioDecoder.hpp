@@ -13,11 +13,14 @@ class AudioDecoder {
 private:
     vector<short> decodedRes;
     BitStream *sourceFile;
+    unsigned int headerSize;
     int initial_m;
     int format;
     int channels;
     int samplerate;
     int frames;
+    bool lossless;
+    unsigned int quantBits;
 
     /**
      * Asserts that vector contains bits stored as least significant bit at the biggest address.

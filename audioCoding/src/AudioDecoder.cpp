@@ -20,19 +20,21 @@ int AudioDecoder::boolvec2int(vector<bool> vec){
 AudioDecoder::AudioDecoder(char* filename){
     sourceFile = new BitStream(filename, 'r');
 
-    // read 20 byte file header (initial_m, format, channels, samplerate, frames)
-    int size = 4*8;
+    // add 28 byte file header (initial_m, format, channels, samplerate, frames, lossless, qBits)
+    headerSize = 28;        // bytes
+    int paramsSize = 32;    // bits
     try {
-        initial_m = boolvec2int(sourceFile->readNbits(size));
-        format = boolvec2int(sourceFile->readNbits(size));
-        channels = boolvec2int(sourceFile->readNbits(size));
-        samplerate = boolvec2int(sourceFile->readNbits(size));
-        frames = boolvec2int(sourceFile->readNbits(size));
+        initial_m = boolvec2int(sourceFile->readNbits(paramsSize));
+        format = boolvec2int(sourceFile->readNbits(paramsSize));
+        channels = boolvec2int(sourceFile->readNbits(paramsSize));
+        samplerate = boolvec2int(sourceFile->readNbits(paramsSize));
+        frames = boolvec2int(sourceFile->readNbits(paramsSize));
+        lossless = boolvec2int(sourceFile->readNbits(paramsSize));
+        quantBits = boolvec2int(sourceFile->readNbits(paramsSize));
     } catch( string mess){
         std::cout << mess << std::endl;
         std::exit(0);
     }
-
 
 }
 
@@ -48,13 +50,19 @@ void AudioDecoder::decode(){
     short rightSample_2 = 0;
     short rightSample_3 = 0;
 
+    // predictor values
+    short predLeftSample;
+    short predRightSample;
+    // residuals
+    short leftRes;
+    short rightRes;
+
     // Golomb decoder
     auto *golomb = new Golomb(initial_m);
     int framesToDecode = 1000; // must be equal to Encoder's m_rate
 
     // read all data
-    int header_size = 20; // bytes
-    vector<bool> data = sourceFile->readNbits((sourceFile->size() - header_size) * 8);
+    vector<bool> data = sourceFile->readNbits((sourceFile->size() - headerSize) * 8);
     unsigned int index = 0;
 
     // used to compute mean of mapped residuals
@@ -78,13 +86,24 @@ void AudioDecoder::decode(){
         //cout << "elapsed time: " << duration.count() << "micro seconds" << endl;
 
         for (int fr = 0; fr < framesToDecode; fr++) {
-            short leftRes = samples.at(fr*channels + 0);
-            short rightRes = samples.at(fr*channels + 1);
+            leftRes = samples.at(fr*channels + 0);
+            rightRes = samples.at(fr*channels + 1);
 
-            short predLeftSample = 3 * leftSample_1 - 3 * leftSample_2 + leftSample_3;
-            short predRightSample = 3 * rightSample_1 - 3 * rightSample_2 + rightSample_3;
-            leftSample = predLeftSample + leftRes;
-            rightSample = predRightSample + rightRes;
+            if(lossless){
+                // use predictor (best for lossless)
+                predLeftSample = 3*leftSample_1 - 3*leftSample_2 + leftSample_3;
+                predRightSample = 3*rightSample_1 - 3*rightSample_2 + rightSample_3;
+                // re calc samples
+                leftSample = predLeftSample + leftRes;
+                rightSample = predRightSample + rightRes;
+            }else{
+                // use predictor (best for lossy)
+                predLeftSample = leftSample_1;
+                predRightSample = rightSample_1;
+                // re calc samples with correctly scaled residuals
+                leftSample = predLeftSample + (leftRes << quantBits);
+                rightSample = predRightSample + (rightRes << quantBits);
+            }
 
             // update
             leftSample_3 = leftSample_2;

@@ -22,9 +22,10 @@ vector<bool> AudioEncoder::int2boolvec(int n){
     return bool_vec_res;
 }
 
-AudioEncoder::AudioEncoder(char* filename, int m, bool lossy, bool calcHist){
+AudioEncoder::AudioEncoder(char* filename, int m, bool ll, unsigned int qBits, bool calcHist){
     initial_m = m;
-    useLossy = lossy;
+    lossless = ll;
+    quantBits = qBits;
     calcHistogram = calcHist;
 
     sourceFile = SndfileHandle(filename, SFM_READ);
@@ -69,6 +70,13 @@ void AudioEncoder::encode(){
     short rightSample_2 = 0;
     short rightSample_3 = 0;
 
+    // predictor values
+    short predLeftSample;
+    short predRightSample;
+    // residuals
+    short leftRes;
+    short rightRes;
+
     // Golomb encoder
     auto *golomb = new Golomb(initial_m);
     // calc m every m_rate frames
@@ -91,27 +99,37 @@ void AudioEncoder::encode(){
             leftSample = audioSample.at(sourceFile.channels()*fr + 0);
             rightSample = audioSample.at(sourceFile.channels()*fr + 1);
 
-            // use predictor
-            short predLeftSample = 3*leftSample_1 - 3*leftSample_2 + leftSample_3;
-            short predRightSample = 3*rightSample_1 - 3*rightSample_2 + rightSample_3;
-            // calc residuals
-            short leftRes = leftSample - predLeftSample;
-            short rightRes = rightSample - predRightSample;
-
-            // quantize residuals
-            // must not remove gaussian distribution
-            if(useLossy){
-                int shift = 4;
-                leftRes >>= shift;                   // r~
-                rightRes >>= shift;                 // r~
-                leftSample = predLeftSample + leftRes;        // x~
-                rightSample = predRightSample + rightRes;     // x~
-            }
-
+            // original samples
             if (calcHistogram){
                 // add to samples list (for histogram)
                 leftSamples.push_back(leftSample);
                 rightSamples.push_back(rightSample);
+            }
+
+            if(lossless){
+                // use predictor (best for lossless)
+                predLeftSample = 3*leftSample_1 - 3*leftSample_2 + leftSample_3;
+                predRightSample = 3*rightSample_1 - 3*rightSample_2 + rightSample_3;
+                // calc residuals
+                leftRes = leftSample - predLeftSample;
+                rightRes = rightSample - predRightSample;
+            }else{
+                // use predictor (best for lossy)
+                predLeftSample = leftSample_1;
+                predRightSample = rightSample_1;
+                // calc residuals
+                leftRes = leftSample - predLeftSample;
+                rightRes = rightSample - predRightSample;
+                // quantize residuals
+                // must not remove gaussian distribution
+                leftRes = (leftRes >> quantBits);
+                rightRes = (rightRes >> quantBits);
+                // re calc samples to sync with decoder
+                leftSample = predLeftSample + (leftRes << quantBits);
+                rightSample = predRightSample + (rightRes << quantBits);
+            }
+
+            if (calcHistogram){
                 // add to residuals list (for histogram)
                 leftResiduals.push_back(leftRes);
                 rightResiduals.push_back(rightRes);
@@ -144,6 +162,13 @@ void AudioEncoder::encode(){
             left_res_sum += leftnMapped;
             right_res_sum += rightnMapped;
 
+//            // display residuals transformed to geometric dist
+//            if (calcHistogram){
+//                // add to mapped residuals list (for histogram)
+//                leftResiduals.push_back(leftnMapped);
+//                rightResiduals.push_back(rightnMapped);
+//            }
+
             numRes++;
             if(numRes == m_rate){
                 // calc mean from last 100 mapped samples
@@ -173,7 +198,7 @@ void AudioEncoder::write(char* filename){
 
     vector<bool> file;
 
-    // add 20 byte file header (initial_m, format, channels, samplerate, frames)
+    // add 28 byte file header (initial_m, format, channels, samplerate, frames, lossless, qBits)
     // initial_m
     vector<bool> m = int2boolvec(initial_m);
     file.insert(file.cend(), m.begin(), m.end());
@@ -189,6 +214,12 @@ void AudioEncoder::write(char* filename){
     // frames
     vector<bool> frames = int2boolvec(sourceFile.frames());
     file.insert(file.end(), frames.begin(), frames.end());
+    // lossless mode
+    vector<bool> ll = int2boolvec(lossless);
+    file.insert(file.end(), ll.begin(), ll.end());
+    // quant Bits used in lossy mode
+    vector<bool> qBits = int2boolvec(quantBits);
+    file.insert(file.end(), qBits.begin(), qBits.end());
 
     // add data
     file.insert(file.end(), encodedRes.begin(), encodedRes.end());

@@ -15,7 +15,8 @@ private:
     SndfileHandle sourceFile;
     vector<bool> encodedRes;
     int initial_m;
-    bool useLossy;
+    bool lossless;
+    unsigned int quantBits;
     bool calcHistogram;
     vector<short> leftResiduals;
     vector<short> rightResiduals;
@@ -35,8 +36,11 @@ public:
      * Constructor
      * @param filename
      * @param m, initial m golomb parameter
+     * @param ll true is lossless, false is lossy
+     * @param qBits number of bits used for quantization
+     * @param calcHist store samples and residuals
      */
-    AudioEncoder(char* filename, int m, bool lossy, bool calcHist);
+    AudioEncoder(char* filename, int m, bool ll, unsigned int qBits, bool calcHist);
 
     /**
      * Computes residuals for each channel using predictor.

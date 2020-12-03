@@ -36,15 +36,16 @@ int main(int argc, char* argv[]) {
         cout << "\tdecode\tdecode SOURCE compressed file into DEST .wav sound file" << endl;
         cout << "options:" << endl;
         cout << "\t-hist\tcompute histograms and entropy and save to .csv (encode operation only)" << endl;
-        cout << "\t-lossy\tuse lossy compression (encode operation only)" << endl;
+        cout << "\t-lossless\tuse lossless compression (encode operation only)" << endl;
         return 0;
     }
     string op = argv[1];
     char* src = argv[2];
     char* dst = argv[3];
     int initial_m = 500;
+    bool lossless = true;
+    int unsigned quantBits = 6;
     bool calcHist = false;
-    bool lossy = false;
 
     // parse options
     if(argc > 4){
@@ -53,14 +54,14 @@ int main(int argc, char* argv[]) {
                 calcHist = true;
             }
             if(string(argv[i]) == "-lossy"){
-                lossy = true;
+                lossless = false;
             }
         }
     }
 
     if (op == "encode"){
         // init encoder with sound file
-        AudioEncoder* encoder = new AudioEncoder(src, initial_m, lossy, calcHist);
+        AudioEncoder* encoder = new AudioEncoder(src, initial_m, lossless, quantBits, calcHist);
         // encode
         encoder->encode();
         // write compressed file
@@ -89,7 +90,7 @@ int main(int argc, char* argv[]) {
             auto * entropyCalculatorLeft = new EntropyCalculator(&hist_left_channel, leftResidualsChannel.size());
             printf("\nentropy of the left channel: %f bits", entropyCalculatorLeft->getEntropy());
             auto * entropyCalculatorRight = new EntropyCalculator(&hist_right_channel, rightResidualsChannel.size());
-            printf("\nentropy of the right channel: %f bits", entropyCalculatorRight->getEntropy());
+            printf("\nentropy of the right channel: %f bits\n", entropyCalculatorRight->getEntropy());
         }
     }else if (op == "decode"){
         // init decoder with compressed file
