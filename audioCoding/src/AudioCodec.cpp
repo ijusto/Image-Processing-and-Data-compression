@@ -44,7 +44,7 @@ int main(int argc, char* argv[]) {
     char* dst = argv[3];
     int initial_m = 500;
     bool lossless = true;
-    int unsigned quantBits = 6;
+    int unsigned quantBits = 10;
     bool calcHist = false;
 
     // parse options
@@ -87,6 +87,9 @@ int main(int argc, char* argv[]) {
             vector<short> rightChannel = encoder->getRightSamples();
             unordered_map<short, int> hist_left_channel = calcHistogram(leftChannel);
             unordered_map<short, int> hist_right_channel = calcHistogram(rightChannel);
+            vectorToCsv("leftChannel.csv", &leftChannel);
+            vectorToCsv("rightChannel.csv", &rightChannel);
+
             auto * entropyCalculatorLeft = new EntropyCalculator(&hist_left_channel, leftResidualsChannel.size());
             printf("\nentropy of the left channel: %f bits", entropyCalculatorLeft->getEntropy());
             auto * entropyCalculatorRight = new EntropyCalculator(&hist_right_channel, rightResidualsChannel.size());
