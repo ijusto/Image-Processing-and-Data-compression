@@ -2,7 +2,8 @@ cmake_minimum_required(VERSION 3.10)
 project(audioCoding)
 
 include_directories(includes)
-file(GLOB SOURCES src/*.cpp)
+include_directories(../audioAndImageOrVideoManipulation/includes)
+include_directories(../entropyCoding//includes)
 
 set(SNDFILE_LIBRARY "-lsndfile")
 set(SNDFILE_DIR "-L/usr/lib/")

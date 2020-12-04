@@ -5,7 +5,7 @@
 #ifndef AUDIOCODING_AUDIODECODER_H
 #define AUDIOCODING_AUDIODECODER_H
 
-#include "BitStream.hpp"
+#include "../../entropyCoding/includes/BitStream.hpp"
 #include <sndfile.hh>
 #include <vector>
 
@@ -27,7 +27,7 @@ private:
      * @param vec
      * @return
      */
-    int boolvec2int(vector<bool> vec);
+    static int boolvec2int(vector<bool> vec);
 
 public:
 

@@ -11,18 +11,17 @@ pip3 install --user -r requirements.txt
 
 ### Build the entire project.
 ```
-cd build
+mkdir build && cd build
 cmake ..
 cmake --build .
 cd ..
 ```
 
 ### Run the scripts
-Always run the scripts on the project directory (/audioAndImageOrVideoManipulation).
 
 #### Copy a wav file, sample by sample. 
 ``` 
-./build/copywav ./wav_files/sample01.wav ./src/audio/copiedwav.wav
+./build/copywav ../wav_files/sample01.wav ./src/audio/copiedwav.wav
 ```
 
 #### Copy a video, pixel by pixel.
@@ -37,7 +36,7 @@ Always run the scripts on the project directory (/audioAndImageOrVideoManipulati
 
 #### Histograms of an audio sample (left and rigth channel and mono) and corresponding entropy.
 ```
-./build/audioEnt ./wav_files/sample01.wav
+./build/audioEnt ../wav_files/sample01.wav
 python3 ./src/audio/plotHist.py
 ```
 

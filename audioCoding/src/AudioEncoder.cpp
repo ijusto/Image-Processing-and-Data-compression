@@ -4,7 +4,7 @@
  */
 
 #include "../includes/AudioEncoder.hpp"
-#include "Golomb.cpp"
+#include "../../entropyCoding/src/Golomb.cpp"
 #include <iostream>
 #include <math.h>
 

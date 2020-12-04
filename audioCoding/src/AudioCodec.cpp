@@ -5,7 +5,7 @@
 #include <iostream>
 #include "AudioEncoder.cpp"
 #include "AudioDecoder.cpp"
-#include "EntropyCalculator.cpp"
+#include "../../audioAndImageOrVideoManipulation/src/EntropyCalculator.cpp"
 #include  <unordered_map>
 #include  <vector>
 

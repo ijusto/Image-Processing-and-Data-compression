@@ -1,11 +1,21 @@
 # Audio Coding
 
+### Build the entire project.
+```
+mkdir build && cd build
+cmake ..
+cmake --build .
+cd ..
+```
+
 ## encode examples
-`./audiocodec encode sample.wav test`
+`./build/audiocodec encode ../wav_files/sample01.wav test`
+
 #### encode using lossy compression  
-`./audiocodec encode sample.wav test -lossy`
+`./build/audiocodec encode ../wav_files/sample01.wav test -lossy`
+
 #### compute histograms and entropy  
-`./audiocodec encode sample.wav test -hist`
+`./build/audiocodec encode ../wav_files/sample01.wav test -hist`
 
 ## decode examples
-`/audiocodec decode test test.wav`
+`./build/audiocodec decode test test.wav`

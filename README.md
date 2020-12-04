@@ -1,6 +1,15 @@
 # Image-Processing-and-Data-compression
 Project of the Audio And Video Coding course, University of Aveiro
 
+## Project
+This project was developed following milestones, each one with their corresponding folder:
+ 
+ 1) [**Audio And Image/Video Manipulation**](./audioAndImageOrVideoManipulation)
+ 2) [**Entropy Coding**](./entropyCoding)
+ 3) [**Audio Coding**](./audioCoding)
+ 4) [**Video Coding**](./videoCoding)
+ 5) [**Extra Mile**](./extraMile)
+
 ## Documentation
 ```
 cd docs && doxygen && firefox html/index.html
