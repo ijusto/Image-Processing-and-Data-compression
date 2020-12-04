@@ -3,7 +3,7 @@ project(audioCoding)
 
 include_directories(includes)
 include_directories(../audioAndImageOrVideoManipulation/includes)
-include_directories(../entropyCoding//includes)
+include_directories(../entropyCoding/includes)
 
 set(SNDFILE_LIBRARY "-lsndfile")
 set(SNDFILE_DIR "-L/usr/lib/")
