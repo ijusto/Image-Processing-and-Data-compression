@@ -1,6 +1,7 @@
-//
-// Created by bruno on 11/29/20.
-//
+/**
+ * Class for reading audio files in defined compressed format,
+ * decode and write result to an audio .wav file.
+ */
 
 #include "../includes/AudioDecoder.hpp"
 #include <sndfile.hh>

@@ -36,7 +36,7 @@ int main(int argc, char* argv[]) {
         cout << "\tdecode\tdecode SOURCE compressed file into DEST .wav sound file" << endl;
         cout << "options:" << endl;
         cout << "\t-hist\tcompute histograms and entropy and save to .csv (encode operation only)" << endl;
-        cout << "\t-lossless\tuse lossless compression (encode operation only)" << endl;
+        cout << "\t-lossy\tuse lossy compression (encode operation only)" << endl;
         return 0;
     }
     string op = argv[1];
