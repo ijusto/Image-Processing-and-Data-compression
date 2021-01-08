@@ -40,6 +40,7 @@ public:
 
     T usePredictorJLS();
 
+
 };
 
 #endif //VIDEOCODING_LOSSLESSJPEGPREDICTORS_HPP

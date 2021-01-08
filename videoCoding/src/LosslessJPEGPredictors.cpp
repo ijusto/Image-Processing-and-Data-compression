@@ -7,6 +7,8 @@
 template <typename T>
 LosslessJPEGPredictors<T>::LosslessJPEGPredictors(T a, T b, T c){
     this->a = a;
+    this->b = b;
+    this->c = c;
 }
 
 template <typename T>

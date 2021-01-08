@@ -8,7 +8,15 @@
 class VideoCodec{
 
 private:
-
+    cv::Mat frame;
+    cv :: Mat residuals1;
+    cv :: Mat residuals2;
+    cv :: Mat residuals3;
+    cv :: Mat residuals4;
+    cv :: Mat residuals5;
+    cv :: Mat residuals6;
+    cv :: Mat residuals7;
+    cv :: Mat residualsJLS;
 
 public:
     //! VideoCodec constructor.
