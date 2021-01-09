@@ -9,12 +9,18 @@ class VideoCodec{
 
 private:
     cv::Mat frame;
-    cv :: Mat residuals;
     int initial_m;
+    cv :: Mat residuals;
     std::vector<bool> encodedRes0;
     std::vector<bool> encodedRes1;
     std::vector<bool> encodedRes2;
 
+    /**
+     * Converts integer to bool vector representing bits.
+     * @param n
+     * @return
+     */
+    std::vector<bool> int2boolvec(int n);
 public:
     //! VideoCodec constructor.
     /*!
@@ -22,6 +28,11 @@ public:
      * @param destFileName destination video file name/path.
     */
     explicit VideoCodec(char* srcFileName, char* destFileName, std::string predictor);
+    /**
+     * Use BitStream to write Golomb encoded residuals to file.
+     * @param filename
+     */
+    void write(char* filename);
 };
 
 #endif //VIDEOCODING_VIDEOCODEC_HPP

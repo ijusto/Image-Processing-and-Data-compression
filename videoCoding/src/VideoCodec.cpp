@@ -10,11 +10,19 @@
 #include "../../entropyCoding/src/Golomb.cpp"
 
 
-//! VideoCodec constructor.
-/*!
- * @param srcFileName source video file name/path.
- * @param destFileName destination video file name/path.
-*/
+vector<bool> VideoCodec::int2boolvec(int n){
+    vector<bool> bool_vec_res;
+
+    unsigned int mask = 0x00000001;
+    for(int i = 0; i < sizeof(n)*8; i++){
+        bool bit = ((n & (mask << i)) >> i) == 1;
+        bool_vec_res.push_back(bit);
+    }
+
+    return bool_vec_res;
+}
+
+
 VideoCodec::VideoCodec(char* srcFileName, char* destFileName, std::string predictor) {
     VideoReader *videoReader;
     try{
@@ -177,6 +185,7 @@ VideoCodec::VideoCodec(char* srcFileName, char* destFileName, std::string predic
                             std::cout << "ERROR !!!" << std::endl;
                             exit(EXIT_FAILURE);
                     }
+
                     // compute m
                     Mapped = 2 * residuals.at<cv::Vec3b>(i,j).val[k];
                     if(residuals.at<cv::Vec3b>(i,j).val[k]<0) Mapped = -Mapped-1;
@@ -200,10 +209,38 @@ VideoCodec::VideoCodec(char* srcFileName, char* destFileName, std::string predic
                 }
 
             }
-
-            // TODO:
-            //       write in a file, define de header
-            //       Possible Header m, format, frame_size
         }
     }
+}
+
+void VideoCodec::write(char *filename) {
+
+    auto * wbs = new BitStream(filename, 'w');
+
+    vector<bool> file;
+
+    // add file header (initial_m, format, channels, frame rows, frame cols)
+    // initial_m
+    vector<bool> m = int2boolvec(initial_m);
+    file.insert(file.cend(), m.begin(), m.end());
+
+    // format
+    vector<bool> format = int2boolvec(420);
+    file.insert(file.end(), format.begin(), format.end());
+
+    // channels
+    vector<bool> channels = int2boolvec(3);
+    file.insert(file.end(), channels.begin(), channels.end());
+
+    // rows
+    vector<bool> rows = int2boolvec(frame.rows);
+    file.insert(file.end(), rows.begin(), rows.end());
+
+    //cols
+    vector<bool> cols = int2boolvec(frame.cols);
+    file.insert(file.end(), cols.begin(), cols.end());
+
+    wbs->writeNbits(file);
+    wbs->endWriteFile();
+
 }
