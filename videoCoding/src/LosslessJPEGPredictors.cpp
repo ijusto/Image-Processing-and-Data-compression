@@ -1,7 +1,3 @@
-//
-// Created by inesjusto on 04/01/21.
-//
-
 #include    "LosslessJPEGPredictors.hpp"
 
 template <typename T>

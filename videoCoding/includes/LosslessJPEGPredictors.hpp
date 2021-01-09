@@ -1,12 +1,13 @@
-//
-// Created by inesjusto on 04/01/21.
-//
-
 #ifndef VIDEOCODING_LOSSLESSJPEGPREDICTORS_HPP
 #define VIDEOCODING_LOSSLESSJPEGPREDICTORS_HPP
 
 template <typename T>
 
+//!  LosslessJPEGPredictors
+/*!
+ *  This class is useful to calculate lossless jpeg predictors.
+ *  @author Inês Justo
+*/
 class LosslessJPEGPredictors{
 
 private:

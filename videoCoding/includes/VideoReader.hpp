@@ -8,6 +8,7 @@
 //!  Video Reader.
 /*!
  *  This class is useful for reading, copying and extract info from video files.
+ *  Reads a video file pixel by pixel. (Class adapted from the script copy in the video folder from the 1st milestone).
  *  @author Inês Justo
 */
 class VideoReader{

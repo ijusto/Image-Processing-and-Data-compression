@@ -1,8 +1,3 @@
-/**
- * Reads a video file pixel by pixel. (Class adapted from the script copy in the video folder from the 1st milestone) .
- * @author Inês Justo
- */
-
 #include    "VideoReader.hpp"
 
 //! VideoReader constructor.
@@ -19,17 +14,6 @@ VideoReader::VideoReader(char* sourceFileName) {
         std::cerr << "ERROR! Unable to open video file\n";
         throw ("ERROR! Unable to open video file.");
     }
-
-    // get one frame to know type
-    this->cap >> this->currFrame;
-
-    // check if we succeeded
-    if (this->currFrame.empty()) {
-        std::cerr << "ERROR! blank frame grabbed\n";
-        throw ("ERROR! Blank frame grabbed.");
-    }
-
-    bool isColor = (this->currFrame.type() == CV_8UC3);
 }
 
 //!

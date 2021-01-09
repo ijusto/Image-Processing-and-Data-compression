@@ -1,10 +1,12 @@
-//
-// Created by inesjusto on 10/12/20.
-//
-
 #ifndef VIDEOCODING_VIDEOCODEC_HPP
 #define VIDEOCODING_VIDEOCODEC_HPP
 
+//!  VideoCodec
+/*!
+ *  This class is useful to ...
+ *  @author Agostinho Pires
+ *  @author Inês Justo
+*/
 class VideoCodec{
 
 private:
@@ -21,6 +23,7 @@ private:
      * @return
      */
     std::vector<bool> int2boolvec(int n);
+
 public:
     //! VideoCodec constructor.
     /*!
