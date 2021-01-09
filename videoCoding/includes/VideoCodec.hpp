@@ -9,14 +9,11 @@ class VideoCodec{
 
 private:
     cv::Mat frame;
-    cv :: Mat residuals1;
-    cv :: Mat residuals2;
-    cv :: Mat residuals3;
-    cv :: Mat residuals4;
-    cv :: Mat residuals5;
-    cv :: Mat residuals6;
-    cv :: Mat residuals7;
-    cv :: Mat residualsJLS;
+    cv :: Mat residuals;
+    int initial_m;
+    std::vector<bool> encodedRes0;
+    std::vector<bool> encodedRes1;
+    std::vector<bool> encodedRes2;
 
 public:
     //! VideoCodec constructor.
@@ -24,7 +21,7 @@ public:
      * @param srcFileName source video file name/path.
      * @param destFileName destination video file name/path.
     */
-    explicit VideoCodec(char* srcFileName, char* destFileName);
+    explicit VideoCodec(char* srcFileName, char* destFileName, std::string predictor);
 };
 
 #endif //VIDEOCODING_VIDEOCODEC_HPP
