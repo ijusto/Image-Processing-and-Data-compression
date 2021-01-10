@@ -17,20 +17,23 @@ private:
     std::vector<bool> encodedRes1;
     std::vector<bool> encodedRes2;
 
+
     /**
      * Converts integer to bool vector representing bits.
      * @param n
      * @return
      */
-    std::vector<bool> int2boolvec(int n);
+    static std::vector<bool> int2boolvec(int n);
 
 public:
     //! VideoCodec constructor.
     /*!
      * @param srcFileName source video file name/path.
      * @param destFileName destination video file name/path.
+     * todo: complete
     */
-    explicit VideoCodec(char* srcFileName, char* destFileName, std::string predictor);
+    explicit VideoCodec(char* srcFileName, char* destFileName, char* predictor, char* type);
+
     /**
      * Use BitStream to write Golomb encoded residuals to file.
      * @param filename

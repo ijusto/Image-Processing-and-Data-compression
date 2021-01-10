@@ -3,7 +3,7 @@
 #include    "VideoReader.hpp"
 #include    "LosslessJPEGPredictors.cpp"
 #include    <fstream>
-#include "../../entropyCoding/src/Golomb.cpp"
+#include    "../../entropyCoding/src/Golomb.cpp"
 
 
 vector<bool> VideoCodec::int2boolvec(int n){
@@ -19,7 +19,7 @@ vector<bool> VideoCodec::int2boolvec(int n){
 }
 
 
-VideoCodec::VideoCodec(char* srcFileName, char* destFileName, std::string predictor) {
+VideoCodec::VideoCodec(char* srcFileName, char* destFileName, char* predictor, char* type) {
     VideoReader *videoReader;
     try{
         videoReader = new VideoReader(srcFileName);
@@ -84,7 +84,7 @@ VideoCodec::VideoCodec(char* srcFileName, char* destFileName, std::string predic
             buffer[i*3 + 1] = u;
             buffer[i*3 + 2] = v;
         }
-        
+
         for(int k = 0; k < 3; k++){
             for(int i = 0; i < frame.rows; i++){
                 // used to compute mean of mapped residuals
@@ -130,7 +130,7 @@ VideoCodec::VideoCodec(char* srcFileName, char* destFileName, std::string predic
                             residuals.at<cv::Vec3b>(i,j).val[k] = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictorJLS();
                             break;
                         default:
-                            std::cout << "ERROR: Predictor chosen is not corrected!!!" << std::endl;
+                            std::cout << "ERROR: Invalid predictor chosen!!!" << std::endl;
                             exit(EXIT_FAILURE);
                     }
 
