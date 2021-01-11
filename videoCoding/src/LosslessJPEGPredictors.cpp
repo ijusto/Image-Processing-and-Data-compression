@@ -56,3 +56,18 @@ T LosslessJPEGPredictors<T>::usePredictorJLS(){
         return this->a + this->b - this->c;
     }
 }
+
+template<typename T>
+T LosslessJPEGPredictors<T>::getA() const {
+    return a;
+}
+
+template<typename T>
+T LosslessJPEGPredictors<T>::getB() const {
+    return b;
+}
+
+template<typename T>
+T LosslessJPEGPredictors<T>::getC() const {
+    return c;
+}

@@ -45,6 +45,7 @@ vector<bool> Golomb::encode(int n) {
 
 vector<bool> Golomb::encode2(int n) {
     /* a positive value x is mapped to x'=2|x|=2x,x>0 and a negative value y is mapped to y'=2|y|-1=-2y-1,y<0*/
+
     int nMapped = 2 * n;
     if (n < 0){ nMapped = -nMapped -1; }
 
@@ -81,7 +82,6 @@ vector<bool> Golomb::encode2(int n) {
     vector<bool> truncatedBin;
     for(;truncatedBinTmp.size() < nBits; nBits--){ truncatedBin.push_back(false); }
     truncatedBin.insert( truncatedBin.end(), truncatedBinTmp.begin(), truncatedBinTmp.end() );
-
     encoded_n.insert( encoded_n.end(), truncatedBin.begin(), truncatedBin.end() );
     return encoded_n;
 }

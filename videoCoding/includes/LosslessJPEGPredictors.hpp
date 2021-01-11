@@ -40,6 +40,12 @@ public:
 
     T usePredictorJLS();
 
+    T getA() const;
+
+    T getB() const;
+
+    T getC() const;
+
 
 };
 

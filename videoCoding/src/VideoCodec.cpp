@@ -23,7 +23,8 @@ vector<bool> VideoCodec::int2boolvec(int n){
 }
 
 
-VideoCodec::VideoCodec(char* srcFileName, char* destFileName, std::string predictor) {
+VideoCodec::VideoCodec(char* srcFileName, char* destFileName, std::string predictor, int init_m) {
+    /*
     VideoReader *videoReader;
     try{
         videoReader = new VideoReader(srcFileName);
@@ -31,8 +32,7 @@ VideoCodec::VideoCodec(char* srcFileName, char* destFileName, std::string predic
         std::cout << msg << std::endl;
         std::exit(0);
     }
-
-    /*
+    initial_m = init_m;
     cv::Mat firstFrame = videoReader->getCurrFrame();
 
     for(int i = 0; i < firstFrame.rows; i++){
@@ -60,45 +60,54 @@ VideoCodec::VideoCodec(char* srcFileName, char* destFileName, std::string predic
     }
     */
 
-    // open video filest::ifstream video;
-    std::ifstream video;
+    initial_m = init_m;
+
+    // open video file
+    ifstream video;
     video.open(srcFileName);
 
     if (!video.is_open()){
-        std::cout << "Error opening file: " << srcFileName << std::endl;
+        cout << "Error opening file: " << destFileName << endl;
         exit(EXIT_FAILURE);
     }
 
-    // parse header
-    std::string header;
 
-    // read frame into this buffer
-    unsigned char* frameData = new unsigned char[frame.rows*frame.cols*3];
 
     // Golomb encoder
     auto *golomb = new Golomb(initial_m);
     // calc m every m_rate frames
     int m_rate = 100;
 
+    // parse header
+    string header;
+    getline(video, header);
+    cout << "header: " << header << endl;
+
+    // get rows, cols
+    int rows = stoi(header.substr(header.find(" H") + 2, header.find(" F") - header.find(" H") - 2));
+    int cols = stoi(header.substr(header.find(" W") + 2, header.find(" H") - header.find(" W") - 2));
+
+    // OpenCV buffer
+    frame = cv::Mat(rows, cols, CV_8UC3);
+    residuals = cv::Mat(rows, cols, CV_8UC3);
+    // read frame into this buffer
+    unsigned char* frameData = new unsigned char[rows*cols*3];
+
     while(true){
-        try{
-            frame = videoReader->readFrame();
-        } catch (char* msg){
-            std::cout << msg << std::endl;
-            break;
-        }
+
         // skip word FRAME
         getline(video, header);
-        // read frame data
-        video.read((char *) frameData, frame.rows * frame.cols * 3);
-        // check number of bytes read
+
+        video.read((char *) frameData, rows * cols * 3);
+
         if (video.gcount() == 0)
             break;
+
 
         // ptr to mat's data buffer (to be filled with pixels in packed mode)
         uchar *buffer = (uchar *) frame.ptr();
 
-        for (int i = 0; i < frame.rows * frame.cols; i++) {
+        for (int i = 0; i < rows * cols; i++) {
             // get YUV components from data in planar mode
             int y, u, v;
 
@@ -116,7 +125,6 @@ VideoCodec::VideoCodec(char* srcFileName, char* destFileName, std::string predic
             buffer[i*3 + 1] = u;
             buffer[i*3 + 2] = v;
         }
-
 
 
         for(int k = 0; k < 3; k++){
@@ -138,6 +146,7 @@ VideoCodec::VideoCodec(char* srcFileName, char* destFileName, std::string predic
                             ((i == 0 | j == 0) ? 0 : frame.at<cv::Vec3b>(i - 1, j - 1).val[k]));
 
                     //calculation of residuals for each predictor
+
                     switch (stoi(predictor)) {
                         case 1:
                             residuals.at<cv::Vec3b>(i,j).val[k] = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictor1();
@@ -170,7 +179,7 @@ VideoCodec::VideoCodec(char* srcFileName, char* destFileName, std::string predic
 
                     // encode channels
                     vector<bool> encodedResidual = golomb->encode2(residuals.at<cv::Vec3b>(i,j).val[k]);
-                    //calculation of encoded golomb residuals
+
                     switch (k) {
                         case 0:
                             encodedRes0.insert(encodedRes0.end(), encodedResidual.begin(), encodedResidual.end());
@@ -201,15 +210,17 @@ VideoCodec::VideoCodec(char* srcFileName, char* destFileName, std::string predic
                         // mu = alpha/(1 - alpha) <=> alpha = mu/(1 + mu)
                         int m = ceil(-1/log(alpha));
                         golomb->setM(m);
-
                         //reset
                         res_sum = 0;
                         numRes = 0;
                     }
+                    std ::cout <<"z : "<< k << "x :" << i << "y: " << j << std::endl;
                 }
 
             }
+
         }
+
     }
 }
 
@@ -240,7 +251,16 @@ void VideoCodec::write(char *filename) {
     vector<bool> cols = int2boolvec(frame.cols);
     file.insert(file.end(), cols.begin(), cols.end());
 
+    //data channel 0
+    file.insert(file.end(), encodedRes0.begin(), encodedRes0.end());
+    //data channel 1
+    file.insert(file.end(), encodedRes1.begin(), encodedRes1.end());
+    //data channel 2
+    file.insert(file.end(), encodedRes2.begin(), encodedRes2.end());
+
     wbs->writeNbits(file);
     wbs->endWriteFile();
 
 }
+
+//TODO: Test de program

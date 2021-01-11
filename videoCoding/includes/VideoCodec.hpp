@@ -8,8 +8,8 @@
 class VideoCodec{
 
 private:
-    cv::Mat frame;
     int initial_m;
+    cv::Mat frame;
     cv :: Mat residuals;
     std::vector<bool> encodedRes0;
     std::vector<bool> encodedRes1;
@@ -27,7 +27,7 @@ public:
      * @param srcFileName source video file name/path.
      * @param destFileName destination video file name/path.
     */
-    explicit VideoCodec(char* srcFileName, char* destFileName, std::string predictor);
+    explicit VideoCodec(char* srcFileName, char* destFileName, std::string predictor, int init_m);
     /**
      * Use BitStream to write Golomb encoded residuals to file.
      * @param filename
