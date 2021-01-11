@@ -3,14 +3,16 @@
 //
 
 #include    "../../audioAndImageOrVideoManipulation/src/EntropyCalculator.cpp"
-#include    "VideoCodec.hpp"
-#include    "VideoReader.hpp"
+#include    "../../entropyCoding/src/Golomb.cpp"
+#include    "VideoEncoder.hpp"
 #include    "LosslessJPEGPredictors.cpp"
 #include    <fstream>
-#include "../../entropyCoding/src/Golomb.cpp"
+#include    <regex>
 
+using namespace cv;
+using namespace std;
 
-vector<bool> VideoCodec::int2boolvec(int n){
+vector<bool> VideoEncoder::int2boolvec(int n){
     vector<bool> bool_vec_res;
 
     unsigned int mask = 0x00000001;
@@ -23,17 +25,8 @@ vector<bool> VideoCodec::int2boolvec(int n){
 }
 
 
-VideoCodec::VideoCodec(char* srcFileName, char* destFileName, std::string predictor, int init_m) {
+VideoEncoder::VideoEncoder(char* srcFileName, int pred, int mode, int init_m) {
     /*
-    VideoReader *videoReader;
-    try{
-        videoReader = new VideoReader(srcFileName);
-    } catch (char* msg){
-        std::cout << msg << std::endl;
-        std::exit(0);
-    }
-    initial_m = init_m;
-    cv::Mat firstFrame = videoReader->getCurrFrame();
 
     for(int i = 0; i < firstFrame.rows; i++){
         for(int j = 0; j < firstFrame.cols; j++){
@@ -59,51 +52,64 @@ VideoCodec::VideoCodec(char* srcFileName, char* destFileName, std::string predic
         }
     }
     */
-
-    initial_m = init_m;
+    this->predictor = pred;
+    this->mode = mode;
+    this->initial_m = init_m;
 
     // open video file
     ifstream video;
     video.open(srcFileName);
 
     if (!video.is_open()){
-        cout << "Error opening file: " << destFileName << endl;
+        cout << "Error opening file: " << srcFileName << endl;
         exit(EXIT_FAILURE);
     }
-
-
-
-    // Golomb encoder
-    auto *golomb = new Golomb(initial_m);
-    // calc m every m_rate frames
-    int m_rate = 100;
 
     // parse header
     string header;
     getline(video, header);
     cout << "header: " << header << endl;
+    smatch match;
 
     // get rows, cols
-    int rows = stoi(header.substr(header.find(" H") + 2, header.find(" F") - header.find(" H") - 2));
-    int cols = stoi(header.substr(header.find(" W") + 2, header.find(" H") - header.find(" W") - 2));
+    regex rgx_w("W([0-9]+)");
+    regex_search(header, match, rgx_w);
+    this->cols = stoi(match[1]);
 
-    // OpenCV buffer
-    frame = cv::Mat(rows, cols, CV_8UC3);
-    residuals = cv::Mat(rows, cols, CV_8UC3);
-    // read frame into this buffer
+    regex rgx_h("H([0-9]+)");
+    regex_search(header, match, rgx_h);
+    this->rows = stoi(match[1]);
+
+    // get subsampling mode
+    regex rgx_samp("C([0-9]+)");
+    regex_search(header, match, rgx_samp);
+
+    if (match.size() == 0){ // 420 by default
+        this->subsampling = 420;
+    }else{
+        this->subsampling = stoi(match[1]);
+    }
+
+    // data buffer of yuv values with subsampling
     unsigned char* frameData = new unsigned char[rows*cols*3];
 
-    while(true){
+    // data buffer of yuv values without subsampling
+    cv::Mat frame = cv::Mat(rows, cols, CV_8UC3);
 
+    // Golomb encoder
+    auto *golomb = new Golomb(this->initial_m);
+    // calc m every m_rate frames
+    int m_rate = 100;
+    // residuals matrix
+    cv::Mat residuals = cv::Mat(rows, cols, CV_8UC3);
+
+    while(true){
         // skip word FRAME
         getline(video, header);
-
+        // read data
         video.read((char *) frameData, rows * cols * 3);
-
         if (video.gcount() == 0)
             break;
-
-
         // ptr to mat's data buffer (to be filled with pixels in packed mode)
         uchar *buffer = (uchar *) frame.ptr();
 
@@ -111,14 +117,29 @@ VideoCodec::VideoCodec(char* srcFileName, char* destFileName, std::string predic
             // get YUV components from data in planar mode
             int y, u, v;
 
-            // 4:2:0 (based on https://en.wikipedia.org/wiki/File:Yuv420.svg)
-            int ci = (i % frame.cols) / 2;   // x of every 2 cols
-            int ri = i / (frame.cols * 2);     // y of every 2 rows
-            int shift = (frame.cols / 2) * ri; // shift amount within U/V planar region
-            y = frameData[i];
-            u = frameData[(ci + shift) + (frame.rows * frame.cols)];
-            v = frameData[(ci + shift) + (frame.rows * frame.cols) + (frame.rows * frame.cols) / 4];
-
+            switch (subsampling) {
+                case 444:
+                    // 4:4:4
+                    y = frameData[i];
+                    u = frameData[i + (rows * cols)];
+                    v = frameData[i + (rows * cols) * 2];
+                    break;
+                case 422:
+                    // 4:2:2
+                    y = frameData[i];
+                    u = frameData[i / 2 + (rows * cols)];
+                    v = frameData[i / 2 + (rows * cols) + (rows * cols) / 2];
+                    break;
+                case 420:
+                    // 4:2:0 (based on https://en.wikipedia.org/wiki/File:Yuv420.svg)
+                    int ci = (i % cols) / 2;   // x of every 2 cols
+                    int ri = i / (cols * 2);     // y of every 2 rows
+                    int shift = (cols / 2) * ri; // shift amount within U/V planar region
+                    y = frameData[i];
+                    u = frameData[(ci + shift) + (rows * cols)];
+                    v = frameData[(ci + shift) + (rows * cols) + (rows * cols) / 4];
+                    break;
+            }
 
             // write to OpenCV buffer in packed mode
             buffer[i*3 ] = y;
@@ -126,19 +147,19 @@ VideoCodec::VideoCodec(char* srcFileName, char* destFileName, std::string predic
             buffer[i*3 + 2] = v;
         }
 
+//        cout << "test" << frame.size() << endl;
+//        imshow("display", frame);
+//        waitKey(0);
 
+        // for every channel
         for(int k = 0; k < 3; k++){
-            for(int i = 0; i < frame.rows; i++){
-                // used to compute mean of mapped residuals
-                float res_sum = 0;
-                int numRes = 0;
-                int Mapped;
-                for(int j = 0; j < frame.cols; j++){
+            // used to compute mean of mapped residuals
+            float res_sum = 0;
+            int numRes = 0;
+            int Mapped;
 
-                    // TODO: a, b, c Vec3b or compare rgb?
-                    //   uchar blue = firstFrame.at<cv::Vec3b>(...).val[0];
-                    //   uchar green = firstFrame.at<cv::Vec3b>(...).val[1];
-                    //   uchar red = firstFrame.at<cv::Vec3b>(...).val[2];
+            for(int i = 0; i < this->rows; i++){
+                for(int j = 0; j < this->cols; j++){
 
                     LosslessJPEGPredictors<int> predictors(
                             (j == 0 ? 0 : frame.at<cv::Vec3b>(i,j-1).val[k]),
@@ -146,8 +167,7 @@ VideoCodec::VideoCodec(char* srcFileName, char* destFileName, std::string predic
                             ((i == 0 | j == 0) ? 0 : frame.at<cv::Vec3b>(i - 1, j - 1).val[k]));
 
                     //calculation of residuals for each predictor
-
-                    switch (stoi(predictor)) {
+                    switch (this->predictor) {
                         case 1:
                             residuals.at<cv::Vec3b>(i,j).val[k] = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictor1();
                             break;
@@ -173,7 +193,7 @@ VideoCodec::VideoCodec(char* srcFileName, char* destFileName, std::string predic
                             residuals.at<cv::Vec3b>(i,j).val[k] = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictorJLS();
                             break;
                         default:
-                            std::cout << "ERROR: Predictor chosen is not corrected!!!" << std::endl;
+                            std::cout << "ERROR: Predictor chosen is not correct!!!" << std::endl;
                             exit(EXIT_FAILURE);
                     }
 
@@ -214,29 +234,31 @@ VideoCodec::VideoCodec(char* srcFileName, char* destFileName, std::string predic
                         res_sum = 0;
                         numRes = 0;
                     }
-                    std ::cout <<"z : "<< k << "x :" << i << "y: " << j << std::endl;
                 }
 
             }
 
         }
-
     }
 }
 
-void VideoCodec::write(char *filename) {
+void VideoEncoder::write(char *filename) {
 
     auto * wbs = new BitStream(filename, 'w');
 
     vector<bool> file;
 
-    // add file header (initial_m, format, channels, frame rows, frame cols)
+    // add file header (initial_m, format, mode, channels, frame rows, frame cols)
     // initial_m
-    vector<bool> m = int2boolvec(initial_m);
+    vector<bool> m = int2boolvec(this->initial_m);
     file.insert(file.cend(), m.begin(), m.end());
 
     // format
-    vector<bool> format = int2boolvec(420);
+    vector<bool> format = int2boolvec(this->subsampling);
+    file.insert(file.end(), format.begin(), format.end());
+
+    // mode
+    vector<bool> vecmode = int2boolvec(this->mode);
     file.insert(file.end(), format.begin(), format.end());
 
     // channels
@@ -244,23 +266,22 @@ void VideoCodec::write(char *filename) {
     file.insert(file.end(), channels.begin(), channels.end());
 
     // rows
-    vector<bool> rows = int2boolvec(frame.rows);
+    vector<bool> rows = int2boolvec(this->rows);
     file.insert(file.end(), rows.begin(), rows.end());
 
     //cols
-    vector<bool> cols = int2boolvec(frame.cols);
+    vector<bool> cols = int2boolvec(this->cols);
     file.insert(file.end(), cols.begin(), cols.end());
 
     //data channel 0
-    file.insert(file.end(), encodedRes0.begin(), encodedRes0.end());
+    file.insert(file.end(), this->encodedRes0.begin(), this->encodedRes0.end());
     //data channel 1
-    file.insert(file.end(), encodedRes1.begin(), encodedRes1.end());
+    file.insert(file.end(), this->encodedRes1.begin(), this->encodedRes1.end());
     //data channel 2
-    file.insert(file.end(), encodedRes2.begin(), encodedRes2.end());
+    file.insert(file.end(), this->encodedRes2.begin(), this->encodedRes2.end());
 
     wbs->writeNbits(file);
     wbs->endWriteFile();
-
 }
 
 //TODO: Test de program
