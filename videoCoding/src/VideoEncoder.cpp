@@ -26,32 +26,6 @@ vector<bool> VideoEncoder::int2boolvec(int n){
 
 
 VideoEncoder::VideoEncoder(char* srcFileName, int pred, int mode, int init_m) {
-    /*
-
-    for(int i = 0; i < firstFrame.rows; i++){
-        for(int j = 0; j < firstFrame.cols; j++){
-            // TODO: deal with pixel info
-            // TODO: a, b, c Vec3b or compare rgb?
-            //   uchar blue = firstFrame.at<cv::Vec3b>(...).val[0];
-            //   uchar green = firstFrame.at<cv::Vec3b>(...).val[1];
-            //   uchar red = firstFrame.at<cv::Vec3b>(...).val[2];
-
-            LosslessJPEGPredictors<cv::Vec3b> predictors(
-                    (j == 0 ? 0 : firstFrame.at<cv::Vec3b>(i - 1 , j)),
-                    (i == 0 ? 0 : firstFrame.at<cv::Vec3b>(i, j - 1)),
-                    ((i == 0 | j == 0) ? 0 : firstFrame.at<cv::Vec3b>(i - 1, j - 1)));
-
-            cv::Vec3b predicted1 = predictors.usePredictor1();
-            cv::Vec3b predicted2 = predictors.usePredictor2();
-            cv::Vec3b predicted3 = predictors.usePredictor3();
-            cv::Vec3b predicted4 = predictors.usePredictor4();
-            cv::Vec3b predicted5 = predictors.usePredictor5();
-            cv::Vec3b predicted6 = predictors.usePredictor6();
-            cv::Vec3b predicted7 = predictors.usePredictor7();
-            cv::Vec3b predictedJLS = predictors.usePredictorJLS();
-        }
-    }
-    */
     this->predictor = pred;
     this->mode = mode;
     this->initial_m = init_m;
@@ -90,8 +64,22 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int mode, int init_m) {
         this->subsampling = stoi(match[1]);
     }
 
+    int frameSize;
+
+    switch(subsampling){
+        case 444:
+            frameSize = rows * cols * 3;
+            break;
+        case 422:
+            frameSize = rows * cols  + (rows * cols * 2) / 2;
+            break;
+        case 420:
+            frameSize = rows * cols + (rows * cols * 2) / 4;
+            break;
+    }
+
     // data buffer of yuv values with subsampling
-    unsigned char* frameData = new unsigned char[rows*cols*3];
+    unsigned char* frameData = new unsigned char[frameSize];
 
     // data buffer of yuv values without subsampling
     cv::Mat frame = cv::Mat(rows, cols, CV_8UC3);
@@ -100,14 +88,14 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int mode, int init_m) {
     auto *golomb = new Golomb(this->initial_m);
     // calc m every m_rate frames
     int m_rate = 100;
-    // residuals matrix
-    cv::Mat residuals = cv::Mat(rows, cols, CV_8UC3);
+    // residuals
+    cv::Mat residuals = cv::Mat(rows, cols, CV_8UC1);
 
     while(true){
         // skip word FRAME
         getline(video, header);
         // read data
-        video.read((char *) frameData, rows * cols * 3);
+        video.read((char *) frameData, frameSize);
         if (video.gcount() == 0)
             break;
         // ptr to mat's data buffer (to be filled with pixels in packed mode)
@@ -169,28 +157,28 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int mode, int init_m) {
                     //calculation of residuals for each predictor
                     switch (this->predictor) {
                         case 1:
-                            residuals.at<cv::Vec3b>(i,j).val[k] = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictor1();
+                            residuals.at<uchar>(i,j) = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictor1();
                             break;
                         case 2:
-                            residuals.at<cv::Vec3b>(i,j).val[k] = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictor2();
+                            residuals.at<uchar>(i,j) = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictor2();
                             break;
                         case 3:
-                            residuals.at<cv::Vec3b>(i,j).val[k] = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictor3();
+                            residuals.at<uchar>(i,j) = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictor3();
                             break;
                         case 4:
-                            residuals.at<cv::Vec3b>(i,j).val[k] = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictor4();
+                            residuals.at<uchar>(i,j) = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictor4();
                             break;
                         case 5:
-                            residuals.at<cv::Vec3b>(i,j).val[k] = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictor5();
+                            residuals.at<uchar>(i,j) = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictor5();
                             break;
                         case 6:
-                            residuals.at<cv::Vec3b>(i,j).val[k] = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictor6();
+                            residuals.at<uchar>(i,j) = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictor6();
                             break;
                         case 7:
-                            residuals.at<cv::Vec3b>(i,j).val[k] = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictor7();
+                            residuals.at<uchar>(i,j) = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictor7();
                             break;
                         case 8:
-                            residuals.at<cv::Vec3b>(i,j).val[k] = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictorJLS();
+                            residuals.at<uchar>(i,j) = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictorJLS();
                             break;
                         default:
                             std::cout << "ERROR: Predictor chosen is not correct!!!" << std::endl;
@@ -198,7 +186,7 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int mode, int init_m) {
                     }
 
                     // encode channels
-                    vector<bool> encodedResidual = golomb->encode2(residuals.at<cv::Vec3b>(i,j).val[k]);
+                    vector<bool> encodedResidual = golomb->encode2(residuals.at<uchar>(i,j));
 
                     switch (k) {
                         case 0:
@@ -216,8 +204,8 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int mode, int init_m) {
                     }
 
                     // compute m
-                    Mapped = 2 * residuals.at<cv::Vec3b>(i,j).val[k];
-                    if(residuals.at<cv::Vec3b>(i,j).val[k]<0) Mapped = -Mapped-1;
+                    Mapped = 2 * residuals.at<uchar>(i,j);
+                    if(residuals.at<uchar>(i,j) < 0) Mapped = -Mapped-1;
                     res_sum += Mapped;
                     numRes++;
 
@@ -229,15 +217,18 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int mode, int init_m) {
                         // calc alpha of geometric dist
                         // mu = alpha/(1 - alpha) <=> alpha = mu/(1 + mu)
                         int m = ceil(-1/log(alpha));
-                        golomb->setM(m);
+                        if (m != 0){
+                            golomb->setM(m);
+                        }
                         //reset
                         res_sum = 0;
                         numRes = 0;
                     }
                 }
-
             }
-
+//            cout << "test" << residuals.size() << endl;
+//            imshow("display", residuals);
+//            waitKey(0);
         }
     }
 }

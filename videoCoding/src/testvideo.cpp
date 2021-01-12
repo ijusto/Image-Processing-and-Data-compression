@@ -61,10 +61,10 @@ int main(int argc, char *argv[]) {
             frameSize = rows * cols * 3;
             break;
         case 422:
-            frameSize = rows * cols * 3 / 2;
+            frameSize = rows * cols  + (rows * cols * 2) / 2;
             break;
         case 420:
-            frameSize = rows * cols * 3 / 4;
+            frameSize = rows * cols + (rows * cols * 2) / 4;
             break;
     }
 
