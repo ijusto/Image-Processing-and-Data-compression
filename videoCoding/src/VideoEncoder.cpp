@@ -25,6 +25,7 @@ vector<bool> VideoEncoder::int2boolvec(int n){
 }
 
 
+
 VideoEncoder::VideoEncoder(char* srcFileName, int pred, int mode, int init_m) {
     this->predictor = pred;
     this->mode = mode;
@@ -138,7 +139,6 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int mode, int init_m) {
 //        cout << "test" << frame.size() << endl;
 //        imshow("display", frame);
 //        waitKey(0);
-
         // for every channel
         for(int k = 0; k < 3; k++){
             // used to compute mean of mapped residuals
@@ -181,7 +181,7 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int mode, int init_m) {
                             residuals.at<uchar>(i,j) = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictorJLS();
                             break;
                         default:
-                            std::cout << "ERROR: Predictor chosen is not correct!!!" << std::endl;
+                            std::cout << "ERROR: Predictor chosen isn't correct!!!" << std::endl;
                             exit(EXIT_FAILURE);
                     }
 
@@ -239,10 +239,14 @@ void VideoEncoder::write(char *filename) {
 
     vector<bool> file;
 
-    // add file header (initial_m, format, mode, channels, frame rows, frame cols)
+    // add file header (initial_m, predictor, format, mode, channels, frame rows, frame cols)
     // initial_m
     vector<bool> m = int2boolvec(this->initial_m);
     file.insert(file.cend(), m.begin(), m.end());
+
+    //predictor
+    vector<bool> pred = int2boolvec(this->predictor);
+    file.insert(file.cend(), pred.begin(), pred.end());
 
     // format
     vector<bool> format = int2boolvec(this->subsampling);

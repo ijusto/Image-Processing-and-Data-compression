@@ -6,11 +6,22 @@
  *  This class is useful to ...
  *  @author Inês Justo
 */
+
+
+#include "../../entropyCoding/includes/BitStream.hpp"
 class VideoDecoder{
 
 private:
-    cv::Mat frame;
+    BitStream *sourceFile;
     int initial_m;
+    int predictor;
+    int format;
+    int mode;
+    int channels;
+    int rows;
+    int cols;
+
+    cv::Mat frame;
     cv :: Mat residuals;
     std::vector<bool> encodedRes0;
     std::vector<bool> encodedRes1;
@@ -30,7 +41,7 @@ public:
      * @param destFileName destination decoded video bitstream file name/path.
      * todo: complete
     */
-    explicit VideoDecoder(char* encodedFileName, char* destFileName, char* predictor, char* type);
+    explicit VideoDecoder(char* encodedFileName, char* destFileName, char* type);
 
     /**
      * Decodes residuals for each channel.
