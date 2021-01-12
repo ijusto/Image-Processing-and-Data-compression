@@ -187,21 +187,7 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int mode, int init_m) {
 
                     // encode channels
                     vector<bool> encodedResidual = golomb->encode2(residuals.at<cv::Vec3b>(i,j).val[k]);
-
-                    switch (k) {
-                        case 0:
-                            encodedRes0.insert(encodedRes0.end(), encodedResidual.begin(), encodedResidual.end());
-                            break;
-                        case 1:
-                            encodedRes1.insert(encodedRes1.end(), encodedResidual.begin(), encodedResidual.end());
-                            break;
-                        case 2:
-                            encodedRes2.insert(encodedRes2.end(), encodedResidual.begin(), encodedResidual.end());
-                            break;
-                        default:
-                            std::cout << "ERROR !!!" << std::endl;
-                            exit(EXIT_FAILURE);
-                    }
+                    encodedRes.insert(encodedRes.end(), encodedResidual.begin(), encodedResidual.end());
 
                     // compute m
                     Mapped = 2 * residuals.at<cv::Vec3b>(i,j).val[k];
@@ -268,12 +254,8 @@ void VideoEncoder::write(char *filename) {
     vector<bool> cols = int2boolvec(this->cols);
     file.insert(file.end(), cols.begin(), cols.end());
 
-    //data channel 0
-    file.insert(file.end(), this->encodedRes0.begin(), this->encodedRes0.end());
-    //data channel 1
-    file.insert(file.end(), this->encodedRes1.begin(), this->encodedRes1.end());
-    //data channel 2
-    file.insert(file.end(), this->encodedRes2.begin(), this->encodedRes2.end());
+    //data
+    file.insert(file.end(), this->encodedRes.begin(), this->encodedRes.end());
 
     wbs->writeNbits(file);
     wbs->endWriteFile();

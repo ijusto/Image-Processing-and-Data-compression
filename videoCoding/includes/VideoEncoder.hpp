@@ -11,9 +11,7 @@ class VideoEncoder{
 
 private:
     int initial_m, subsampling, mode, predictor, rows, cols;
-    std::vector<bool> encodedRes0;
-    std::vector<bool> encodedRes1;
-    std::vector<bool> encodedRes2;
+    std::vector<bool> encodedRes;
 
     /**
      * Converts integer to bool vector representing bits.

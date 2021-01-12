@@ -9,10 +9,13 @@
 
 
 #include "../../entropyCoding/includes/BitStream.hpp"
+
 class VideoDecoder{
 
 private:
     BitStream *sourceFile;
+    char* dst;
+
     unsigned int headerSize;
     int initial_m;
     int predictor;
@@ -23,8 +26,6 @@ private:
     int cols;
 
     cv :: Mat frame;
-    cv :: Mat residuals;
-
 
     /**
      * Asserts that vector contains bits stored as least significant bit at the biggest address.
@@ -48,6 +49,7 @@ public:
     void decode();
 
     /**
+     * @param dst destiny file path
      */
     void write();
 };

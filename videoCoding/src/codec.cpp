@@ -8,7 +8,7 @@
 int main(int argc, char *argv[]) {
 
     if(argc < 5){
-        std::cout << "Usage: " << argv[0] << " <src_path> <encod_path> <dst_path> <predictor>" << std::endl;
+        std::cout << "Usage: " << argv[0] << " <src_path> <encoded_path> <dst_path> <predictor>" << std::endl;
         return 0;
     }
     char* src = argv[1];
