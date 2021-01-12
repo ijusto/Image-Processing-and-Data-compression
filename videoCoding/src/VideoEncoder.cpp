@@ -157,28 +157,28 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int mode, int init_m) {
                     //calculation of residuals for each predictor
                     switch (this->predictor) {
                         case 1:
-                            residuals.at<uchar>(i,j) = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictor1();
+                            residuals.at<cv::Vec3b>(i,j).val[k] = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictor1();
                             break;
                         case 2:
-                            residuals.at<uchar>(i,j) = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictor2();
+                            residuals.at<cv::Vec3b>(i,j).val[k] = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictor2();
                             break;
                         case 3:
-                            residuals.at<uchar>(i,j) = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictor3();
+                            residuals.at<cv::Vec3b>(i,j).val[k] = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictor3();
                             break;
                         case 4:
-                            residuals.at<uchar>(i,j) = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictor4();
+                            residuals.at<cv::Vec3b>(i,j).val[k] = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictor4();
                             break;
                         case 5:
-                            residuals.at<uchar>(i,j) = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictor5();
+                            residuals.at<cv::Vec3b>(i,j).val[k] = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictor5();
                             break;
                         case 6:
-                            residuals.at<uchar>(i,j) = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictor6();
+                            residuals.at<cv::Vec3b>(i,j).val[k] = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictor6();
                             break;
                         case 7:
-                            residuals.at<uchar>(i,j) = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictor7();
+                            residuals.at<cv::Vec3b>(i,j).val[k] = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictor7();
                             break;
                         case 8:
-                            residuals.at<uchar>(i,j) = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictorJLS();
+                            residuals.at<cv::Vec3b>(i,j).val[k] = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictorJLS();
                             break;
                         default:
                             std::cout << "ERROR: Predictor chosen isn't correct!!!" << std::endl;
@@ -186,7 +186,7 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int mode, int init_m) {
                     }
 
                     // encode channels
-                    vector<bool> encodedResidual = golomb->encode2(residuals.at<uchar>(i,j));
+                    vector<bool> encodedResidual = golomb->encode2(residuals.at<cv::Vec3b>(i,j).val[k]);
 
                     switch (k) {
                         case 0:
@@ -204,8 +204,8 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int mode, int init_m) {
                     }
 
                     // compute m
-                    Mapped = 2 * residuals.at<uchar>(i,j);
-                    if(residuals.at<uchar>(i,j) < 0) Mapped = -Mapped-1;
+                    Mapped = 2 * residuals.at<cv::Vec3b>(i,j).val[k];
+                    if(residuals.at<cv::Vec3b>(i,j).val[k]< 0) Mapped = -Mapped-1;
                     res_sum += Mapped;
                     numRes++;
 
@@ -213,9 +213,9 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int mode, int init_m) {
                     if(numRes == m_rate){
                         // calc mean from last 100 mapped pixels
                         float res_mean = res_sum/numRes;
-                        float alpha = res_mean/(1+res_mean);
                         // calc alpha of geometric dist
                         // mu = alpha/(1 - alpha) <=> alpha = mu/(1 + mu)
+                        float alpha = res_mean/(1+res_mean);
                         int m = ceil(-1/log(alpha));
                         if (m != 0){
                             golomb->setM(m);

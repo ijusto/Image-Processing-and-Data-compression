@@ -13,6 +13,7 @@ class VideoDecoder{
 
 private:
     BitStream *sourceFile;
+    unsigned int headerSize;
     int initial_m;
     int predictor;
     int format;
@@ -21,11 +22,9 @@ private:
     int rows;
     int cols;
 
-    cv::Mat frame;
+    cv :: Mat frame;
     cv :: Mat residuals;
-    std::vector<bool> encodedRes0;
-    std::vector<bool> encodedRes1;
-    std::vector<bool> encodedRes2;
+
 
     /**
      * Asserts that vector contains bits stored as least significant bit at the biggest address.
