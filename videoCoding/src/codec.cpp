@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
     char* dst = argv[3];
     int predictor = stoi(argv[4]);
     char* type;
-    int mode = 0; // inter
+    int mode = 0; // 0 - intra, 1 - hybrid
     int initial_m = 512;
     bool calcHist = false;
 

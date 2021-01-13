@@ -100,6 +100,17 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int mode, int init_m, bo
 
     // data buffer
     Mat frameData;
+    // intra coding rate
+    const int intra_rate = 10;
+    int frameCounter = 0;
+    // previous data buffer
+    Mat y_prev = Mat(Y_frame_rows, Y_frame_cols, CV_8UC1); // init with 0s
+    Mat u_prev = Mat(U_frame_rows, U_frame_cols, CV_8UC1);
+    Mat v_prev = Mat(V_frame_rows, V_frame_cols, CV_8UC1);
+    // block size
+    int block_size = 10;
+    // search area size
+    int search_size = 4*block_size;
 
     // Golomb encoder
     auto *golomb = new Golomb(this->initial_m);
@@ -117,24 +128,63 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int mode, int init_m, bo
         video.read((char *) frameData.ptr(), Y_frame_rows * Y_frame_cols);
         if (video.gcount() == 0)
             break;
-        // encode residuals
-        this->encodeResiduals(frameData, golomb, m_rate, 0);
+
+        // compute residuals for y
+        if(this->mode == 0 || frameCounter % intra_rate == 0){
+            // intra coding
+            // encode residuals
+            this->encodeRes_intra(frameData, golomb, m_rate, 0);
+        }else if(this->mode == 1){
+            // intra + inter coding (hybrid)
+            // encode motion vectors and residuals
+            encodeRes_inter(y_prev, frameData, golomb, m_rate, block_size, search_size,0);
+        }
+        // update previous
+        y_prev = frameData;
 
         // read u
         frameData = Mat(U_frame_rows, U_frame_cols, CV_8UC1);
         video.read((char *) frameData.ptr(), U_frame_rows * U_frame_cols);
         // encode residuals
-        this->encodeResiduals(frameData, golomb, m_rate, 1);
+        this->encodeRes_intra(frameData, golomb, m_rate, 1);
+
+        // compute residuals for u
+        if(this->mode == 0 || frameCounter % intra_rate == 0){
+            // intra coding
+            // encode residuals
+            this->encodeRes_intra(frameData, golomb, m_rate, 0);
+        }else if(this->mode == 1){
+            // intra + inter coding (hybrid)
+            // encode motion vectors and residuals
+            encodeRes_inter(u_prev, frameData, golomb, m_rate, block_size, search_size,0);
+        }
+        // update previous
+        y_prev = frameData;
 
         // read v
         frameData = Mat(V_frame_rows, V_frame_cols, CV_8UC1);
         video.read((char *) frameData.ptr(), V_frame_rows * V_frame_cols);
         // encode residuals
-        this->encodeResiduals(frameData, golomb, m_rate, 2);
+        this->encodeRes_intra(frameData, golomb, m_rate, 2);
+
+        // compute residuals for v
+        if(this->mode == 0 || frameCounter % intra_rate == 0){
+            // intra coding
+            // encode residuals
+            this->encodeRes_intra(frameData, golomb, m_rate, 0);
+        }else if(this->mode == 1){
+            // intra + inter coding (hybrid)
+            // encode motion vectors and residuals
+            encodeRes_inter(v_prev, frameData, golomb, m_rate, block_size, search_size,0);
+        }
+        // update previous
+        y_prev = frameData;
+
+        frameCounter++;
     }
 }
 
-void VideoEncoder::encodeResiduals(Mat &frame, Golomb *golomb, int m_rate, int k){
+void VideoEncoder::encodeRes_intra(Mat &frame, Golomb *golomb, int m_rate, int k){
     // residuals
     char residual;
     // used to compute mean of mapped residuals
@@ -212,6 +262,35 @@ void VideoEncoder::encodeResiduals(Mat &frame, Golomb *golomb, int m_rate, int k
                 res_sum = 0;
                 numRes = 0;
             }
+        }
+    }
+}
+
+void VideoEncoder::encodeRes_inter(cv::Mat &prev_frame, cv::Mat &curr_frame, Golomb *golomb, int m_rate, int block_size, int search_size, int k){
+
+    // split current frame into blocks
+    // grid of blocks dimensions
+    int grid_h = curr_frame.rows / block_size;
+    int grid_w = curr_frame.cols / block_size;
+
+    // traverse all block
+    for(int i = 0; i < grid_h; i++){
+        for(int j = 0; j < grid_w; j++){
+            // top left corner of square block
+            int x = j*block_size;
+            int y = i*block_size;
+
+            // perform 2d log search on previous frame search area
+            int best_x, best_y; // motion vector
+            int min_mse;
+
+            // compute residuals
+
+            // golomb encode residuals
+
+            // add motion vector to bit stream
+
+            // add encoded residuals to bit stream
         }
     }
 }

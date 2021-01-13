@@ -34,7 +34,29 @@ public:
     */
     explicit VideoEncoder(char* srcFileName, int predictor, int mode, int init_m, bool calcHist);
 
-    void encodeResiduals(cv::Mat &frame, Golomb *golomb, int m_rate, int k);
+    /**
+     * Use linear and non-linear predictors to compute residuals, encode them using the
+     * Golomb encoder and add them to the bitstream.
+     * @param frame matrix containing single channel values.
+     * @param golomb Golomb entropy encoder
+     * @param m_rate rate at which Golomb entropy encoder's m parameter is updated
+     * @param k used to identify channel when storing residuals for histograms
+     */
+    void encodeRes_intra(cv::Mat &frame, Golomb *golomb, int m_rate, int k);
+
+    /**
+     * Use motion compensation to compute residuals, encode them and the
+     * corresponding motion vectors using the Golomb encoder and add them
+     * to the bitstream.
+     * @param prev_frame matrix containing single channel values from previous frame.
+     * @param curr_frame matrix containing single channel values from current frame.
+     * @param golomb Golomb entropy encoder
+     * @param m_rate rate at which Golomb entropy encoder's m parameter is updated
+     * @param block_size dimension of square frame block block_size*block_size
+     * @param search_size dimension of square search area search_size*search_size
+     * @param k used to identify channel when storing residuals for histograms
+     */
+    void encodeRes_inter(cv::Mat &prev_frame, cv::Mat &curr_frame, Golomb *golomb, int m_rate, int block_size, int search_size,int k);
 
     /**
      * Use BitStream to write Golomb encoded residuals to file.
@@ -42,8 +64,17 @@ public:
      */
     void write(char* filename);
 
+    /**
+     * Returns residuals from multiple channels computed during encoding
+     * to use when producing a histogram.
+     * @return
+     */
     vector<vector<char>> get_res_hists();
 
+    /**
+     * Returns samples from multiple channels to use when producing a histogram.
+     * @return
+     */
     vector<vector<char>> get_sample_hists();
 };
 
