@@ -12,6 +12,9 @@ class VideoEncoder{
 private:
     int initial_m, subsampling, mode, predictor, rows, cols;
     std::vector<bool> encodedRes;
+    bool cHist;
+    vector<vector<char>> *res_hists;
+    vector<vector<char>> *sample_hists;
 
     /**
      * Converts integer to bool vector representing bits.
@@ -28,12 +31,16 @@ public:
      * @param mode intra (0) or hybrid (1)
      * @param initial m used in Golomb encoder
     */
-    explicit VideoEncoder(char* srcFileName, int predictor, int mode, int init_m);
+    explicit VideoEncoder(char* srcFileName, int predictor, int mode, int init_m, bool calcHist);
     /**
      * Use BitStream to write Golomb encoded residuals to file.
      * @param filename
      */
     void write(char* filename);
+
+    vector<vector<char>> get_res_hists();
+
+    vector<vector<char>> get_sample_hists();
 };
 
 #endif //VIDEOCODING_VIDEOENCODER_HPP

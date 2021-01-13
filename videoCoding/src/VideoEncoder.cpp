@@ -24,12 +24,21 @@ vector<bool> VideoEncoder::int2boolvec(int n){
     return bool_vec_res;
 }
 
-
-
-VideoEncoder::VideoEncoder(char* srcFileName, int pred, int mode, int init_m) {
+VideoEncoder::VideoEncoder(char* srcFileName, int pred, int mode, int init_m, bool calcHist) {
     this->predictor = pred;
     this->mode = mode;
     this->initial_m = init_m;
+    this->cHist = calcHist;
+
+    // init histograms
+    if(this->cHist){
+        this->res_hists = new vector<vector<char>>;
+        this->sample_hists = new vector<vector<char>>;
+        for(int k = 0; k < 3; k++){
+            this->res_hists->push_back(vector<char>());
+            this->sample_hists->push_back(vector<char>());
+        }
+    }
 
     // open video file
     ifstream video;
@@ -90,7 +99,7 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int mode, int init_m) {
     // calc m every m_rate frames
     int m_rate = 100;
     // residuals
-    cv::Mat residuals = cv::Mat(rows, cols, CV_8UC1);
+    char residual;
 
     while(true){
         // skip word FRAME
@@ -157,45 +166,52 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int mode, int init_m) {
                     //calculation of residuals for each predictor
                     switch (this->predictor) {
                         case 1:
-                            residuals.at<cv::Vec3b>(i,j).val[k] = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictor1();
+                            residual = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictor1();
                             break;
                         case 2:
-                            residuals.at<cv::Vec3b>(i,j).val[k] = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictor2();
+                            residual = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictor2();
                             break;
                         case 3:
-                            residuals.at<cv::Vec3b>(i,j).val[k] = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictor3();
+                            residual = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictor3();
                             break;
                         case 4:
-                            residuals.at<cv::Vec3b>(i,j).val[k] = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictor4();
+                            residual = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictor4();
                             break;
                         case 5:
-                            residuals.at<cv::Vec3b>(i,j).val[k] = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictor5();
+                            residual = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictor5();
                             break;
                         case 6:
-                            residuals.at<cv::Vec3b>(i,j).val[k] = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictor6();
+                            residual = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictor6();
                             break;
                         case 7:
-                            residuals.at<cv::Vec3b>(i,j).val[k] = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictor7();
+                            residual = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictor7();
                             break;
                         case 8:
-                            residuals.at<cv::Vec3b>(i,j).val[k] = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictorJLS();
+                            residual = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictorJLS();
                             break;
                         default:
                             std::cout << "ERROR: Predictor chosen isn't correct!!!" << std::endl;
                             exit(EXIT_FAILURE);
                     }
 
+                    if(this->cHist){
+                        // store residuals
+                        this->res_hists->at(k).push_back(residual);
+                        // store samples
+                        this->sample_hists->at(k).push_back(frame.at<cv::Vec3b>(i,j).val[k]);
+                    }
+
                     // encode channels
-                    vector<bool> encodedResidual = golomb->encode2(residuals.at<cv::Vec3b>(i,j).val[k]);
+                    vector<bool> encodedResidual = golomb->encode2(residual);
                     encodedRes.insert(encodedRes.end(), encodedResidual.begin(), encodedResidual.end());
 
                     // compute m
-                    Mapped = 2 * residuals.at<cv::Vec3b>(i,j).val[k];
-                    if(residuals.at<cv::Vec3b>(i,j).val[k]< 0) Mapped = -Mapped-1;
+                    Mapped = 2 * residual;
+                    if(residual < 0){
+                        Mapped = -Mapped-1;
+                    }
                     res_sum += Mapped;
                     numRes++;
-
-                    //calculate new m
                     if(numRes == m_rate){
                         // calc mean from last 100 mapped pixels
                         float res_mean = res_sum/numRes;
@@ -212,9 +228,6 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int mode, int init_m) {
                     }
                 }
             }
-//            cout << "test" << residuals.size() << endl;
-//            imshow("display", residuals);
-//            waitKey(0);
         }
     }
 }
@@ -259,6 +272,14 @@ void VideoEncoder::write(char *filename) {
 
     wbs->writeNbits(file);
     wbs->endWriteFile();
+}
+
+vector<vector<char>> VideoEncoder::get_res_hists(){
+    return *(this->res_hists);
+}
+
+vector<vector<char>> VideoEncoder::get_sample_hists(){
+    return *(this->sample_hists);
 }
 
 //TODO: Test de program
