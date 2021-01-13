@@ -5,6 +5,7 @@
 #ifndef VIDEOCODING_VIDEOENCODER_HPP
 #define VIDEOCODING_VIDEOENCODER_HPP
 
+#include    "../../entropyCoding/includes/Golomb.h"
 #include    <opencv2/opencv.hpp>
 
 class VideoEncoder{
@@ -32,6 +33,9 @@ public:
      * @param initial m used in Golomb encoder
     */
     explicit VideoEncoder(char* srcFileName, int predictor, int mode, int init_m, bool calcHist);
+
+    void encodeResiduals(cv::Mat &frame, Golomb *golomb, int m_rate, int k);
+
     /**
      * Use BitStream to write Golomb encoded residuals to file.
      * @param filename

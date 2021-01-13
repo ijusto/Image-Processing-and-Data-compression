@@ -74,159 +74,143 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int mode, int init_m, bo
         this->subsampling = stoi(match[1]);
     }
 
-    int frameSize;
+    // Chroma subsampling dimensions
+    int Y_frame_cols, Y_frame_rows;
+    int U_frame_cols, U_frame_rows;
+    int V_frame_cols, V_frame_rows;
 
     switch(subsampling){
         case 444:
-            frameSize = rows * cols * 3;
+            Y_frame_rows = U_frame_rows = V_frame_rows = rows;
+            Y_frame_cols = U_frame_cols = V_frame_cols = cols;
             break;
         case 422:
-            frameSize = rows * cols  + (rows * cols * 2) / 2;
+            Y_frame_rows = rows;
+            Y_frame_cols = cols;
+            U_frame_rows = V_frame_rows = rows / 2;
+            U_frame_cols = V_frame_cols = cols / 2;
             break;
         case 420:
-            frameSize = rows * cols + (rows * cols * 2) / 4;
+            Y_frame_rows = rows;
+            Y_frame_cols = cols;
+            U_frame_rows = V_frame_rows = rows / 4;
+            U_frame_cols = V_frame_cols = cols / 4;
             break;
     }
 
-    // data buffer of yuv values with subsampling
-    unsigned char* frameData = new unsigned char[frameSize];
-
-    // data buffer of yuv values without subsampling
-    cv::Mat frame = cv::Mat(rows, cols, CV_8UC3);
+    // data buffer
+    Mat frameData;
 
     // Golomb encoder
     auto *golomb = new Golomb(this->initial_m);
     // calc m every m_rate frames
     int m_rate = 100;
-    // residuals
-    char residual;
 
     while(true){
         // skip word FRAME
         getline(video, header);
-        // read data
-        video.read((char *) frameData, frameSize);
+
+        // read data, compute and encode residuals
+
+        // read y
+        frameData = Mat(Y_frame_rows, Y_frame_cols, CV_8UC1);
+        video.read((char *) frameData.ptr(), Y_frame_rows * Y_frame_cols);
         if (video.gcount() == 0)
             break;
-        // ptr to mat's data buffer (to be filled with pixels in packed mode)
-        uchar *buffer = (uchar *) frame.ptr();
+        // encode residuals
+        this->encodeResiduals(frameData, golomb, m_rate, 0);
 
-        for (int i = 0; i < rows * cols; i++) {
-            // get YUV components from data in planar mode
-            int y, u, v;
+        // read u
+        frameData = Mat(U_frame_rows, U_frame_cols, CV_8UC1);
+        video.read((char *) frameData.ptr(), U_frame_rows * U_frame_cols);
+        // encode residuals
+        this->encodeResiduals(frameData, golomb, m_rate, 1);
 
-            switch (subsampling) {
-                case 444:
-                    // 4:4:4
-                    y = frameData[i];
-                    u = frameData[i + (rows * cols)];
-                    v = frameData[i + (rows * cols) * 2];
+        // read v
+        frameData = Mat(V_frame_rows, V_frame_cols, CV_8UC1);
+        video.read((char *) frameData.ptr(), V_frame_rows * V_frame_cols);
+        // encode residuals
+        this->encodeResiduals(frameData, golomb, m_rate, 2);
+    }
+}
+
+void VideoEncoder::encodeResiduals(Mat &frame, Golomb *golomb, int m_rate, int k){
+    // residuals
+    char residual;
+    // used to compute mean of mapped residuals
+    float res_sum = 0;
+    int numRes = 0;
+
+    for(int i = 0; i < frame.rows; i++){
+        for(int j = 0; j < frame.cols; j++){
+
+            LosslessJPEGPredictors<int> predictors(
+                    (j == 0 ? 0 : frame.at<uchar>(i,j-1)),
+                    (i == 0 ? 0 : frame.at<uchar>(i-1,j)),
+                    ((i == 0 | j == 0) ? 0 : frame.at<uchar>(i - 1, j - 1)));
+
+            //calculation of residuals for each predictor
+            switch (this->predictor) {
+                case 1:
+                    residual = frame.at<uchar>(i,j) - predictors.usePredictor1();
                     break;
-                case 422:
-                    // 4:2:2
-                    y = frameData[i];
-                    u = frameData[i / 2 + (rows * cols)];
-                    v = frameData[i / 2 + (rows * cols) + (rows * cols) / 2];
+                case 2:
+                    residual = frame.at<uchar>(i,j) - predictors.usePredictor2();
                     break;
-                case 420:
-                    // 4:2:0 (based on https://en.wikipedia.org/wiki/File:Yuv420.svg)
-                    int ci = (i % cols) / 2;   // x of every 2 cols
-                    int ri = i / (cols * 2);     // y of every 2 rows
-                    int shift = (cols / 2) * ri; // shift amount within U/V planar region
-                    y = frameData[i];
-                    u = frameData[(ci + shift) + (rows * cols)];
-                    v = frameData[(ci + shift) + (rows * cols) + (rows * cols) / 4];
+                case 3:
+                    residual = frame.at<uchar>(i,j) - predictors.usePredictor3();
                     break;
+                case 4:
+                    residual = frame.at<uchar>(i,j) - predictors.usePredictor4();
+                    break;
+                case 5:
+                    residual = frame.at<uchar>(i,j) - predictors.usePredictor5();
+                    break;
+                case 6:
+                    residual = frame.at<uchar>(i,j) - predictors.usePredictor6();
+                    break;
+                case 7:
+                    residual = frame.at<uchar>(i,j) - predictors.usePredictor7();
+                    break;
+                case 8:
+                    residual = frame.at<uchar>(i,j) - predictors.usePredictorJLS();
+                    break;
+                default:
+                    std::cout << "ERROR: Predictor chosen isn't correct!!!" << std::endl;
+                    exit(EXIT_FAILURE);
             }
 
-            // write to OpenCV buffer in packed mode
-            buffer[i*3 ] = y;
-            buffer[i*3 + 1] = u;
-            buffer[i*3 + 2] = v;
-        }
+            if(this->cHist){
+                // store residuals
+                this->res_hists->at(k).push_back(residual);
+                // store samples
+                this->sample_hists->at(k).push_back(frame.at<uchar>(i,j));
+            }
 
-//        cout << "test" << frame.size() << endl;
-//        imshow("display", frame);
-//        waitKey(0);
-        // for every channel
-        for(int k = 0; k < 3; k++){
-            // used to compute mean of mapped residuals
-            float res_sum = 0;
-            int numRes = 0;
-            int Mapped;
+            // encode residuals
+            vector<bool> encodedResidual = golomb->encode2(residual);
+            encodedRes.insert(encodedRes.end(), encodedResidual.begin(), encodedResidual.end());
 
-            for(int i = 0; i < this->rows; i++){
-                for(int j = 0; j < this->cols; j++){
-
-                    LosslessJPEGPredictors<int> predictors(
-                            (j == 0 ? 0 : frame.at<cv::Vec3b>(i,j-1).val[k]),
-                            (i == 0 ? 0 : frame.at<cv::Vec3b>(i-1,j).val[k]),
-                            ((i == 0 | j == 0) ? 0 : frame.at<cv::Vec3b>(i - 1, j - 1).val[k]));
-
-                    //calculation of residuals for each predictor
-                    switch (this->predictor) {
-                        case 1:
-                            residual = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictor1();
-                            break;
-                        case 2:
-                            residual = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictor2();
-                            break;
-                        case 3:
-                            residual = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictor3();
-                            break;
-                        case 4:
-                            residual = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictor4();
-                            break;
-                        case 5:
-                            residual = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictor5();
-                            break;
-                        case 6:
-                            residual = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictor6();
-                            break;
-                        case 7:
-                            residual = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictor7();
-                            break;
-                        case 8:
-                            residual = frame.at<cv::Vec3b>(i,j).val[k] - predictors.usePredictorJLS();
-                            break;
-                        default:
-                            std::cout << "ERROR: Predictor chosen isn't correct!!!" << std::endl;
-                            exit(EXIT_FAILURE);
-                    }
-
-                    if(this->cHist){
-                        // store residuals
-                        this->res_hists->at(k).push_back(residual);
-                        // store samples
-                        this->sample_hists->at(k).push_back(frame.at<cv::Vec3b>(i,j).val[k]);
-                    }
-
-                    // encode channels
-                    vector<bool> encodedResidual = golomb->encode2(residual);
-                    encodedRes.insert(encodedRes.end(), encodedResidual.begin(), encodedResidual.end());
-
-                    // compute m
-                    Mapped = 2 * residual;
-                    if(residual < 0){
-                        Mapped = -Mapped-1;
-                    }
-                    res_sum += Mapped;
-                    numRes++;
-                    if(numRes == m_rate){
-                        // calc mean from last 100 mapped pixels
-                        float res_mean = res_sum/numRes;
-                        // calc alpha of geometric dist
-                        // mu = alpha/(1 - alpha) <=> alpha = mu/(1 + mu)
-                        float alpha = res_mean/(1+res_mean);
-                        int m = ceil(-1/log(alpha));
-                        if (m != 0){
-                            golomb->setM(m);
-                        }
-                        //reset
-                        res_sum = 0;
-                        numRes = 0;
-                    }
+            // compute m
+            int Mapped = 2 * residual;
+            if(residual < 0){
+                Mapped = -Mapped-1;
+            }
+            res_sum += Mapped;
+            numRes++;
+            if(numRes == m_rate){
+                // calc mean from last 100 mapped pixels
+                float res_mean = res_sum/numRes;
+                // calc alpha of geometric dist
+                // mu = alpha/(1 - alpha) <=> alpha = mu/(1 + mu)
+                float alpha = res_mean/(1+res_mean);
+                int m = ceil(-1/log(alpha));
+                if (m != 0){
+                    golomb->setM(m);
                 }
+                //reset
+                res_sum = 0;
+                numRes = 0;
             }
         }
     }
@@ -281,5 +265,3 @@ vector<vector<char>> VideoEncoder::get_res_hists(){
 vector<vector<char>> VideoEncoder::get_sample_hists(){
     return *(this->sample_hists);
 }
-
-//TODO: Test de program
