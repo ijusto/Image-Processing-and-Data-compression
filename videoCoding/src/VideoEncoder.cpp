@@ -8,6 +8,7 @@
 #include    "LosslessJPEGPredictors.cpp"
 #include    <fstream>
 #include    <regex>
+#include    <algorithm>
 
 using namespace cv;
 using namespace std;
@@ -159,7 +160,7 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int mode, int init_m, bo
             encodeRes_inter(u_prev, frameData, golomb, m_rate, block_size, search_size,0);
         }
         // update previous
-        y_prev = frameData;
+        u_prev = frameData;
 
         // read v
         frameData = Mat(V_frame_rows, V_frame_cols, CV_8UC1);
@@ -178,7 +179,7 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int mode, int init_m, bo
             encodeRes_inter(v_prev, frameData, golomb, m_rate, block_size, search_size,0);
         }
         // update previous
-        y_prev = frameData;
+        v_prev = frameData;
 
         frameCounter++;
     }
@@ -267,30 +268,108 @@ void VideoEncoder::encodeRes_intra(Mat &frame, Golomb *golomb, int m_rate, int k
 }
 
 void VideoEncoder::encodeRes_inter(cv::Mat &prev_frame, cv::Mat &curr_frame, Golomb *golomb, int m_rate, int block_size, int search_size, int k){
-
-    // split current frame into blocks
+    // split current frame into square blocks
     // grid of blocks dimensions
     int grid_h = curr_frame.rows / block_size;
+    // add block partially outside frame
+    if(curr_frame.rows % block_size != 0){
+        grid_h += 1;
+    }
     int grid_w = curr_frame.cols / block_size;
+    // add block partially outside frame
+    if(curr_frame.cols % block_size != 0){
+        grid_w += 1;
+    }
 
-    // traverse all block
-    for(int i = 0; i < grid_h; i++){
-        for(int j = 0; j < grid_w; j++){
-            // top left corner of square block
-            int x = j*block_size;
-            int y = i*block_size;
-
+    // traverse all blocks
+    for(int x = 0; x < grid_w; x++){
+        for(int y = 0; y < grid_h; y++){
             // perform 2d log search on previous frame search area
-            int best_x, best_y; // motion vector
-            int min_mse;
+            // init center block
+            Point2i center_block_pt(x * block_size, y * block_size);
+            Point2i best_pt(center_block_pt.x, center_block_pt.y);
+            int stepSize = search_size/4 + 1;
+            vector<Point2i> old_search_blocks;
+            while(stepSize != 1){
+                // define initial search blocks
+                vector<Point2i> search_blocks;
+                search_blocks.push_back(Point2i(center_block_pt.x, center_block_pt.y));
+                search_blocks.push_back(Point2i(center_block_pt.x - stepSize, center_block_pt.y));
+                search_blocks.push_back(Point2i(center_block_pt.x + stepSize, center_block_pt.y));
+                search_blocks.push_back(Point2i(center_block_pt.x, center_block_pt.y - stepSize));
+                search_blocks.push_back(Point2i(center_block_pt.x, center_block_pt.y + stepSize));
 
-            // compute residuals
+                int min_mse = -1;
+                for(Point2i pt : search_blocks){
+                    if(find(old_search_blocks.begin(), old_search_blocks.end(), pt) == old_search_blocks.end()) {
+                        // pt not in old_search_blocks
 
-            // golomb encode residuals
+                        // calc mse
+                        int mse = 0;
+                        for(int k = 0; k < block_size; k++){
+                            for(int l = 0; l < block_size; l++){
+                                int prev_value = 0;
+                                // within frame
+                                if( (pt.x + k >= 0) && (pt.x + k < prev_frame.cols) &&
+                                    (pt.y + l >= 0) && (pt.y + l < prev_frame.rows) ){
+                                    prev_value = prev_frame.at<uchar>(pt.x + k, pt.y + l);
+                                }
+                                int curr_value = curr_frame.at<uchar>(x + k, y + l);
+                                int error = prev_value - curr_value;
+                                mse += pow(error, 2);
+                            }
+                        }
+
+                        // update best motion vector
+                        if (mse < min_mse || min_mse == -1){
+                            min_mse = mse;
+                            best_pt = pt;
+                        }
+
+                        // add to already seen blocks
+                        old_search_blocks.push_back(pt);
+                    }
+                }
+
+//                cout << stepSize << endl;
+
+//                // update step size;
+//                stepSize = stepSize/2;
+
+                if(best_pt != center_block_pt){
+                    // update center
+                    center_block_pt = best_pt;
+                }else{
+                    // update step size;
+                    stepSize = stepSize/2;
+                }
+            }
 
             // add motion vector to bit stream
-
+            vector<bool> m_x = golomb->encode2(best_pt.x);
             // add encoded residuals to bit stream
+            encodedRes.insert(encodedRes.end(), m_x.begin(), m_x.end());
+            vector<bool> m_y = golomb->encode2(best_pt.y);
+            // add encoded residuals to bit stream
+            encodedRes.insert(encodedRes.end(), m_y.begin(), m_y.end());
+
+            // compute residuals
+            for(int k = 0; k < block_size; k++){
+                for(int l = 0; l < block_size; l++){
+                    int prev_value = 0;
+                    // within frame
+                    if( (best_pt.x + k >= 0) && (best_pt.x + k < prev_frame.cols) &&
+                        (best_pt.y + l >= 0) && (best_pt.y + l < prev_frame.rows) ){
+                        prev_value = prev_frame.at<uchar>(best_pt.x + k, best_pt.y + l);
+                    }
+                    int curr_value = curr_frame.at<uchar>(x + k, y + l);
+                    int residual = prev_value - curr_value;
+                    // golomb encode residuals
+                    vector<bool> encodedResidual = golomb->encode2(residual);
+                    // add encoded residuals to bit stream
+                    encodedRes.insert(encodedRes.end(), encodedResidual.begin(), encodedResidual.end());
+                }
+            }
         }
     }
 }
