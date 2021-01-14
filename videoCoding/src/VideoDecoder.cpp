@@ -1,7 +1,7 @@
-#include    "VideoDecoder.hpp"
 
 
-using namespace std;
+#include    "../includes/VideoDecoder.hpp"
+
 
 int VideoDecoder::boolvec2int(vector<bool> vec){
     int acc = 0;
@@ -19,12 +19,19 @@ VideoDecoder::VideoDecoder(char* encodedFileName, char* destFileName, char* type
 
     try {
         initial_m = boolvec2int(sourceFile->readNbits(paramsSize));
+        //cout << initial_m << endl;
         predictor =  boolvec2int(sourceFile->readNbits(paramsSize));
+        //cout << predictor << endl;
         format = boolvec2int(sourceFile->readNbits(paramsSize));
+        //cout << format << endl;
         mode = boolvec2int(sourceFile->readNbits(paramsSize));
+        //cout << mode << endl;
         channels = boolvec2int(sourceFile->readNbits(paramsSize));
+        //cout << channels << endl;
         rows =  boolvec2int(sourceFile->readNbits(paramsSize));
+        //cout << rows << endl;
         cols =  boolvec2int(sourceFile->readNbits(paramsSize));
+        //cout << cols << endl;
 
     } catch( string mess){
         std::cout << mess << std::endl;
@@ -37,17 +44,42 @@ VideoDecoder::VideoDecoder(char* encodedFileName, char* destFileName, char* type
 void VideoDecoder::decode(){
     // read all data
     vector<bool> data = sourceFile->readNbits((sourceFile->size() - headerSize) * 8);
+    cout << data.size() << endl;
     unsigned int index = 0;
 
     // residuals
     cv :: Mat residuals = cv::Mat(rows, cols, CV_8UC3);
 
     // Golomb decoder
-    auto *golomb = new Golomb(initial_m);
+    Golomb *golomb = new Golomb(initial_m);
     int framesToDecode = 100; // must be equal to Encoder's m_rate
 
     int totalframes = 0;
-    int frames = cols*rows*channels;
+    int frames = data.size();
+
+    // Chroma subsampling dimensions
+    int Y_frame_cols, Y_frame_rows;
+    int U_frame_cols, U_frame_rows;
+    int V_frame_cols, V_frame_rows;
+
+    switch(format){
+        case 444:
+            Y_frame_rows = U_frame_rows = V_frame_rows = rows;
+            Y_frame_cols = U_frame_cols = V_frame_cols = cols;
+            break;
+        case 422:
+            Y_frame_rows = rows;
+            Y_frame_cols = cols;
+            U_frame_rows = V_frame_rows = rows / 2;
+            U_frame_cols = V_frame_cols = cols / 2;
+            break;
+        case 420:
+            Y_frame_rows = rows;
+            Y_frame_cols = cols;
+            U_frame_rows = V_frame_rows = rows / 4;
+            U_frame_cols = V_frame_cols = cols / 4;
+            break;
+    }
 
     //vars to reconstruct de frame
     int x = 0;
@@ -63,6 +95,7 @@ void VideoDecoder::decode(){
         cout << "decoded frames: " << totalframes << "/" << frames << endl;
 
         vector<int> samples = golomb->decode2(data, &index, framesToDecode);
+        cout << index << endl;
 
         // used to compute mean of mapped residuals
         float res_sum = 0;
@@ -83,7 +116,8 @@ void VideoDecoder::decode(){
                     frame.at<cv::Vec3b>(x,y).val[z] = residuals.at<cv::Vec3b>(x,y).val[z] + predictors.usePredictor1();
                     break;
                 case 2:
-                    frame.at<cv::Vec3b>(x,y).val[z] = residuals.at<cv::Vec3b>(x,y).val[z] + predictors.usePredictor2();                    break;
+                    frame.at<cv::Vec3b>(x,y).val[z] = residuals.at<cv::Vec3b>(x,y).val[z] + predictors.usePredictor2();
+                    break;
                 case 3:
                     frame.at<cv::Vec3b>(x,y).val[z] = residuals.at<cv::Vec3b>(x,y).val[z] + predictors.usePredictor3();
                     break;
@@ -112,51 +146,53 @@ void VideoDecoder::decode(){
             res_sum += Mapped;
 
             y++;
-            if(x == (rows-1)){
-                x=0;
-                y=0;
-                z++;
-            }
-            if(y == (cols-1)){
-                y=0;
-                x++;
-            }
-            if(z == 3 && x == (rows-1)){
-                for(int i = 0; i < rows ; i++){
-                    for(int j = 0; j < cols; j++){
-                        int y,u,v;
-                        y = frame.at<cv::Vec3b>(i,j).val[0];
-                        u = frame.at<cv::Vec3b>(x,y).val[1];
-                        v = frame.at<cv::Vec3b>(x,y).val[2];
-
-                        /* convert to RGB */
-                        int b = (int)(1.164*(y - 16) + 2.018*(u-128));
-                        int g = (int)(1.164*(y - 16) - 0.813*(u-128) - 0.391*(v-128));
-                        int r = (int)(1.164*(y - 16) + 1.596*(v-128));
-
-                        /* clipping to [0 ... 255] */
-                        if(r < 0) r = 0;
-                        if(g < 0) g = 0;
-                        if(b < 0) b = 0;
-                        if(r > 255) r = 255;
-                        if(g > 255) g = 255;
-                        if(b > 255) b = 255;
-
-                        frame.at<cv::Vec3b>(i,j).val[0] = b;
-                        frame.at<cv::Vec3b>(x,y).val[1] = g;
-                        frame.at<cv::Vec3b>(x,y).val[2] = r;
-                    }
+            if(z==0) {
+                if (x == (Y_frame_rows - 1) && y == (Y_frame_cols - 1)) {
+                    x = 0;
+                    y = 0;
+                    z++;
                 }
-                //write de frame
-                this->write();
-
-                x=0;
-                y=0;
-                z=0;
+                if (y == (Y_frame_cols - 1)) {
+                    y = 0;
+                    x++;
+                }
             }
+            else if(z==1){
+                if (x == (U_frame_rows - 1) && y == (Y_frame_cols - 1)) {
+                    x = 0;
+                    y = 0;
+                    z++;
+                }
+                if (y == (U_frame_cols - 1)) {
+                    y = 0;
+                    x++;
+                }
+            }
+            else{
+                if (x == (V_frame_rows - 1) && y == (Y_frame_cols - 1)) {
+                    x = 0;
+                    y = 0;
+                    z++;
+                }
+                if(z==channels)
+                {
+                    //write de frame
+                    this->write();
+                    x=0;
+                    y=0;
+                    z=0;
+                }
+                if (y == (V_frame_cols - 1)) {
+                    y = 0;
+                    x++;
+                }
+
+            }
+
+        }
 
             //TODO: test program
-        }
+
         // calc mean from last 100 mapped pixels
         float res_mean = res_sum/numRes;
         // calc alpha of geometric dist
@@ -171,10 +207,9 @@ void VideoDecoder::decode(){
 }
 
 void VideoDecoder::write(){
+    cv::VideoWriter writer;
 
-    VideoWriter writer;
-
-    int codec = VideoWriter::fourcc('M', 'J', 'P', 'G');
+    int codec = cv::VideoWriter::fourcc('M', 'J', 'P', 'G');
     double fps = 25.0;
 
     writer.open(dst, codec, fps, frame.size(), CV_8UC3);

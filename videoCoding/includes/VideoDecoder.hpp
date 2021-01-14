@@ -8,15 +8,17 @@
 */
 
 
-#include "../../entropyCoding/includes/BitStream.hpp"
+#include "../../entropyCoding/includes/Golomb.h"
+#include    <opencv2/opencv.hpp>
+#include    "LosslessJPEGPredictors.hpp"
+#include    <vector>
 
 class VideoDecoder{
 
 private:
     BitStream *sourceFile;
-    char* dst;
-
     unsigned int headerSize;
+    char *dst;
     int initial_m;
     int predictor;
     int format;
@@ -25,8 +27,7 @@ private:
     int rows;
     int cols;
 
-    cv :: Mat frame;
-
+    cv:: Mat frame;
     /**
      * Asserts that vector contains bits stored as least significant bit at the biggest address.
      * @param vec
@@ -49,9 +50,10 @@ public:
     void decode();
 
     /**
-     * @param dst destiny file path
-     */
+    * Write decodified video
+    */
     void write();
+
 };
 
 #endif //VIDEOCODING_VIDEODECODER_HPP

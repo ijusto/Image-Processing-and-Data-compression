@@ -64,7 +64,8 @@ int main(int argc, char *argv[]) {
         }
     }else if (op == "decode"){
         VideoDecoder* videoDecoder = new VideoDecoder(src,dst,type);
-    }else{
+        videoDecoder->decode();
+        }else{
         printf("\n ERROR : This option doesn't exist!!");
     }
 
