@@ -1,7 +1,6 @@
-
-
 #include    "../includes/VideoDecoder.hpp"
 
+using namespace cv;
 
 int VideoDecoder::boolvec2int(vector<bool> vec){
     int acc = 0;
@@ -11,34 +10,27 @@ int VideoDecoder::boolvec2int(vector<bool> vec){
     return acc;
 }
 
-VideoDecoder::VideoDecoder(char* encodedFileName, char* destFileName, char* type){
+VideoDecoder::VideoDecoder(char* encodedFileName){
     sourceFile = new BitStream(encodedFileName, 'r');
-    dst = destFileName;
-    headerSize = 28;        // bytes
+
+    // 32 byte file header (initial_m, predictor, subsampling, mode, fps1, fps2, frame rows, frame cols)
+    headerSize = 32;        // bytes
     int paramsSize = 32;    // bits 4 bytes
 
     try {
         initial_m = boolvec2int(sourceFile->readNbits(paramsSize));
-        //cout << initial_m << endl;
         predictor =  boolvec2int(sourceFile->readNbits(paramsSize));
-        //cout << predictor << endl;
-        format = boolvec2int(sourceFile->readNbits(paramsSize));
-        //cout << format << endl;
+        subsampling = boolvec2int(sourceFile->readNbits(paramsSize));
         mode = boolvec2int(sourceFile->readNbits(paramsSize));
-        //cout << mode << endl;
-        channels = boolvec2int(sourceFile->readNbits(paramsSize));
-        //cout << channels << endl;
+        fps1 = boolvec2int(sourceFile->readNbits(paramsSize));
+        fps2 = boolvec2int(sourceFile->readNbits(paramsSize));
         rows =  boolvec2int(sourceFile->readNbits(paramsSize));
-        //cout << rows << endl;
         cols =  boolvec2int(sourceFile->readNbits(paramsSize));
-        //cout << cols << endl;
 
     } catch( string mess){
         std::cout << mess << std::endl;
         std::exit(0);
     }
-    // data buffer of yuv values without subsampling
-    frame = cv::Mat(rows, cols, CV_8UC3);
 }
 
 void VideoDecoder::decode(){
@@ -62,7 +54,7 @@ void VideoDecoder::decode(){
     int U_frame_cols, U_frame_rows;
     int V_frame_cols, V_frame_rows;
 
-    switch(format){
+    switch(this->subsampling){
         case 444:
             Y_frame_rows = U_frame_rows = V_frame_rows = rows;
             Y_frame_cols = U_frame_cols = V_frame_cols = cols;
@@ -174,14 +166,14 @@ void VideoDecoder::decode(){
                     y = 0;
                     z++;
                 }
-                if(z==channels)
-                {
-                    //write de frame
-                    this->write();
-                    x=0;
-                    y=0;
-                    z=0;
-                }
+//                if(z==channels)
+//                {
+//                    //write de frame
+//                    this->write();
+//                    x=0;
+//                    y=0;
+//                    z=0;
+//                }
                 if (y == (V_frame_cols - 1)) {
                     y = 0;
                     x++;
@@ -190,8 +182,6 @@ void VideoDecoder::decode(){
             }
 
         }
-
-            //TODO: test program
 
         // calc mean from last 100 mapped pixels
         float res_mean = res_sum/numRes;
@@ -206,19 +196,20 @@ void VideoDecoder::decode(){
 
 }
 
-void VideoDecoder::write(){
-    cv::VideoWriter writer;
+void VideoDecoder::write(char* fileName){
+    // open output video file
+    ofstream outvideo;
+    outvideo.open (fileName);
 
-    int codec = cv::VideoWriter::fourcc('M', 'J', 'P', 'G');
-    double fps = 25.0;
+    // write HEADER
+    string header = format("YUV4MPEG2 W%d H%d F%d:%d\n", this->cols, this->rows, this->fps1, this->fps2);
+    outvideo << header;
 
-    writer.open(dst, codec, fps, frame.size(), CV_8UC3);
-
-    // check if we succeeded
-    if (!writer.isOpened()) {
-        cerr << "Could not open the output video file for write\n";
-        exit(EXIT_FAILURE);
+    //write frames
+    for(vector<uchar> fr: this->frames){
+        // write FRAME header
+        outvideo << "FRAME\n";
+        // write data
+        outvideo.write((char *) fr.data(), fr.size());
     }
-
-    writer.write(frame);
 }
