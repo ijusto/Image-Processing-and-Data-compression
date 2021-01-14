@@ -10,6 +10,7 @@ include_directories(../audioAndImageOrVideoManipulation/includes)
 include_directories(../entropyCoding/includes)
 
 add_executable(codec src/codec.cpp)
+#add_executable(testdecoder src/testdecoder.cpp)
 add_executable(testvideo src/testvideo.cpp)
 target_link_libraries(codec ${OpenCV_LIBS})
 
