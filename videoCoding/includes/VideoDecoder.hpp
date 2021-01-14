@@ -7,10 +7,9 @@
  *  @author Inês Justo
 */
 
-
 #include "../../entropyCoding/includes/Golomb.h"
-#include    <opencv2/opencv.hpp>
 #include    "LosslessJPEGPredictors.hpp"
+#include    <opencv2/opencv.hpp>
 #include    <vector>
 
 class VideoDecoder{
@@ -21,13 +20,14 @@ private:
     char *dst;
     int initial_m;
     int predictor;
-    int format;
+    int subsampling;
     int mode;
-    int channels;
+    int fps1;
+    int fps2;
     int rows;
     int cols;
+    vector<vector<uchar>> frames;
 
-    cv:: Mat frame;
     /**
      * Asserts that vector contains bits stored as least significant bit at the biggest address.
      * @param vec
@@ -38,11 +38,9 @@ private:
 public:
     //! VideoDecoder constructor.
     /*!
-     * @param encodedFileName encoded video bitstream file name/path.
-     * @param destFileName destination decoded video bitstream file name/path.
-     * todo: complete
+    * @param encodedFileName encoded video bitstream file name/path.
     */
-    explicit VideoDecoder(char* encodedFileName, char* destFileName, char* type);
+    explicit VideoDecoder(char* encodedFileName);
 
     /**
      * Decodes residuals for each channel.
@@ -51,8 +49,9 @@ public:
 
     /**
     * Write decodified video
+    * @param destFileName destination decoded video bitstream file name/path.
     */
-    void write();
+    void write(char* fileName);
 
 };
 

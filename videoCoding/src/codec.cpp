@@ -18,8 +18,8 @@ void vectorToCsv(const char* fName, vector<char>* hitVec){
 
 int main(int argc, char *argv[]) {
 
-    if(argc < 4){
-        cout << "usage: " << argv[0] << " <operation> SOURCE DEST <predictor [1,8] used for encoding> [options]" << endl;
+    if(argc < 3){
+        cout << "usage: " << argv[0] << " <operation> SOURCE DEST <predictor [1,8] used for encoding> <encoding mode 0 - intra, 1 - hybrid> [options]" << endl;
         cout << "operations:" << endl;
         cout << "\tencode\tencode SOURCE .y4m video file into DEST compressed file" << endl;
         cout << "\tdecode\tdecode SOURCE compressed file into DEST .y4m video file" << endl;
@@ -31,14 +31,11 @@ int main(int argc, char *argv[]) {
     string op = argv[1];
     char* src = argv[2];
     char* dst = argv[3];
-    int predictor = stoi(argv[4]);
-    char* type;
-    int mode = 0; // 0 - intra, 1 - hybrid
     int initial_m = 512;
     bool calcHist = false;
 
     // parse options
-    if(argc > 4){
+    if(argc > 5){
         for(int i = 4; i < 4+(argc-4); i++){
             if(string(argv[i]) == "-hist") {
                 calcHist = true;
@@ -47,6 +44,9 @@ int main(int argc, char *argv[]) {
     }
 
     if (op == "encode"){
+        int predictor = stoi(argv[4]);
+        int mode = stoi(argv[5]); // 0 - intra, 1 - hybrid
+
         VideoEncoder* videoEncoder = new VideoEncoder(src, predictor, mode, initial_m, calcHist);
         cout << "writing..." << endl;
         videoEncoder->write(dst);
@@ -63,9 +63,10 @@ int main(int argc, char *argv[]) {
             vectorToCsv("v_samples.csv", (vector<char> *) &samples.at(2));
         }
     }else if (op == "decode"){
-        VideoDecoder* videoDecoder = new VideoDecoder(src,dst,type);
+        VideoDecoder* videoDecoder = new VideoDecoder(src);
         videoDecoder->decode();
-        }else{
+        videoDecoder->write(dst);
+    }else{
         printf("\n ERROR : This option doesn't exist!!");
     }
 

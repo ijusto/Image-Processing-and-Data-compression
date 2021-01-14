@@ -56,6 +56,14 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int mode, int init_m, bo
     cout << "header: " << header << endl;
     smatch match;
 
+    // get fps
+    regex rgx_f1("F([0-9]+):[0-9]+");
+    regex_search(header, match, rgx_f1);
+    this->fps1 = stoi(match[1]);
+    regex rgx_f2("F[0-9]+:([0-9]+)");
+    regex_search(header, match, rgx_f2);
+    this->fps2 = stoi(match[1]);
+
     // get rows, cols
     regex rgx_w("W([0-9]+)");
     regex_search(header, match, rgx_w);
@@ -281,6 +289,10 @@ void VideoEncoder::encodeRes_inter(cv::Mat &prev_frame, cv::Mat &curr_frame, Gol
         grid_w += 1;
     }
 
+    // used to compute mean of mapped residuals
+    float res_sum = 0;
+    int numRes = 0;
+
     // traverse all blocks
     for(int x = 0; x < grid_w; x++){
         for(int y = 0; y < grid_h; y++){
@@ -333,16 +345,16 @@ void VideoEncoder::encodeRes_inter(cv::Mat &prev_frame, cv::Mat &curr_frame, Gol
 
 //                cout << stepSize << endl;
 
-//                // update step size;
-//                stepSize = stepSize/2;
+                // update step size;
+                stepSize = stepSize/2;
 
-                if(best_pt != center_block_pt){
-                    // update center
-                    center_block_pt = best_pt;
-                }else{
-                    // update step size;
-                    stepSize = stepSize/2;
-                }
+//                if(best_pt != center_block_pt){
+//                    // update center
+//                    center_block_pt = best_pt;
+//                }else{
+//                    // update step size;
+//                    stepSize = stepSize/2;
+//                }
             }
 
             // add motion vector to bit stream
@@ -368,6 +380,28 @@ void VideoEncoder::encodeRes_inter(cv::Mat &prev_frame, cv::Mat &curr_frame, Gol
                     vector<bool> encodedResidual = golomb->encode2(residual);
                     // add encoded residuals to bit stream
                     encodedRes.insert(encodedRes.end(), encodedResidual.begin(), encodedResidual.end());
+
+                    // compute m
+                    int Mapped = 2 * residual;
+                    if(residual < 0){
+                        Mapped = -Mapped-1;
+                    }
+                    res_sum += Mapped;
+                    numRes++;
+                    if(numRes == m_rate){
+                        // calc mean from last 100 mapped pixels
+                        float res_mean = res_sum/numRes;
+                        // calc alpha of geometric dist
+                        // mu = alpha/(1 - alpha) <=> alpha = mu/(1 + mu)
+                        float alpha = res_mean/(1+res_mean);
+                        int m = ceil(-1/log(alpha));
+                        if (m != 0){
+                            golomb->setM(m);
+                        }
+                        //reset
+                        res_sum = 0;
+                        numRes = 0;
+                    }
                 }
             }
         }
@@ -375,40 +409,36 @@ void VideoEncoder::encodeRes_inter(cv::Mat &prev_frame, cv::Mat &curr_frame, Gol
 }
 
 void VideoEncoder::write(char *filename) {
-
     auto * wbs = new BitStream(filename, 'w');
 
     vector<bool> file;
 
-    // add file header (initial_m, predictor, format, mode, channels, frame rows, frame cols)
+    // add 32 byte file header (initial_m, predictor, subsampling, mode, fps1, fps2, frame rows, frame cols)
+
     // initial_m
     vector<bool> m = int2boolvec(this->initial_m);
     file.insert(file.cend(), m.begin(), m.end());
-
     //predictor
     vector<bool> pred = int2boolvec(this->predictor);
     file.insert(file.cend(), pred.begin(), pred.end());
-
-    // format
-    vector<bool> format = int2boolvec(this->subsampling);
-    file.insert(file.end(), format.begin(), format.end());
-
+    // subsampling
+    vector<bool> subsamp = int2boolvec(this->subsampling);
+    file.insert(file.end(), subsamp.begin(), subsamp.end());
     // mode
     vector<bool> vecmode = int2boolvec(this->mode);
-    file.insert(file.end(), format.begin(), format.end());
-
-    // channels
-    vector<bool> channels = int2boolvec(3);
-    file.insert(file.end(), channels.begin(), channels.end());
-
+    file.insert(file.end(), vecmode.begin(), vecmode.end());
+    // fps part 1
+    vector<bool> f1 = int2boolvec(this->fps1);
+    file.insert(file.end(), f1.begin(), f1.end());
+    // fps part 2
+    vector<bool> f2 = int2boolvec(this->fps2);
+    file.insert(file.end(), f2.begin(), f2.end());
     // rows
     vector<bool> rows = int2boolvec(this->rows);
     file.insert(file.end(), rows.begin(), rows.end());
-
     //cols
     vector<bool> cols = int2boolvec(this->cols);
     file.insert(file.end(), cols.begin(), cols.end());
-
     //data
     file.insert(file.end(), this->encodedRes.begin(), this->encodedRes.end());
 
