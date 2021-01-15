@@ -79,6 +79,12 @@ void dct(cv::Mat frame, bool isColor) {
             // Calculate the DCT 2D of each block.
             double twoDDCTBlock[8][8];
 
+            // base quantization matrix of JPEG (luminance)
+            float jpeg_matrix[8][8];
+            memcpy(jpeg_matrix,
+                   (isColor) ? jpeg_matrix_color : jpeg_matrix_grayscale,
+                   sizeof((isColor) ? jpeg_matrix_color : jpeg_matrix_grayscale));
+
             // Find discrete cosine transform
             // based on this implementation: https://www.geeksforgeeks.org/discrete-cosine-transform-algorithm-program/
             int i, j, k, l;
@@ -113,44 +119,28 @@ void dct(cv::Mat frame, bool isColor) {
                         }
                     }
                     twoDDCTBlock[i][j] = ci * cj * sum;
+
+                    // ******************************* Quantization of the DCT coefficients ************************************
+                    // Quantization of the DCT coefficients, in order to eliminate less relevant information, according to the
+                    // characteristics of the human visual system.
+
+                    // The DCT coefficients are quantized using a quantization matrix, previously scaled by a compression
+                    // quality factor.
+                    twoDDCTBlock[i][j] = floor(twoDDCTBlock[i][j] / jpeg_matrix[i][j]); // ỹ(r,c)=ROUND(y(r,c)/q(r,c))
                 }
             }
 
-            // ******************************* Quantization of the DCT coefficients ************************************
-            // Quantization of the DCT coefficients, in order to eliminate less relevant information, according to the
-            // characteristics of the human visual system.
-
-            // The DCT coefficients are quantized using a quantization matrix, previously scaled by a compression
-            // quality factor.
-
-            // base quantization matrix of JPEG (luminance)
-            float jpeg_matrix[8][8];
-            memcpy(jpeg_matrix,
-                    (isColor) ? jpeg_matrix_color : jpeg_matrix_grayscale,
-                    sizeof((isColor) ? jpeg_matrix_color : jpeg_matrix_grayscale));
-            
-            /*
-            Q = 80; // Define Q factor
-
-            // Determine S
-            if (Q < 50)
-                S = 5000/Q;
-            else
-                S = 200 - 2*Q;
-            end
-
-            Ts = floor((S*Tb + 50) / 100);
-            Ts(Ts == 0) = 1; % // Prevent divide by 0 error
-            */
 
             // Next, the coefficients are organized in a one-dimensional vector according to a zig-zag scan.
 
-            // ********************* Statistical coding (Huffman) of the quantized DCT coefficients ********************
+            // ********************* Statistical coding (Golomb) of the quantized DCT coefficients *********************
 
             // The non-zero AC coefficients are encoded using Huffman or arithmetic coding, representing the value of the
             // coefficient, as well as the number of zeros preceding it.
+            // In this case, we use the Golomb code instead.
 
-            // The DC coefficient of each block is predicatively encoded in relation to the DC coefficient of the previous block.
+            // The DC coefficient of each block is predicatively encoded in relation to the DC coefficient of the
+            // previous block.
 
 
         }
