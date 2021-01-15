@@ -3,7 +3,9 @@
 
 //!  VideoDecoder
 /*!
- *  This class is useful to ...
+ *  This class is useful to decode a video.
+ *  @author Agostinho Pires
+ *  @author Bruno Pereira
  *  @author Inês Justo
 */
 
@@ -53,7 +55,7 @@ public:
     void decodeRes_intra(vector<int> &residualValues, vector<uchar> &planarValues, int f_rows, int f_cols, Golomb *golomb, int m_rate);
 
     /**
-    * Write decodified video
+    * Write decoded video
     * @param destFileName destination decoded video bitstream file name/path.
     */
     void write(char* fileName);

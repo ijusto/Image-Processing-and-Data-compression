@@ -5,6 +5,14 @@
 #ifndef VIDEOCODING_VIDEOENCODER_HPP
 #define VIDEOCODING_VIDEOENCODER_HPP
 
+//!  VideoEncoder
+/*!
+ *  This class is useful to encode a video.
+ *  @author Agostinho Pires
+ *  @author Bruno Pereira
+ *  @author Inês Justo
+*/
+
 #include    "../../entropyCoding/includes/Golomb.h"
 #include    <opencv2/opencv.hpp>
 
