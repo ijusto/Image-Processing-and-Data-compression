@@ -85,8 +85,7 @@ void dct(cv::Mat frame, bool isColor) {
                    (isColor) ? jpeg_matrix_color : jpeg_matrix_grayscale,
                    sizeof((isColor) ? jpeg_matrix_color : jpeg_matrix_grayscale));
 
-            // Find discrete cosine transform
-            // based on this implementation: https://www.geeksforgeeks.org/discrete-cosine-transform-algorithm-program/
+            // Find discrete cosine transform based on this implementation: https://www.geeksforgeeks.org/discrete-cosine-transform-algorithm-program/
             int i, j, k, l;
             int m = 8;
             int n = 8;
@@ -120,18 +119,57 @@ void dct(cv::Mat frame, bool isColor) {
                     }
                     twoDDCTBlock[i][j] = ci * cj * sum;
 
-                    // ******************************* Quantization of the DCT coefficients ************************************
-                    // Quantization of the DCT coefficients, in order to eliminate less relevant information, according to the
-                    // characteristics of the human visual system.
+                    // ******************************* Quantization of the DCT coefficients ****************************
+                    // Quantization of the DCT coefficients, in order to eliminate less relevant information, according
+                    // to the characteristics of the human visual system.
 
-                    // The DCT coefficients are quantized using a quantization matrix, previously scaled by a compression
-                    // quality factor.
+                    // The DCT coefficients are quantized using a quantization matrix, previously scaled by a
+                    // compression quality factor.
                     twoDDCTBlock[i][j] = floor(twoDDCTBlock[i][j] / jpeg_matrix[i][j]); // ỹ(r,c)=ROUND(y(r,c)/q(r,c))
                 }
             }
 
-
             // Next, the coefficients are organized in a one-dimensional vector according to a zig-zag scan.
+            std::vector<float> zigzag_array;
+            zigzag_array.push_back(twoDDCTBlock[0][0]);
+            int row = 0;
+            int col = 0;
+            int diagonals = 2;
+            while(true){
+                // left
+                col += 1;
+                zigzag_array.push_back(twoDDCTBlock[row][col]);
+
+                if((row == 8) && (col == 8)){
+                    break;
+                }
+
+                // down diagonal
+                int temp_diagonals = diagonals;
+                while(temp_diagonals != 0){
+                    row -= 1;
+                    col -= 1;
+                    zigzag_array.push_back(twoDDCTBlock[row][col]);
+
+                    temp_diagonals -= 1;
+                }
+                diagonals += 1;
+
+                // down
+                row = row + 1;
+                zigzag_array.push_back(twoDDCTBlock[row][col]);
+
+                // up diagonal
+                temp_diagonals = diagonals;
+                while(temp_diagonals != 0){
+                    row += 1;
+                    col += 1;
+                    zigzag_array.push_back(twoDDCTBlock[row][col]);
+
+                    temp_diagonals -= 1;
+                }
+                diagonals += 1;
+            }
 
             // ********************* Statistical coding (Golomb) of the quantized DCT coefficients *********************
 
