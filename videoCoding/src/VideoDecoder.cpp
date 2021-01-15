@@ -13,8 +13,8 @@ int VideoDecoder::boolvec2int(vector<bool> vec){
 VideoDecoder::VideoDecoder(char* encodedFileName){
     sourceFile = new BitStream(encodedFileName, 'r');
 
-    // 32 byte file header (initial_m, predictor, subsampling, mode, fps1, fps2, frame rows, frame cols)
-    headerSize = 32;        // bytes
+    // 36 byte file header (initial_m, predictor, subsampling, mode, fps1, fps2, frame rows, frame cols)
+    headerSize = 36;        // bytes
     int paramsSize = 32;    // bits 4 bytes
 
     try {
@@ -24,6 +24,7 @@ VideoDecoder::VideoDecoder(char* encodedFileName){
         mode = boolvec2int(sourceFile->readNbits(paramsSize));
         fps1 = boolvec2int(sourceFile->readNbits(paramsSize));
         fps2 = boolvec2int(sourceFile->readNbits(paramsSize));
+        totalFrames = boolvec2int(sourceFile->readNbits(paramsSize));
         rows =  boolvec2int(sourceFile->readNbits(paramsSize));
         cols =  boolvec2int(sourceFile->readNbits(paramsSize));
 
@@ -36,18 +37,13 @@ VideoDecoder::VideoDecoder(char* encodedFileName){
 void VideoDecoder::decode(){
     // read all data
     vector<bool> data = sourceFile->readNbits((sourceFile->size() - headerSize) * 8);
-    cout << data.size() << endl;
+    cout << "data size " << data.size() << endl;
     unsigned int index = 0;
-
-    // residuals
-    cv :: Mat residuals = cv::Mat(rows, cols, CV_8UC3);
 
     // Golomb decoder
     Golomb *golomb = new Golomb(initial_m);
-    int framesToDecode = 100; // must be equal to Encoder's m_rate
-
-    int totalframes = 0;
-    int frames = data.size();
+    int m_rate = 100; // must be equal to Encoder's m_rate
+    int decodedFrames = 0;
 
     // Chroma subsampling dimensions
     int Y_frame_cols, Y_frame_rows;
@@ -73,128 +69,108 @@ void VideoDecoder::decode(){
             break;
     }
 
-    //vars to reconstruct de frame
-    int x = 0;
-    int y = 0;
-    int z = 0;
-    while(totalframes < frames) {
-        // to not read more than available
-        if (totalframes + framesToDecode > frames) {
-            framesToDecode = frames - totalframes;
-        }
 
-        totalframes += framesToDecode;
-        cout << "decoded frames: " << totalframes << "/" << frames << endl;
+    while(decodedFrames < this->totalFrames) {
+        decodedFrames++;
+        cout << "decoded frames: " << decodedFrames << "/" << this->totalFrames << endl;
 
-        vector<int> samples = golomb->decode2(data, &index, framesToDecode);
-        cout << index << endl;
+        vector<uchar> frame;
 
-        // used to compute mean of mapped residuals
-        float res_sum = 0;
-        int numRes = 0;
-        int Mapped;
+        // read y
+        vector<int> samples = golomb->decode2(data, &index, Y_frame_rows * Y_frame_cols);
+        // decode y component and add to frame vector
+        cout << "woops1" << endl;
+        this->decodeRes_intra(samples, frame, Y_frame_rows, Y_frame_cols, golomb, m_rate);
+        cout << "woops2" << endl;
 
-        for(int i = 0; i<framesToDecode; i++){
-            residuals.at<cv::Vec3b>(x,y).val[z]= samples.at(i);
+        // read u
+        samples = golomb->decode2(data, &index, U_frame_rows * U_frame_cols);
+        // decode u component and add to frame vector
+        this->decodeRes_intra(samples, frame, U_frame_rows, U_frame_cols, golomb, m_rate);
+
+        // read v
+        samples = golomb->decode2(data, &index, V_frame_rows * V_frame_cols);
+        // decode v component and add to frame vector
+        this->decodeRes_intra(samples, frame, V_frame_rows, V_frame_cols, golomb, m_rate);
+
+        // add frame to buffer
+        this->frames.push_back(frame);
+    }
+}
+
+void VideoDecoder::decodeRes_intra(vector<int> &residualValues, vector<uchar> &planarValues, int f_rows, int f_cols, Golomb *golomb, int m_rate){
+    // used to compute mean of mapped residuals
+    float res_sum = 0;
+    int numRes = 0;
+
+    for(int i = 0; i < f_rows; i++){
+        for(int j = 0; j < f_cols; j++){
+            int idx = i * f_rows + j;
 
             LosslessJPEGPredictors<int> predictors(
-                    (y == 0 ? 0 : frame.at<cv::Vec3b>(x,y-1).val[z]),
-                    (x == 0 ? 0 : frame.at<cv::Vec3b>(x-1,y).val[z]),
-                    ((x == 0 | y == 0) ? 0 : frame.at<cv::Vec3b>(x - 1, y - 1).val[z]));
+                    (j == 0 ? 0 : planarValues[i * f_rows + (j-1)]),                    // (i,j-1)
+                    (i == 0 ? 0 : planarValues[(i-1) * f_rows + j]),                    // (i-1,j)
+                    ((i == 0 | j == 0) ? 0 : planarValues[(i-1) * f_rows + (j-1)]));    // (i-1,j-1)
 
-            //calculation of residuals for each predictor
+            uchar value;
             switch (this->predictor) {
                 case 1:
-                    frame.at<cv::Vec3b>(x,y).val[z] = residuals.at<cv::Vec3b>(x,y).val[z] + predictors.usePredictor1();
+                    value = residualValues.at(idx) + predictors.usePredictor1();
                     break;
                 case 2:
-                    frame.at<cv::Vec3b>(x,y).val[z] = residuals.at<cv::Vec3b>(x,y).val[z] + predictors.usePredictor2();
+                    value = residualValues.at(idx) + predictors.usePredictor2();
                     break;
                 case 3:
-                    frame.at<cv::Vec3b>(x,y).val[z] = residuals.at<cv::Vec3b>(x,y).val[z] + predictors.usePredictor3();
+                    value = residualValues.at(idx) +predictors.usePredictor3();
                     break;
                 case 4:
-                    frame.at<cv::Vec3b>(x,y).val[z] = residuals.at<cv::Vec3b>(x,y).val[z] + predictors.usePredictor4();
+                    value = residualValues.at(idx) +predictors.usePredictor4();
                     break;
                 case 5:
-                    frame.at<cv::Vec3b>(x,y).val[z] = residuals.at<cv::Vec3b>(x,y).val[z] + predictors.usePredictor5();
+                    value = residualValues.at(idx) +predictors.usePredictor5();
                     break;
                 case 6:
-                    frame.at<cv::Vec3b>(x,y).val[z] = residuals.at<cv::Vec3b>(x,y).val[z] + predictors.usePredictor6();
+                    value = residualValues.at(idx) +predictors.usePredictor6();
                     break;
                 case 7:
-                    frame.at<cv::Vec3b>(x,y).val[z] = residuals.at<cv::Vec3b>(x,y).val[z] + predictors.usePredictor7();
+                    value = residualValues.at(idx) +predictors.usePredictor7();
                     break;
                 case 8:
-                    frame.at<cv::Vec3b>(x,y).val[z] = residuals.at<cv::Vec3b>(x,y).val[z] + predictors.usePredictorJLS();
+                    value = residualValues.at(idx) +predictors.usePredictorJLS();
                     break;
                 default:
                     std::cout << "ERROR: Predictor chosen isn't correct!!!" << std::endl;
                     exit(EXIT_FAILURE);
             }
 
-            Mapped = 2 * residuals.at<cv::Vec3b>(x,y).val[z];
-            if(residuals.at<cv::Vec3b>(x,y).val[z]< 0) Mapped = -Mapped-1;
+            // add value to frame
+            planarValues.push_back(value);
+
+            // compute m
+            int Mapped = 2 * residualValues.at(idx);
+            if(residualValues.at(idx) < 0){
+                Mapped = -Mapped-1;
+            }
             res_sum += Mapped;
-
-            y++;
-            if(z==0) {
-                if (x == (Y_frame_rows - 1) && y == (Y_frame_cols - 1)) {
-                    x = 0;
-                    y = 0;
-                    z++;
+            numRes++;
+            if(numRes == m_rate){
+                // calc mean from last 100 mapped pixels
+                float res_mean = res_sum/numRes;
+                // calc alpha of geometric dist
+                // mu = alpha/(1 - alpha) <=> alpha = mu/(1 + mu)
+                float alpha = res_mean/(1+res_mean);
+                int m = ceil(-1/log(alpha));
+                if (m != 0){
+                    golomb->setM(m);
                 }
-                if (y == (Y_frame_cols - 1)) {
-                    y = 0;
-                    x++;
-                }
+                //reset
+                res_sum = 0;
+                numRes = 0;
             }
-            else if(z==1){
-                if (x == (U_frame_rows - 1) && y == (Y_frame_cols - 1)) {
-                    x = 0;
-                    y = 0;
-                    z++;
-                }
-                if (y == (U_frame_cols - 1)) {
-                    y = 0;
-                    x++;
-                }
-            }
-            else{
-                if (x == (V_frame_rows - 1) && y == (Y_frame_cols - 1)) {
-                    x = 0;
-                    y = 0;
-                    z++;
-                }
-//                if(z==channels)
-//                {
-//                    //write de frame
-//                    this->write();
-//                    x=0;
-//                    y=0;
-//                    z=0;
-//                }
-                if (y == (V_frame_cols - 1)) {
-                    y = 0;
-                    x++;
-                }
-
-            }
-
-        }
-
-        // calc mean from last 100 mapped pixels
-        float res_mean = res_sum/numRes;
-        // calc alpha of geometric dist
-        // mu = alpha/(1 - alpha) <=> alpha = mu/(1 + mu)
-        float alpha = res_mean/(1+res_mean);
-        int m = ceil(-1/log(alpha));
-        if (m != 0){
-            golomb->setM(m);
         }
     }
-
 }
+
 
 void VideoDecoder::write(char* fileName){
     // open output video file

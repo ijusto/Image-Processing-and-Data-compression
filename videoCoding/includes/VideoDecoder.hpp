@@ -24,6 +24,7 @@ private:
     int mode;
     int fps1;
     int fps2;
+    int totalFrames;
     int rows;
     int cols;
     vector<vector<uchar>> frames;
@@ -46,6 +47,8 @@ public:
      * Decodes residuals for each channel.
      */
     void decode();
+
+    void decodeRes_intra(vector<int> &residualValues, vector<uchar> &planarValues, int f_rows, int f_cols, Golomb *golomb, int m_rate);
 
     /**
     * Write decodified video

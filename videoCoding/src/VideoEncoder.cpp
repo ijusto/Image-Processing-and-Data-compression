@@ -191,6 +191,8 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int mode, int init_m, bo
 
         frameCounter++;
     }
+
+    this->totalFrames = frameCounter;
 }
 
 void VideoEncoder::encodeRes_intra(Mat &frame, Golomb *golomb, int m_rate, int k){
@@ -245,6 +247,8 @@ void VideoEncoder::encodeRes_intra(Mat &frame, Golomb *golomb, int m_rate, int k
                 // store samples
                 this->sample_hists->at(k).push_back(frame.at<uchar>(i,j));
             }
+
+            // // quantize residual here before encoding
 
             // encode residuals
             vector<bool> encodedResidual = golomb->encode2(residual);
@@ -413,7 +417,7 @@ void VideoEncoder::write(char *filename) {
 
     vector<bool> file;
 
-    // add 32 byte file header (initial_m, predictor, subsampling, mode, fps1, fps2, frame rows, frame cols)
+    // add 36 byte file header (initial_m, predictor, subsampling, mode, fps1, fps2, totalFrames, frame rows, frame cols)
 
     // initial_m
     vector<bool> m = int2boolvec(this->initial_m);
@@ -433,6 +437,9 @@ void VideoEncoder::write(char *filename) {
     // fps part 2
     vector<bool> f2 = int2boolvec(this->fps2);
     file.insert(file.end(), f2.begin(), f2.end());
+    // totalFrames
+    vector<bool> tFrames = int2boolvec(this->totalFrames);
+    file.insert(file.end(), tFrames.begin(), tFrames.end());
     // rows
     vector<bool> rows = int2boolvec(this->rows);
     file.insert(file.end(), rows.begin(), rows.end());
