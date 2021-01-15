@@ -48,6 +48,8 @@ public:
      */
     void decode();
 
+    void update_m(vector<int> residuals, Golomb *golomb, int m_rate);
+
     void decodeRes_intra(vector<int> &residualValues, vector<uchar> &planarValues, int f_rows, int f_cols, Golomb *golomb, int m_rate);
 
     /**

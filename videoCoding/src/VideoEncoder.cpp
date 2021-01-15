@@ -6,10 +6,10 @@
 #include    "../../entropyCoding/src/Golomb.cpp"
 #include    "VideoEncoder.hpp"
 #include    "LosslessJPEGPredictors.cpp"
+//#include    "BaselineJPEG.cpp"
 #include    <fstream>
 #include    <regex>
 #include    <algorithm>
-#include    <BaselineJPEG.cpp>
 
 using namespace cv;
 using namespace std;
@@ -128,6 +128,7 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int mode, int init_m, bo
     int m_rate = 100;
 
     while(true){
+        cout << "encoded frames " << frameCounter << endl;
         // skip word FRAME
         getline(video, header);
 
@@ -144,6 +145,7 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int mode, int init_m, bo
             // intra coding
             // encode residuals
             this->encodeRes_intra(frameData, golomb, m_rate, 0);
+            //cout << "sample size y" << frameData.size() << endl;
         }else if(this->mode == 1){
             // intra + inter coding (hybrid)
             // encode motion vectors and residuals
@@ -155,14 +157,13 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int mode, int init_m, bo
         // read u
         frameData = Mat(U_frame_rows, U_frame_cols, CV_8UC1);
         video.read((char *) frameData.ptr(), U_frame_rows * U_frame_cols);
-        // encode residuals
-        this->encodeRes_intra(frameData, golomb, m_rate, 1);
 
         // compute residuals for u
         if(this->mode == 0 || frameCounter % intra_rate == 0){
             // intra coding
             // encode residuals
             this->encodeRes_intra(frameData, golomb, m_rate, 0);
+            //cout << "sample size u" << frameData.size() << endl;
         }else if(this->mode == 1){
             // intra + inter coding (hybrid)
             // encode motion vectors and residuals
@@ -174,14 +175,13 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int mode, int init_m, bo
         // read v
         frameData = Mat(V_frame_rows, V_frame_cols, CV_8UC1);
         video.read((char *) frameData.ptr(), V_frame_rows * V_frame_cols);
-        // encode residuals
-        this->encodeRes_intra(frameData, golomb, m_rate, 2);
 
         // compute residuals for v
         if(this->mode == 0 || frameCounter % intra_rate == 0){
             // intra coding
             // encode residuals
             this->encodeRes_intra(frameData, golomb, m_rate, 0);
+            //cout << "sample size v" << frameData.size() << endl;
         }else if(this->mode == 1){
             // intra + inter coding (hybrid)
             // encode motion vectors and residuals
@@ -270,6 +270,7 @@ void VideoEncoder::encodeRes_intra(Mat &frame, Golomb *golomb, int m_rate, int k
                 float alpha = res_mean/(1+res_mean);
                 int m = ceil(-1/log(alpha));
                 if (m != 0){
+                    //cout << "NEW M " << m << endl;
                     golomb->setM(m);
                 }
                 //reset

@@ -18,7 +18,7 @@ void vectorToCsv(const char* fName, vector<char>* hitVec){
 
 int main(int argc, char *argv[]) {
 
-    if(argc < 3){
+    if(argc < 4){
         cout << "usage: " << argv[0] << " <operation> SOURCE DEST <predictor [1,8] used for encoding> <encoding mode 0 - intra, 1 - hybrid> [options]" << endl;
         cout << "operations:" << endl;
         cout << "\tencode\tencode SOURCE .y4m video file into DEST compressed file" << endl;
