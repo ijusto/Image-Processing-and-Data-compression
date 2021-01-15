@@ -82,7 +82,7 @@ void VideoDecoder::decode(){
         while(n_decoded < Y_frame_rows * Y_frame_cols){
             // cout << "n_decoded " << n_decoded << endl;
             // read remaining
-            if(n_decoded + m_rate > Y_frame_rows * Y_frame_cols){
+            if(n_decoded + n_to_decode > Y_frame_rows * Y_frame_cols){
                 n_to_decode = Y_frame_rows * Y_frame_cols - n_decoded;
             }
             n_decoded += n_to_decode;
@@ -105,7 +105,7 @@ void VideoDecoder::decode(){
         n_decoded = 0;
         while(n_decoded < U_frame_rows * U_frame_cols){
             // read remaining
-            if(n_decoded + m_rate > U_frame_rows * U_frame_cols){
+            if(n_decoded + n_to_decode > U_frame_rows * U_frame_cols){
                 n_to_decode = U_frame_rows * U_frame_cols - n_decoded;
             }
             n_decoded += n_to_decode;
@@ -128,7 +128,7 @@ void VideoDecoder::decode(){
         n_decoded = 0;
         while(n_decoded < V_frame_rows * V_frame_cols){
             // read remaining
-            if(n_decoded + m_rate > V_frame_rows * V_frame_cols){
+            if(n_decoded + n_to_decode > V_frame_rows * V_frame_cols){
                 n_to_decode = V_frame_rows * V_frame_cols - n_decoded;
             }
             n_decoded += n_to_decode;
@@ -148,6 +148,7 @@ void VideoDecoder::decode(){
         // add frame to buffer
         this->frames.push_back(frame);
     }
+    cout << "index" << index << endl;
 }
 
 void VideoDecoder::update_m(vector<int> residuals, Golomb *golomb, int m_rate){
@@ -185,12 +186,12 @@ void VideoDecoder::update_m(vector<int> residuals, Golomb *golomb, int m_rate){
 void VideoDecoder::decodeRes_intra(vector<int> &residualValues, vector<uchar> &planarValues, int f_rows, int f_cols, Golomb *golomb, int m_rate){
     for(int i = 0; i < f_rows; i++){
         for(int j = 0; j < f_cols; j++){
-            int idx = i * f_rows + j;
+            int idx = i * f_cols + j;
 
             LosslessJPEGPredictors<int> predictors(
-                    (j == 0 ? 0 : planarValues[i * f_rows + (j-1)]),                    // (i,j-1)
-                    (i == 0 ? 0 : planarValues[(i-1) * f_rows + j]),                    // (i-1,j)
-                    ((i == 0 | j == 0) ? 0 : planarValues[(i-1) * f_rows + (j-1)]));    // (i-1,j-1)
+                    (j == 0 ? 0 : planarValues[i * f_cols + (j-1)]),                    // (i,j-1)
+                    (i == 0 ? 0 : planarValues[(i-1) * f_cols + j]),                    // (i-1,j)
+                    ((i == 0 | j == 0) ? 0 : planarValues[(i-1) * f_cols + (j-1)]));    // (i-1,j-1)
 
             uchar value;
             switch (this->predictor) {
@@ -236,14 +237,17 @@ void VideoDecoder::write(char* fileName){
     outvideo.open (fileName);
 
     // write HEADER
-    string header = format("YUV4MPEG2 W%d H%d F%d:%d\n", this->cols, this->rows, this->fps1, this->fps2);
+    string header = format("YUV4MPEG2 W%d H%d F%d:%d C%d\n", this->cols, this->rows, this->fps1, this->fps2, this->subsampling);
     outvideo << header;
 
+    int fileSize = 0;
     //write frames
     for(vector<uchar> fr: this->frames){
+        fileSize+=fr.size();
         // write FRAME header
         outvideo << "FRAME\n";
         // write data
         outvideo.write((char *) fr.data(), fr.size());
     }
+    cout << "file size: " << fileSize << endl;
 }

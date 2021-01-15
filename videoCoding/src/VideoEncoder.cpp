@@ -127,11 +127,11 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int mode, int init_m, bo
     // calc m every m_rate frames
     int m_rate = 100;
 
+    int totalValuesSize = 0;
     while(true){
         cout << "encoded frames " << frameCounter << endl;
         // skip word FRAME
         getline(video, header);
-
         // read data, compute and encode residuals
 
         // read y
@@ -139,6 +139,8 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int mode, int init_m, bo
         video.read((char *) frameData.ptr(), Y_frame_rows * Y_frame_cols);
         if (video.gcount() == 0)
             break;
+        totalValuesSize += Y_frame_rows * Y_frame_cols;
+        cout << header << endl;
 
         // compute residuals for y
         if(this->mode == 0 || frameCounter % intra_rate == 0){
@@ -157,6 +159,7 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int mode, int init_m, bo
         // read u
         frameData = Mat(U_frame_rows, U_frame_cols, CV_8UC1);
         video.read((char *) frameData.ptr(), U_frame_rows * U_frame_cols);
+        totalValuesSize += U_frame_rows * U_frame_cols;
 
         // compute residuals for u
         if(this->mode == 0 || frameCounter % intra_rate == 0){
@@ -175,6 +178,7 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int mode, int init_m, bo
         // read v
         frameData = Mat(V_frame_rows, V_frame_cols, CV_8UC1);
         video.read((char *) frameData.ptr(), V_frame_rows * V_frame_cols);
+        totalValuesSize += V_frame_rows * V_frame_cols;
 
         // compute residuals for v
         if(this->mode == 0 || frameCounter % intra_rate == 0){
@@ -194,6 +198,8 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int mode, int init_m, bo
     }
 
     this->totalFrames = frameCounter;
+
+    cout << "file size: " << totalValuesSize << endl;
 }
 
 void VideoEncoder::encodeRes_intra(Mat &frame, Golomb *golomb, int m_rate, int k){
