@@ -4,17 +4,10 @@
  *  @author Inês Justo
 */
 
-//! Calculates the DCT.
-/*!
- * @param frame image frame of the video.
- * @param nRows number of rows.
- * @param nCols number of columns.
- * @returns
-*/
 #include <opencv2/core.hpp>
 #include <opencv2/videoio.hpp>
 #include <opencv2/opencv.hpp>
-#include <math.h>      /* pow */
+#include <cmath>
 
 #define pi 3.142857
 
@@ -66,12 +59,11 @@ void dct(cv::Mat frame, bool isColor) {
 
             for(int i = 0; i <8; i++){
                 for (int j = 0; j < 8; ++j) {
-                    //block.at<char>(i, j) = frame.at<uchar>(r + i, c + j) - pow(2, 7);
+                    block.at<char>(i, j) = frame.at<double>(r + i, c + j) - pow(2, 7);
                     std::cout << "pos "<< r+i << "," << c+j << " " << frame.at<double>(r + i, c + j) - pow(2, 7) <<  " ";
                 }
                 std::cout << std::endl;
             }
-            std::cout << std::endl;
             std::cout << std::endl;
             std::cout << std::endl;
 
@@ -85,7 +77,8 @@ void dct(cv::Mat frame, bool isColor) {
                    (isColor) ? jpeg_matrix_color : jpeg_matrix_grayscale,
                    sizeof((isColor) ? jpeg_matrix_color : jpeg_matrix_grayscale));
 
-            // Find discrete cosine transform based on this implementation: https://www.geeksforgeeks.org/discrete-cosine-transform-algorithm-program/
+            // Find discrete cosine transform based on this implementation:
+            // https://www.geeksforgeeks.org/discrete-cosine-transform-algorithm-program/
             int i, j, k, l;
             int m = 8;
             int n = 8;
@@ -134,7 +127,7 @@ void dct(cv::Mat frame, bool isColor) {
             zigzag_array.push_back(twoDDCTBlock[0][0]);
             int row = 0;
             int col = 0;
-            int diagonals = 2;
+            int diagonals = 1;
             while(true){
                 // left
                 col += 1;
@@ -171,11 +164,26 @@ void dct(cv::Mat frame, bool isColor) {
                 diagonals += 1;
             }
 
-            // ********************* Statistical coding (Golomb) of the quantized DCT coefficients *********************
+            // ********************* Statistical coding (Huffman) of the quantized DCT coefficients ********************
 
             // The non-zero AC coefficients are encoded using Huffman or arithmetic coding, representing the value of the
             // coefficient, as well as the number of zeros preceding it.
-            // In this case, we use the Golomb code instead.
+            int nZeros = 0;
+            std::vector<std::pair<int, float>> toBeEncoded;
+            zigzag_array.erase(zigzag_array.begin()); // doesn't have zeros preceding it
+            for(float coef : zigzag_array){
+                if (coef != 0) {
+                    toBeEncoded.push_back(std::pair<int, float>(nZeros, coef));
+                    nZeros = 0;
+                } else {
+                    nZeros += 1;
+                }
+
+            }
+            if(nZeros > 0){
+                toBeEncoded.push_back(std::pair<int, float>(nZeros, 0));
+                nZeros = 0;
+            }
 
             // The DC coefficient of each block is predicatively encoded in relation to the DC coefficient of the
             // previous block.

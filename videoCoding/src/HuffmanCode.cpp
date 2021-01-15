@@ -1,5 +1,8 @@
-#include "HuffmanCode.hpp"
-
+//!  HuffmanCode
+/*!
+ *  Encoder and Decoder of the Huffman Code.
+ *  @author Inês Justo
+*/
 
 HuffmanCode::HuffmanCode(n){
     // n - number of bits of each codeword
@@ -8,10 +11,10 @@ HuffmanCode::HuffmanCode(n){
     //
 }
 
-void HuffmanCode::encode() {
+huffmanEncode() {
 
 }
 
-void HuffmanCode::decode() {
+huffmanDecode() {
 
 }
