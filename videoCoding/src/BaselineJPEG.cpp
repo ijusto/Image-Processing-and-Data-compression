@@ -94,8 +94,8 @@ void quantizeDct(cv::Mat frame, /*float previous_dc[frame.rows][frame.cols],*/ b
             }
 
             // Next, the coefficients are organized in a one-dimensional vector according to a zig-zag scan.
-            std::vector<float> zigzag_array;
-            zigzag_array.push_back(twoDDCTBlock[0][0]);
+            std::vector<double> zigzag_array;
+            double zig_zag_dc = twoDDCTBlock[0][0];
             int row = 0;
             int col = 0;
             int diagonals = 1;
@@ -141,11 +141,11 @@ void quantizeDct(cv::Mat frame, /*float previous_dc[frame.rows][frame.cols],*/ b
             // the coefficient, as well as the number of zeros preceding it.
             // In this case, we use the Golomb code
             int nZeros = 0;
-            std::vector<std::pair<int, float>> ac;
+            std::vector<std::pair<int, double>> ac;
 
             for(float coef : zigzag_array){
                 if (coef != 0) {
-                    ac.push_back(std::pair<int, float>(nZeros, coef));
+                    ac.push_back(std::pair<int, double>(nZeros, coef));
                     nZeros = 0;
                 } else {
                     nZeros += 1;
@@ -155,7 +155,7 @@ void quantizeDct(cv::Mat frame, /*float previous_dc[frame.rows][frame.cols],*/ b
 
             // The DC coefficient of each block is predicatively encoded in relation to the DC coefficient of the
             // previous block.
-            // float dc = previous_dc[r][c] - zigzag_array.at(0);
+            // float dc = zig_zag_dc - previous_dc[r][c];
             // current_dc[r][c] = zigzag_array.at(0);
             // TODO get previous_dc
 
