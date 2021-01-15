@@ -12,6 +12,8 @@
 
 void quantizeDct(cv::Mat frame, float previous_dc[frame.rows][frame.cols], bool isColor) {
 
+    cv::Mat quantizeDct = cv::Mat::zeros(frame.rows, frame.cols, CV_64F);
+
     float jpeg_matrix_grayscale [8][8] = {{16, 11, 10, 16, 24, 40, 51, 61},
                                           {12, 12, 14, 19, 26, 58, 60, 55},
                                           {14, 13, 16, 24, 40, 57, 69, 56},
@@ -133,10 +135,11 @@ void quantizeDct(cv::Mat frame, float previous_dc[frame.rows][frame.cols], bool 
                 diagonals += 1;
             }
 
-            // ********************* Statistical coding (Huffman) of the quantized DCT coefficients ********************
+            // ********************* Statistical coding (Golomb) of the quantized DCT coefficients ********************
 
             // The non-zero AC coefficients are encoded using Huffman or arithmetic coding, representing the value of
             // the coefficient, as well as the number of zeros preceding it.
+            // In this case, we use the Golomb code
             int nZeros = 0;
             std::vector<std::pair<int, float>> ac;
 
@@ -150,21 +153,14 @@ void quantizeDct(cv::Mat frame, float previous_dc[frame.rows][frame.cols], bool 
 
             }
 
-            for(std::pair<int, float> pair : ac){
-                pair.second = pair.second / 2;  // pair (run, size) of ac coefficient
-            }
-
-            if (nZeros > 15) { // ZRL
-
-            }
-
             // The DC coefficient of each block is predicatively encoded in relation to the DC coefficient of the
             // previous block.
-            float dc = previous_dc[r][c] - zigzag_array.at(0);
-            current_dc[r][c] = zigzag_array.at(0);
+            // float dc = previous_dc[r][c] - zigzag_array.at(0);
+            // current_dc[r][c] = zigzag_array.at(0);
+            // TODO get previous_dc
 
 
-            // TODO encode
+
         }
     }
 
@@ -194,7 +190,7 @@ void inverseQuantizeDct(cv::Mat frame, float previous_dc[frame.rows][frame.cols]
 
     float current_dc[frame.rows][frame.cols];
 
-    // ********************* Statistical decoding (Huffman) of the quantized DCT coefficients ********************
+    // *********************** Statistical decoding (Golomb) of the quantized DCT coefficients *************************
     // TODO
 
     cv::Mat block = cv::Mat::zeros(8, 8, CV_64F);

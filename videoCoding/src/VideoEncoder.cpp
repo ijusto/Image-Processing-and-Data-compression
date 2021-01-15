@@ -9,6 +9,7 @@
 #include    <fstream>
 #include    <regex>
 #include    <algorithm>
+#include    <BaselineJPEG.cpp>
 
 using namespace cv;
 using namespace std;
@@ -248,7 +249,7 @@ void VideoEncoder::encodeRes_intra(Mat &frame, Golomb *golomb, int m_rate, int k
                 this->sample_hists->at(k).push_back(frame.at<uchar>(i,j));
             }
 
-            // // quantize residual here before encoding
+            // quantize residual here before encoding
 
             // encode residuals
             vector<bool> encodedResidual = golomb->encode2(residual);
