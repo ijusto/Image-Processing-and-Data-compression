@@ -13,6 +13,6 @@ using namespace std;
 
 int main(int argc, char *argv[]) {
     cv::Mat frame = cv::Mat::ones(15, 8, CV_64F);
-    calculateDCT(frame, 15, 8);
+    dct(frame, true);
     return 0;
 }
