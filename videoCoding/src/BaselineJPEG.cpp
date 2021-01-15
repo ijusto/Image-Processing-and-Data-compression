@@ -10,7 +10,7 @@
 #include <cmath>
 #include <naive-dct.hpp>
 
-void quantizeDct(cv::Mat frame, float previous_dc[frame.rows][frame.cols], bool isColor) {
+void quantizeDct(cv::Mat frame, /*float previous_dc[frame.rows][frame.cols],*/ bool isColor) {
 
     cv::Mat quantizeDct = cv::Mat::zeros(frame.rows, frame.cols, CV_64F);
 
@@ -159,14 +159,12 @@ void quantizeDct(cv::Mat frame, float previous_dc[frame.rows][frame.cols], bool 
             // current_dc[r][c] = zigzag_array.at(0);
             // TODO get previous_dc
 
-
-
         }
     }
 
 }
 
-void inverseQuantizeDct(cv::Mat frame, float previous_dc[frame.rows][frame.cols], bool isColor){
+void inverseQuantizeDct(cv::Mat frame, /*float previous_dc[frame.rows][frame.cols],*/ bool isColor){
 
     cv::Mat return_frame  = cv::Mat::zeros(frame.rows, frame.cols, CV_64F);
 
