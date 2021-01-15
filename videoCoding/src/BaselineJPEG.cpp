@@ -1,6 +1,6 @@
 //!  BaselineJPEG
 /*!
- *  Functions useful when computing the sequential mode of JPEG (Baseline)
+ *  Quantization using the sequential mode of JPEG (Baseline)
  *  @author Inês Justo
 */
 
@@ -18,42 +18,46 @@
 
 #define pi 3.142857
 
-// Quantization of the DCT coefficients, in order to eliminate less relevant information, according to the
-// characteristics of the human visual system.
-void quantizeDCTCoefficients(){
-    // The DCT coefficients are quantized using a quantization matrix, previously scaled by a compression quality factor.
+void dct(cv::Mat frame, bool isColor) {
 
-    // Next, the coefficients are organized in a one-dimensional vector according to a zig-zag scan.
-}
 
-// Statistical coding (Huffman or arithmetic) of the quantized DCT coefficients.
-void statisticalCoding(){
-    // The non-zero AC coefficients are encoded using Huffman or arithmetic coding, representing the value of the
-    // coefficient, as well as the number of zeros preceding it.
+    float jpeg_matrix_grayscale [8][8] = {{16, 11, 10, 16, 24, 40, 51, 61},
+                                          {12, 12, 14, 19, 26, 58, 60, 55},
+                                          {14, 13, 16, 24, 40, 57, 69, 56},
+                                          {14, 17, 22, 29, 51, 87, 80, 62},
+                                          {18, 22, 37, 56, 68, 109, 103, 77},
+                                          {24, 35, 55, 64, 81, 104, 113, 92},
+                                          {49, 64, 78, 87, 103, 121, 120, 101},
+                                          {72, 92, 95, 98, 112, 100, 103, 99}};
 
-    // The DC coefficient of each block is predicatively encoded in relation to the DC coefficient of the previous block.
-}
+    float jpeg_matrix_color [8][8] = {{17, 18, 24, 47, 99, 99, 99, 99},
+                                      {18, 21, 26, 66, 99, 99, 99, 99},
+                                      {24, 26, 56, 99, 99, 99, 99, 99},
+                                      {47, 66, 99, 99, 99, 99, 80, 99},
+                                      {99, 99, 99, 99, 99, 99, 99, 99},
+                                      {99, 99, 99, 99, 99, 99, 99, 99},
+                                      {99, 99, 99, 99, 99, 99, 99, 99},
+                                      {99, 99, 99, 99, 99, 99, 99, 99}};
 
-void calculateDCT(cv::Mat frame, int nRows, int nCols) {
+    // ***************************************** Calculation of the DCT ************************************************
+    std::cout << "nrows: " << frame.rows << ", rows to add: " << ((frame.rows % 8) == 0 ? 0 :  (8 - (frame.rows % 8))) << std::endl;
+    std::cout << "ncols: " << frame.cols << ", cols to add: " << ((frame.cols % 8) == 0 ? 0 :  (8 - (frame.cols % 8))) << std::endl;
 
     // The image is partitioned into 8 × 8 blocks of pixels.
     // If the number of rows or columns is not multiple of 8, then they are internally adjusted (using padding).
-    int rowsToAdd = (nRows % 8) == 0 ? 0 :  (8 - (nRows % 8));
+    int rowsToAdd = (frame.rows % 8) == 0 ? 0 :  (8 - (frame.rows % 8));
     if(rowsToAdd != 0){
         cv::Mat rows = cv::Mat::zeros(rowsToAdd, frame.cols, CV_64F);
         frame.push_back(rows);
     }
-    int colsToAdd = (nCols % 8) == 0 ? 0 :  (8 - (nCols % 8));
+    int colsToAdd = (frame.cols % 8) == 0 ? 0 :  (8 - (frame.cols % 8));
     if(colsToAdd != 0){
         cv::Mat cols = cv::Mat::zeros(frame.rows, colsToAdd, CV_64F);
         cv::Mat temp = frame;
         cv::hconcat(temp, cols, frame);
     }
-    std::cout << "nrows: " << nRows << ", rows to add: " << rowsToAdd << std::endl;
-    std::cout << "ncols: " << nCols << ", cols to add: " << colsToAdd << std::endl;
     std::cout << "frame nrows: " << frame.rows << std::endl;
     std::cout << "frame ncols: " << frame.cols << std::endl;
-
 
     for(int r = 0; r < frame.rows; r += 8) {
         for (int c = 0; c < frame.cols; c += 8) {
@@ -112,7 +116,42 @@ void calculateDCT(cv::Mat frame, int nRows, int nCols) {
                 }
             }
 
-            quantizeDCTCoefficients();
+            // ******************************* Quantization of the DCT coefficients ************************************
+            // Quantization of the DCT coefficients, in order to eliminate less relevant information, according to the
+            // characteristics of the human visual system.
+
+            // The DCT coefficients are quantized using a quantization matrix, previously scaled by a compression
+            // quality factor.
+
+            // base quantization matrix of JPEG (luminance)
+            float jpeg_matrix[8][8];
+            memcpy(jpeg_matrix,
+                    (isColor) ? jpeg_matrix_color : jpeg_matrix_grayscale,
+                    sizeof((isColor) ? jpeg_matrix_color : jpeg_matrix_grayscale));
+            
+            /*
+            Q = 80; // Define Q factor
+
+            // Determine S
+            if (Q < 50)
+                S = 5000/Q;
+            else
+                S = 200 - 2*Q;
+            end
+
+            Ts = floor((S*Tb + 50) / 100);
+            Ts(Ts == 0) = 1; % // Prevent divide by 0 error
+            */
+
+            // Next, the coefficients are organized in a one-dimensional vector according to a zig-zag scan.
+
+            // ********************* Statistical coding (Huffman) of the quantized DCT coefficients ********************
+
+            // The non-zero AC coefficients are encoded using Huffman or arithmetic coding, representing the value of the
+            // coefficient, as well as the number of zeros preceding it.
+
+            // The DC coefficient of each block is predicatively encoded in relation to the DC coefficient of the previous block.
+
 
         }
     }
