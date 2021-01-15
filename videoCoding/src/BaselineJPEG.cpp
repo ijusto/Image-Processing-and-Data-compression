@@ -52,21 +52,23 @@ void dct(cv::Mat frame, bool isColor) {
     std::cout << "frame nrows: " << frame.rows << std::endl;
     std::cout << "frame ncols: " << frame.cols << std::endl;
 
+
+    float previous_dc = 0;
+
     for(int r = 0; r < frame.rows; r += 8) {
         for (int c = 0; c < frame.cols; c += 8) {
+
             // Subtract 2^(b−1) to each pixel value, where b is the number of bits used to represent the pixels.
             cv::Mat block = cv::Mat::zeros(8, 8, CV_64F);
 
             for(int i = 0; i <8; i++){
                 for (int j = 0; j < 8; ++j) {
                     block.at<char>(i, j) = frame.at<double>(r + i, c + j) - pow(2, 7);
-                    std::cout << "pos "<< r+i << "," << c+j << " " << frame.at<double>(r + i, c + j) - pow(2, 7) <<  " ";
+                    //std::cout << "pos "<< r+i << "," << c+j << " " << frame.at<double>(r + i, c + j) - pow(2, 7) <<  " ";
                 }
-                std::cout << std::endl;
+                //std::cout << std::endl;
             }
-            std::cout << std::endl;
-            std::cout << std::endl;
-
+            //std::cout << std::endl;
 
             // Calculate the DCT 2D of each block.
             double twoDDCTBlock[8][8];
@@ -129,7 +131,7 @@ void dct(cv::Mat frame, bool isColor) {
             int col = 0;
             int diagonals = 1;
             while(true){
-                // left
+                // right
                 col += 1;
                 zigzag_array.push_back(twoDDCTBlock[row][col]);
 
@@ -166,29 +168,26 @@ void dct(cv::Mat frame, bool isColor) {
 
             // ********************* Statistical coding (Huffman) of the quantized DCT coefficients ********************
 
-            // The non-zero AC coefficients are encoded using Huffman or arithmetic coding, representing the value of the
-            // coefficient, as well as the number of zeros preceding it.
+            // The non-zero AC coefficients are encoded using Huffman or arithmetic coding, representing the value of
+            // the coefficient, as well as the number of zeros preceding it.
             int nZeros = 0;
-            std::vector<std::pair<int, float>> toBeEncoded;
-            zigzag_array.erase(zigzag_array.begin()); // doesn't have zeros preceding it
+            std::vector<std::pair<int, float>> ac;
+
             for(float coef : zigzag_array){
                 if (coef != 0) {
-                    toBeEncoded.push_back(std::pair<int, float>(nZeros, coef));
+                    ac.push_back(std::pair<int, float>(nZeros, coef));
                     nZeros = 0;
                 } else {
                     nZeros += 1;
                 }
 
             }
-            if(nZeros > 0){
-                toBeEncoded.push_back(std::pair<int, float>(nZeros, 0));
-                nZeros = 0;
-            }
 
             // The DC coefficient of each block is predicatively encoded in relation to the DC coefficient of the
             // previous block.
+            float dc = zigzag_array.at(0);
 
-
+            previous_dc = dc;
         }
     }
 
