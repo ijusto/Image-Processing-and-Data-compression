@@ -11,7 +11,7 @@
 class VideoEncoder{
 
 private:
-    int initial_m, subsampling, mode, predictor, rows, cols;
+    int initial_m, subsampling, mode, predictor, totalFrames, rows, cols;
     int fps1, fps2;
     std::vector<bool> encodedRes;
     bool cHist;

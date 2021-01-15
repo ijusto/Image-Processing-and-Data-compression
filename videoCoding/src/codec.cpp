@@ -65,6 +65,7 @@ int main(int argc, char *argv[]) {
     }else if (op == "decode"){
         VideoDecoder* videoDecoder = new VideoDecoder(src);
         videoDecoder->decode();
+        cout << "writing..." << endl;
         videoDecoder->write(dst);
     }else{
         printf("\n ERROR : This option doesn't exist!!");
