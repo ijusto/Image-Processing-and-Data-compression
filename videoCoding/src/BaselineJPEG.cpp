@@ -8,10 +8,9 @@
 #include <opencv2/videoio.hpp>
 #include <opencv2/opencv.hpp>
 #include <cmath>
+#include <naive-dct.hpp>
 
-#define pi 3.142857
-
-void dct(cv::Mat frame, float previous_dc[frame.rows][frame.cols], bool isColor) {
+void quantizeDct(cv::Mat frame, float previous_dc[frame.rows][frame.cols], bool isColor) {
 
     float jpeg_matrix_grayscale [8][8] = {{16, 11, 10, 16, 24, 40, 51, 61},
                                           {12, 12, 14, 19, 26, 58, 60, 55},
@@ -51,7 +50,7 @@ void dct(cv::Mat frame, float previous_dc[frame.rows][frame.cols], bool isColor)
     std::cout << "frame nrows: " << frame.rows << std::endl;
     std::cout << "frame ncols: " << frame.cols << std::endl;
 
-    float next_dc[frame.rows][frame.cols];
+    float current_dc[frame.rows][frame.cols];
     for(int r = 0; r < frame.rows; r += 8) {
         for (int c = 0; c < frame.cols; c += 8) {
 
@@ -76,40 +75,11 @@ void dct(cv::Mat frame, float previous_dc[frame.rows][frame.cols], bool isColor)
                    (isColor) ? jpeg_matrix_color : jpeg_matrix_grayscale,
                    sizeof((isColor) ? jpeg_matrix_color : jpeg_matrix_grayscale));
 
-            // Find discrete cosine transform based on this implementation:
-            // https://www.geeksforgeeks.org/discrete-cosine-transform-algorithm-program/
-            int i, j, k, l;
-            int m = 8;
-            int n = 8;
-
-            double ci, cj, dct1, sum;
-
-            for (i = 0; i < m; i++) {
-                for (j = 0; j < n; j++) {
-
-                    // ci and cj depends on frequency as well as
-                    // number of row and columns of specified matrix
-                    if (i == 0)
-                        ci = 1 / sqrt(m);
-                    else
-                        ci = sqrt(2) / sqrt(m);
-                    if (j == 0)
-                        cj = 1 / sqrt(n);
-                    else
-                        cj = sqrt(2) / sqrt(n);
-
-                    // sum will temporarily store the sum of
-                    // cosine signals
-                    sum = 0;
-                    for (k = 0; k < m; k++) {
-                        for (l = 0; l < n; l++) {
-                            dct1 = block.at<double>(k, l) *
-                                   cos((2 * k + 1) * i * pi / (2 * m)) *
-                                   cos((2 * l + 1) * j * pi / (2 * n));
-                            sum = sum + dct1;
-                        }
-                    }
-                    twoDDCTBlock[i][j] = ci * cj * sum;
+            // Find discrete cosine transform
+            for (int i = 0; i < 8; i++) {
+                for (int j = 0; j < 8; j++) {
+                    double vector[1] = {block.at<double>(i,j)};
+                    twoDDCTBlock[i][j] = *NaiveDct_transform(vector, 1);
 
                     // ******************************* Quantization of the DCT coefficients ****************************
                     // Quantization of the DCT coefficients, in order to eliminate less relevant information, according
@@ -168,7 +138,7 @@ void dct(cv::Mat frame, float previous_dc[frame.rows][frame.cols], bool isColor)
             // The non-zero AC coefficients are encoded using Huffman or arithmetic coding, representing the value of
             // the coefficient, as well as the number of zeros preceding it.
             int nZeros = 0;
-            std::vector<std::pair<int, float>> ac; // pair (run, size) of ac coefficient
+            std::vector<std::pair<int, float>> ac;
 
             for(float coef : zigzag_array){
                 if (coef != 0) {
@@ -181,7 +151,7 @@ void dct(cv::Mat frame, float previous_dc[frame.rows][frame.cols], bool isColor)
             }
 
             for(std::pair<int, float> pair : ac){
-                pair.second = pair.second / 2; // size
+                pair.second = pair.second / 2;  // pair (run, size) of ac coefficient
             }
 
             if (nZeros > 15) { // ZRL
@@ -191,15 +161,18 @@ void dct(cv::Mat frame, float previous_dc[frame.rows][frame.cols], bool isColor)
             // The DC coefficient of each block is predicatively encoded in relation to the DC coefficient of the
             // previous block.
             float dc = previous_dc[r][c] - zigzag_array.at(0);
-            next_dc[r][c] = zigzag_array.at(0);
+            current_dc[r][c] = zigzag_array.at(0);
 
+
+            // TODO encode
         }
     }
 
-    // return next_dc
 }
 
-void inverseDct(cv::Mat frame, bool isColor){
+void inverseQuantizeDct(cv::Mat frame, float previous_dc[frame.rows][frame.cols], bool isColor){
+
+    cv::Mat return_frame  = cv::Mat::zeros(frame.rows, frame.cols, CV_64F);
 
     float jpeg_matrix_grayscale [8][8] = {{16, 11, 10, 16, 24, 40, 51, 61},
                                           {12, 12, 14, 19, 26, 58, 60, 55},
@@ -218,4 +191,39 @@ void inverseDct(cv::Mat frame, bool isColor){
                                       {99, 99, 99, 99, 99, 99, 99, 99},
                                       {99, 99, 99, 99, 99, 99, 99, 99},
                                       {99, 99, 99, 99, 99, 99, 99, 99}};
+
+    float current_dc[frame.rows][frame.cols];
+
+    // ********************* Statistical decoding (Huffman) of the quantized DCT coefficients ********************
+    // TODO
+
+    cv::Mat block = cv::Mat::zeros(8, 8, CV_64F);
+    for(int r = 0; r < frame.rows; r += 8) {
+        for (int c = 0; c < frame.cols; c += 8) {
+
+            // Calculate the inverse DCT 2D of each block.
+            double twoIDDCTBlock[8][8];
+
+            // base quantization matrix of JPEG (luminance)
+            float jpeg_matrix[8][8];
+            memcpy(jpeg_matrix,
+                   (isColor) ? jpeg_matrix_color : jpeg_matrix_grayscale,
+                   sizeof((isColor) ? jpeg_matrix_color : jpeg_matrix_grayscale));
+
+            for(int i = 0; i < 8; i++) {
+                for(int j = 0; j < 8; j++) {
+                    // ******************************* Dequantization of the DCT coefficients **************************
+                    twoIDDCTBlock[i][j] = block.at<double>(i, j) * jpeg_matrix[i][j];
+
+                    // ************************************** Inverse DCT **********************************************
+                    double vector[1] = {twoIDDCTBlock[i][j]};
+                    twoIDDCTBlock[i][j] = *NaiveDct_inverseTransform(vector, 1);
+
+                    // Add 2^(b−1) to each pixel value, where b is the number of bits used to represent the pixels.
+                    return_frame.at<double>(r + i, c + j) = twoIDDCTBlock[i][j] + pow(2, 7);
+                }
+            }
+
+        }
+    }
 }
