@@ -1,7 +1,3 @@
-//
-// Created by inesjusto on 10/12/20.
-//
-
 #include    "../../audioAndImageOrVideoManipulation/src/EntropyCalculator.cpp"
 #include    "../../entropyCoding/src/Golomb.cpp"
 #include    "VideoEncoder.hpp"

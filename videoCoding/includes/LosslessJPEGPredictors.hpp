@@ -8,6 +8,7 @@ template <typename T>
  *  This class is useful to calculate lossless jpeg predictors.
  *  @author Inês Justo
 */
+
 class LosslessJPEGPredictors{
 
 private:
