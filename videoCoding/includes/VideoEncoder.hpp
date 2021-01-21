@@ -72,7 +72,11 @@ public:
      * @param filename
      */
     void write(char* filename);
-
+    /**
+    * Convert video format to 420
+    * @param address in memory of first position pixel
+    */
+    void convertionTo420(cv::Mat &frame);
     /**
      * Returns residuals from multiple channels computed during encoding
      * to use when producing a histogram.
@@ -85,6 +89,8 @@ public:
      * @return
      */
     vector<vector<char>> get_sample_hists();
+
+
 };
 
 #endif //VIDEOCODING_VIDEOENCODER_HPP
