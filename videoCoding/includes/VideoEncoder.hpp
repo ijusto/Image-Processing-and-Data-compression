@@ -70,7 +70,7 @@ public:
 
     //! Convert video format to the YUV 4:2:0 format.
     /*!
-     * @param address in memory of first position pixel
+     * @param frame address in memory of first position pixel
      */
     void convertionTo420(cv::Mat &frame);
 

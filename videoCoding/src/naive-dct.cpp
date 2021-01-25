@@ -32,7 +32,7 @@
 double *NaiveDct_transform(double vector[], size_t len) {
     if (SIZE_MAX / sizeof(double) < len)
         return NULL;
-    double *result = malloc(len * sizeof(double));
+    double *result = (double *) malloc(len * sizeof(double));
     if (result == NULL)
         return NULL;
 
@@ -52,7 +52,7 @@ double *NaiveDct_transform(double vector[], size_t len) {
 double *NaiveDct_inverseTransform(double vector[], size_t len) {
     if (SIZE_MAX / sizeof(double) < len)
         return NULL;
-    double *result = malloc(len * sizeof(double));
+    double *result = (double *) malloc(len * sizeof(double));
     if (result == NULL)
         return NULL;
 

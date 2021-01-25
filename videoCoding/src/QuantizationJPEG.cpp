@@ -1,6 +1,6 @@
-//!  BaselineJPEG
+//!  QuantizationJPEG
 /*!
- *  Quantization using the sequential mode of JPEG (Baseline).
+ *  Quantization using the sequential (baseline) or the progressive mode of JPEG.
  *  @author Inês Justo
 */
 
@@ -8,9 +8,45 @@
 #include <opencv2/videoio.hpp>
 #include <opencv2/opencv.hpp>
 #include <cmath>
-#include <naive-dct.hpp>
+#include <naive-dct.h>
 
-void quantizeDct(cv::Mat frame, /*float previous_dc[frame.rows][frame.cols],*/ bool isColor) {
+void divideImageIn8x8Blocks(cv::Mat &frame){
+
+    //std::cout << "nrows: " << frame.rows << ", rows to add: " << ((frame.rows % 8) == 0 ? 0 :  (8 - (frame.rows % 8))) << std::endl;
+    //std::cout << "ncols: " << frame.cols << ", cols to add: " << ((frame.cols % 8) == 0 ? 0 :  (8 - (frame.cols % 8))) << std::endl;
+
+    // The image is partitioned into 8 × 8 blocks of pixels.
+    // If the number of rows or columns is not multiple of 8, then they are internally adjusted (using padding).
+    int nRowsToAdd = (frame.rows % 8) == 0 ? 0 :  (8 - (frame.rows % 8));
+    if(nRowsToAdd != 0){
+        cv::Mat rowsToAdd = cv::Mat::zeros(nRowsToAdd, frame.cols, CV_64F);
+        // padding is equal to last row of original image
+        for(int r = 0; r < rowsToAdd.rows; r += 1) {
+            for (int c = 0; c < frame.cols; c += 1) {
+                rowsToAdd.at<char>(r, c) = frame.at<double>(frame.rows - 1, c);
+            }
+        }
+        frame.push_back(rowsToAdd);
+    }
+
+    int nColsToAdd = (frame.cols % 8) == 0 ? 0 :  (8 - (frame.cols % 8));
+    if(nColsToAdd != 0){
+        cv::Mat colsToAdd = cv::Mat::zeros(frame.rows, nColsToAdd, CV_64F);
+        // padding is equal to last row of the original image (along with the padded rows)
+        for(int r = 0; r < frame.rows; r += 1) {
+            for (int c = 0; c < colsToAdd.cols; c += 1) {
+                colsToAdd.at<char>(r, c) = frame.at<double>(r, frame.cols - 1);
+            }
+        }
+        cv::Mat temp = frame;
+        cv::hconcat(temp, colsToAdd, frame);
+    }
+
+    //std::cout << "frame nrows: " << frame.rows << std::endl;
+    //std::cout << "frame ncols: " << frame.cols << std::endl;
+}
+
+void quantizeDctBaselineJPEG(cv::Mat frame,  cv::Mat prev_frame, bool isColor) {
 
     cv::Mat quantizeDct = cv::Mat::zeros(frame.rows, frame.cols, CV_64F);
 
@@ -32,26 +68,12 @@ void quantizeDct(cv::Mat frame, /*float previous_dc[frame.rows][frame.cols],*/ b
                                       {99, 99, 99, 99, 99, 99, 99, 99},
                                       {99, 99, 99, 99, 99, 99, 99, 99}};
 
+    divideImageIn8x8Blocks(frame);
+
+    //std::cout << "frame nrows: " << frame.rows << std::endl;
+    //std::cout << "frame ncols: " << frame.cols << std::endl;
+
     // ***************************************** Calculation of the DCT ************************************************
-    std::cout << "nrows: " << frame.rows << ", rows to add: " << ((frame.rows % 8) == 0 ? 0 :  (8 - (frame.rows % 8))) << std::endl;
-    std::cout << "ncols: " << frame.cols << ", cols to add: " << ((frame.cols % 8) == 0 ? 0 :  (8 - (frame.cols % 8))) << std::endl;
-
-    // The image is partitioned into 8 × 8 blocks of pixels.
-    // If the number of rows or columns is not multiple of 8, then they are internally adjusted (using padding).
-    int rowsToAdd = (frame.rows % 8) == 0 ? 0 :  (8 - (frame.rows % 8));
-    if(rowsToAdd != 0){
-        cv::Mat rows = cv::Mat::zeros(rowsToAdd, frame.cols, CV_64F);
-        frame.push_back(rows);
-    }
-    int colsToAdd = (frame.cols % 8) == 0 ? 0 :  (8 - (frame.cols % 8));
-    if(colsToAdd != 0){
-        cv::Mat cols = cv::Mat::zeros(frame.rows, colsToAdd, CV_64F);
-        cv::Mat temp = frame;
-        cv::hconcat(temp, cols, frame);
-    }
-    std::cout << "frame nrows: " << frame.rows << std::endl;
-    std::cout << "frame ncols: " << frame.cols << std::endl;
-
     float current_dc[frame.rows][frame.cols];
     for(int r = 0; r < frame.rows; r += 8) {
         for (int c = 0; c < frame.cols; c += 8) {
@@ -158,7 +180,7 @@ void quantizeDct(cv::Mat frame, /*float previous_dc[frame.rows][frame.cols],*/ b
 
 }
 
-void inverseQuantizeDct(cv::Mat frame, /*float previous_dc[frame.rows][frame.cols],*/ bool isColor){
+void inverseQuantizeDctBaselineJPEG(cv::Mat frame, /*float previous_dc[frame.rows][frame.cols],*/ bool isColor){
 
     cv::Mat return_frame  = cv::Mat::zeros(frame.rows, frame.cols, CV_64F);
 
@@ -216,3 +238,6 @@ void inverseQuantizeDct(cv::Mat frame, /*float previous_dc[frame.rows][frame.col
     }
 }
 
+void quantizeDctProgressiveJPEG(cv::Mat frame, bool isColor){}
+
+void inverseQuantizeDctProgressiveJPEG(cv::Mat frame, bool isColor){}

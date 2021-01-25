@@ -457,12 +457,12 @@ void VideoEncoder::write(char *filename) {
     wbs->endWriteFile();
 }
 
-void VideoEncoder::convertionTo420(Mat &FrameData){
-    for(int i = 0; i< FrameData.rows; i+=2) {
-        for (int j = 0; j < FrameData.cols; j+=2) {
-            FrameData.at<uchar>(i,j+1) = FrameData.at<uchar>(i,j);
-            FrameData.at<uchar>(i+1,j) = FrameData.at<uchar>(i,j);
-            FrameData.at<uchar>(i+1,j+1) = FrameData.at<uchar>(i,j);
+void VideoEncoder::convertionTo420(Mat &frameData){
+    for(int i = 0; i< frameData.rows; i+=2) {
+        for (int j = 0; j < frameData.cols; j+=2) {
+            frameData.at<uchar>(i,j+1) = frameData.at<uchar>(i,j);
+            frameData.at<uchar>(i+1,j) = frameData.at<uchar>(i,j);
+            frameData.at<uchar>(i+1,j+1) = frameData.at<uchar>(i,j);
         }
     }
 }

@@ -2,7 +2,7 @@
 // Created by inesjusto on 14/01/21.
 //
 
-#include    "BaselineJPEG.cpp"
+#include    "QuantizationJPEG.cpp"
 #include <opencv2/core.hpp>
 #include <opencv2/videoio.hpp>
 #include <opencv2/opencv.hpp>
@@ -35,6 +35,6 @@ int main(int argc, char *argv[]) {
             frame.at<double>(r,c) = in[r][c];
         }
     }
-    //quantizeDct(frame, true);
+    quantizeDctBaselineJPEG(frame, true);
     return 0;
 }
