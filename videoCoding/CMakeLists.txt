@@ -10,8 +10,10 @@ include_directories(../audioAndImageOrVideoManipulation/includes)
 include_directories(../entropyCoding/includes)
 
 add_executable(codec src/codec.cpp)
-#add_executable(testdecoder src/testdecoder.cpp)
-add_executable(testvideo src/testvideo.cpp)
+add_executable(testdecoder test/testdecoder.cpp)
+add_executable(testQuantization test/testQuantizationMain.cpp src/naive-dct.cpp)
+add_executable(testvideo test/testvideo.cpp)
 target_link_libraries(codec ${OpenCV_LIBS})
+target_link_libraries(testQuantization ${OpenCV_LIBS})
 
 

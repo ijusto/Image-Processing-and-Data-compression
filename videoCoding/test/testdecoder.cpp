@@ -1,7 +1,7 @@
 //
 // Created by irocs on 1/13/21.
 //
-#include    "VideoDecoder.cpp"
+#include    "../src/VideoDecoder.cpp"
 
 using namespace cv;
 using namespace std;
