@@ -1,6 +1,6 @@
 //!  BaselineJPEG
 /*!
- *  Quantization using the sequential mode of JPEG (Baseline)
+ *  Quantization using the sequential mode of JPEG (Baseline).
  *  @author Inês Justo
 */
 
@@ -99,19 +99,25 @@ void quantizeDct(cv::Mat frame, /*float previous_dc[frame.rows][frame.cols],*/ b
             int row = 0;
             int col = 0;
             int diagonals = 1;
+            bool reachedRow8 = false;
             while(true){
-                // right
-                col += 1;
+                if(!reachedRow8){
+                    // right
+                    col += 1;
+                } else {
+                    // down
+                    row = row + 1;
+                }
                 zigzag_array.push_back(twoDDCTBlock[row][col]);
 
-                if((row == 8) && (col == 8)){
+                if((row == 7) && (col == 7)){
                     break;
                 }
 
                 // down diagonal
                 int temp_diagonals = diagonals;
                 while(temp_diagonals != 0){
-                    row -= 1;
+                    row += 1;
                     col -= 1;
                     zigzag_array.push_back(twoDDCTBlock[row][col]);
 
@@ -119,14 +125,23 @@ void quantizeDct(cv::Mat frame, /*float previous_dc[frame.rows][frame.cols],*/ b
                 }
                 diagonals += 1;
 
-                // down
-                row = row + 1;
+                if(row == 7){
+                    reachedRow8 = true;
+                }
+
+                if(!reachedRow8){
+                    // down
+                    row = row + 1;
+                } else {
+                    // right
+                    col += 1;
+                }
                 zigzag_array.push_back(twoDDCTBlock[row][col]);
 
                 // up diagonal
                 temp_diagonals = diagonals;
                 while(temp_diagonals != 0){
-                    row += 1;
+                    row -= 1;
                     col += 1;
                     zigzag_array.push_back(twoDDCTBlock[row][col]);
 
@@ -221,3 +236,4 @@ void inverseQuantizeDct(cv::Mat frame, /*float previous_dc[frame.rows][frame.col
         }
     }
 }
+

@@ -1,7 +1,3 @@
-//
-// Created by inesjusto on 10/12/20.
-//
-
 #ifndef VIDEOCODING_VIDEOENCODER_HPP
 #define VIDEOCODING_VIDEOENCODER_HPP
 
@@ -26,8 +22,8 @@ private:
     vector<vector<char>> *res_hists;
     vector<vector<char>> *sample_hists;
 
-    /**
-     * Converts integer to bool vector representing bits.
+    //! Converts integer to bool vector representing bits.
+    /*!
      * @param n
      * @return
      */
@@ -43,9 +39,9 @@ public:
     */
     explicit VideoEncoder(char* srcFileName, int predictor, int mode, int init_m, bool calcHist);
 
-    /**
-     * Use linear and non-linear predictors to compute residuals, encode them using the
-     * Golomb encoder and add them to the bitstream.
+    //! Use linear and non-linear predictors to compute residuals, encode them using the Golomb encoder and add them to
+    //! the bitstream.
+    /*!
      * @param frame matrix containing single channel values.
      * @param golomb Golomb entropy encoder
      * @param m_rate rate at which Golomb entropy encoder's m parameter is updated
@@ -53,10 +49,9 @@ public:
      */
     void encodeRes_intra(cv::Mat &frame, Golomb *golomb, int m_rate, int k);
 
-    /**
-     * Use motion compensation to compute residuals, encode them and the
-     * corresponding motion vectors using the Golomb encoder and add them
-     * to the bitstream.
+    //! Use motion compensation to compute residuals, encode them and the corresponding motion vectors using the Golomb
+    //! encoder and add them to the bitstream.
+    /*!
      * @param prev_frame matrix containing single channel values from previous frame.
      * @param curr_frame matrix containing single channel values from current frame.
      * @param golomb Golomb entropy encoder
@@ -67,25 +62,26 @@ public:
      */
     void encodeRes_inter(cv::Mat &prev_frame, cv::Mat &curr_frame, Golomb *golomb, int m_rate, int block_size, int search_size,int k);
 
-    /**
-     * Use BitStream to write Golomb encoded residuals to file.
+    //! Use BitStream to write Golomb encoded residuals to file.
+    /*!
      * @param filename
      */
     void write(char* filename);
-    /**
-    * Convert video format to 420
-    * @param address in memory of first position pixel
-    */
+
+    //! Convert video format to the YUV 4:2:0 format.
+    /*!
+     * @param address in memory of first position pixel
+     */
     void convertionTo420(cv::Mat &frame);
-    /**
-     * Returns residuals from multiple channels computed during encoding
-     * to use when producing a histogram.
+
+    //! Returns residuals from multiple channels computed during encoding to use when producing a histogram.
+    /*!
      * @return
      */
     vector<vector<char>> get_res_hists();
 
-    /**
-     * Returns samples from multiple channels to use when producing a histogram.
+    //! Returns samples from multiple channels to use when producing a histogram.
+    /*!
      * @return
      */
     vector<vector<char>> get_sample_hists();
