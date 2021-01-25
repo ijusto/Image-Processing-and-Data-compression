@@ -101,53 +101,32 @@ void quantizeDct(cv::Mat frame, /*float previous_dc[frame.rows][frame.cols],*/ b
             int diagonals = 1;
             bool reachedRow8 = false;
             while(true){
-                if(!reachedRow8){
-                    // right
-                    col += 1;
-                } else {
-                    // down
-                    row = row + 1;
-                }
+                if(!reachedRow8){ col += 1; /* right */ } else { row = row + 1; /* down */ }
                 zigzag_array.push_back(twoDDCTBlock[row][col]);
-
-                if((row == 7) && (col == 7)){
-                    break;
-                }
 
                 // down diagonal
                 int temp_diagonals = diagonals;
                 while(temp_diagonals != 0){
-                    row += 1;
-                    col -= 1;
+                    row += 1; col -= 1;
                     zigzag_array.push_back(twoDDCTBlock[row][col]);
-
                     temp_diagonals -= 1;
                 }
-                diagonals += 1;
+                if(row == 7){ reachedRow8 = true; }
+                if(!reachedRow8){ diagonals += 1; } else { diagonals -= 1; }
 
-                if(row == 7){
-                    reachedRow8 = true;
-                }
-
-                if(!reachedRow8){
-                    // down
-                    row = row + 1;
-                } else {
-                    // right
-                    col += 1;
-                }
+                if(!reachedRow8){ row = row + 1; /* down */ } else { col += 1; /* right */ }
                 zigzag_array.push_back(twoDDCTBlock[row][col]);
+
+                if(diagonals == 0){ break; }
 
                 // up diagonal
                 temp_diagonals = diagonals;
                 while(temp_diagonals != 0){
-                    row -= 1;
-                    col += 1;
+                    row -= 1; col += 1;
                     zigzag_array.push_back(twoDDCTBlock[row][col]);
-
                     temp_diagonals -= 1;
                 }
-                diagonals += 1;
+                if(!reachedRow8){ diagonals += 1; } else { diagonals -= 1; }
             }
 
             // ********************* Statistical coding (Golomb) of the quantized DCT coefficients ********************
