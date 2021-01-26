@@ -166,8 +166,8 @@ void wholeDCTQuant(cv::Mat &block, cv::Mat quantMatrix){
     }
 }
 
-std::vector<double> zigZagScan(cv::Mat &block){
-    std::vector<double> zigzag_array;
+std::vector<int> zigZagScan(cv::Mat &block){
+    std::vector<int> zigzag_array;
     double dc = block.at<double>(0, 0);
     int row = 0, col = 0, diagonals = 1;
     bool reachedRow8 = false;
@@ -203,20 +203,102 @@ std::vector<double> zigZagScan(cv::Mat &block){
     return zigzag_array;
 }
 
-std::vector<std::pair<int, double>> runLengthCode(std::vector<double> &zigzag_array){
+//! Run Length Code
+/*!
+ * In this implementation, the code is the pair (non zero value, number of zeros succeeding this value)
+ * With this approach, we save the bits to represent the EOB symbol and in the last pair, we will have this:
+ * (last non zero value, -1 to represent this is the last).
+ * Note: if the first ac is zero (unlikely), the first code word is (0, number of zeros succeding the first ac).
+ * @param arr
+ * @return
+ */
+std::vector<std::pair<int, int>> runLengthCode(std::vector<int> arr){
+    std::vector<std::pair<int, int>> code;
+    int nonZeroElem = arr.at(0);
     int nZeros = 0;
-    std::vector<std::pair<int, double>> ac;
-
-    for(double coef : zigzag_array){
-        if (coef != 0) {
-            ac.push_back(std::pair<int, double>(nZeros, coef));
+    arr.erase(arr.begin());
+    for(int elem : arr){
+        if (elem != 0) {
+            code.push_back(std::pair<int, int>(nonZeroElem, nZeros));
+            nonZeroElem = elem;
             nZeros = 0;
         } else {
             nZeros += 1;
         }
     }
+    code.push_back(std::pair<int, int>(nonZeroElem, -1));
 
-    return ac;
+
+    return code;
+}
+
+void huffmanEncode(std::vector<std::pair<int, int>> runLengthCode){
+    std::unordered_map<int, double> freqsMap; // codeword, freq
+    std::unordered_map<int, std::vector<bool>> codeWordMap;
+    double total_codewords = runLengthCode.size()*2;
+    for(std::pair<int, int> ac: runLengthCode){
+        freqsMap[ac.first]++;
+        freqsMap[ac.second]++;
+    }
+
+    std::cout << "total_codewords: " << total_codewords << std::endl;
+    std::list<std::pair<int, double>> freqs_list;
+    for(const auto &f : freqsMap){
+        freqsMap[f.first] = f.second / total_codewords;
+        std::cout << f.first << " freq: " << freqsMap[f.first] << std::endl;
+        freqs_list.push_back(std::pair<int, double>(f.first, freqsMap[f.first]));
+    }
+    std::cout<<std::endl;
+
+    // sort codewords by frequency
+    freqs_list.sort([]( const std::pair<int, double> &a,
+                              const std::pair<int,double> &b ) { return a.second < b.second; } );
+
+
+    std::cout << "sorted list: " << std::endl;
+    for(const auto &cw : freqs_list){
+        std::cout << cw.first << ", freq: " << cw.second << std::endl;
+    }
+    std::cout<<std::endl;
+
+    std::pair<int, double> leastProbCodeWord = freqs_list.front();
+    codeWordMap[leastProbCodeWord.first].push_back(1);
+    float join_probs = leastProbCodeWord.second;
+    freqs_list.erase(freqs_list.begin());
+
+    for (std::list<std::pair<int, double>>::iterator it = freqs_list.begin(); it != freqs_list.end(); ++it){
+        join_probs += it->second;
+        for(const auto &cw : codeWordMap){
+            codeWordMap[cw.first].insert(codeWordMap[cw.first].begin(), 1);
+        }
+        codeWordMap[it->first].insert(codeWordMap[it->first].begin(), 0);
+    }
+
+
+    for(const auto &cw : codeWordMap){
+        std::cout << cw.first << ", codeword: ";
+        for(const auto &bit : cw.second){
+            std::cout << bit;
+        }
+        std::cout << std::endl;
+    }
+
+    std::cout<<std::endl;
+
+    std::vector<bool> code;
+    for(std::pair<int, int> ac: runLengthCode){
+        code.insert( code.end(), codeWordMap[ac.first].begin(), codeWordMap[ac.first].end());
+        code.insert( code.end(), codeWordMap[ac.second].begin(), codeWordMap[ac.second].end());
+    }
+
+    for(const auto &bit : code){
+        std::cout<<bit;
+    }
+    std::cout<<std::endl;
+}
+
+void huffmanDecode(){
+    
 }
 
 void quantizeDctBaselineJPEG(cv::Mat frame,  /*cv::Mat prev_frame,*/ bool isColor) {
@@ -236,62 +318,13 @@ void quantizeDctBaselineJPEG(cv::Mat frame,  /*cv::Mat prev_frame,*/ bool isColo
             wholeDCTQuant(block, quantMatrixGrayscale);
 
             // Next, the coefficients are organized in a one-dimensional vector according to a zig-zag scan.
-            std::vector<double> zigzag_array;
-            double zig_zag_dc = block.at<double>(0, 0);
-            int row = 0;
-            int col = 0;
-            int diagonals = 1;
-            bool reachedRow8 = false;
-            while(true){
-                if(!reachedRow8){ col += 1; /* right */ } else { row = row + 1; /* down */ }
-                zigzag_array.push_back(block.at<double>(row, col));
-                std::cout << block.at<double>(row, col) << std::endl;
+            std::vector<int> zigzag_array = zigZagScan(block);
 
-                // down diagonal
-                int temp_diagonals = diagonals;
-                while(temp_diagonals != 0){
-                    row += 1; col -= 1;
-                    zigzag_array.push_back(block.at<double>(row, col));
-                    std::cout << block.at<double>(row, col) << std::endl;
-                    temp_diagonals -= 1;
-                }
-                if(row == 7){ reachedRow8 = true; }
-                if(!reachedRow8){ diagonals += 1; } else { diagonals -= 1; }
-
-                if(!reachedRow8){ row = row + 1; /* down */ } else { col += 1; /* right */ }
-                zigzag_array.push_back(block.at<double>(row, col));
-                std::cout << block.at<double>(row, col) << std::endl;
-
-                if(diagonals == 0){ break; }
-
-                // up diagonal
-                temp_diagonals = diagonals;
-                while(temp_diagonals != 0){
-                    row -= 1; col += 1;
-                    zigzag_array.push_back(block.at<double>(row, col));
-                    std::cout << block.at<double>(row, col) << std::endl;
-                    temp_diagonals -= 1;
-                }
-                if(!reachedRow8){ diagonals += 1; } else { diagonals -= 1; }
-            }
-
-            // ********************* Statistical coding (Golomb) of the quantized DCT coefficients ********************
+            // ********************* Statistical coding (Huffman) of the quantized DCT coefficients ********************
 
             // The non-zero AC coefficients are encoded using Huffman or arithmetic coding, representing the value of
             // the coefficient, as well as the number of zeros preceding it.
-            // In this case, we use the Golomb code
-            int nZeros = 0;
-            std::vector<std::pair<int, double>> ac;
-
-            for(double coef : zigzag_array){
-                if (coef != 0) {
-                    ac.push_back(std::pair<int, double>(nZeros, coef));
-                    nZeros = 0;
-                } else {
-                    nZeros += 1;
-                }
-
-            }
+            std::vector<std::pair<int, int>> acs = runLengthCode(zigzag_array);
 
             // The DC coefficient of each block is predicatively encoded in relation to the DC coefficient of the
             // previous block.

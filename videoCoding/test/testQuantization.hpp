@@ -40,8 +40,13 @@ double final_Y [8][8] = {{20,5,-3,1,3,-2,1,0},
                          {0,0,0,0,0,0,0,0},
                          {0,0,0,0,0,0,0,0}};
 
-std::vector<double> zigzag_array = {5,-3,-1,-2,-3,1,1,-1,-1,0,0,1,2,3,-2,1,1,0,0,0,0,0,0,1,1,0,1,0,0,0,0,0,0,0,0,0,
+std::vector<int> zigzag_array = {5,-3,-1,-2,-3,1,1,-1,-1,0,0,1,2,3,-2,1,1,0,0,0,0,0,0,1,1,0,1,0,0,0,0,0,0,0,0,0,
                                     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+
+std::vector<std::pair<int, int>> acs = {{5,0}, {-3,0}, {-1,0}, {-2,0}, {-3,0},
+                                        {1,0}, {1,0}, {-1,0}, {-1,2}, {1,0},
+                                        {2,0}, {3,0}, {-2,0}, {1,0}, {1,6}, {1,0},
+                                        {1,1}, {1,-1}};
 
 TEST_CASE("Quantization divideImageIn8x8Blocks") {
 
@@ -146,7 +151,7 @@ TEST_CASE("Zig Zag San"){
     cv::Mat block = cv::Mat(8, 8, CV_64F, &final_Y);
     INFO("\nY: \n");
     INFO(block);
-    std::vector<double> result = zigZagScan(block);
+    std::vector<int> result = zigZagScan(block);
     std::string info = "\ncoefficients (except dc) in zig zag order: \n";
     for(double elem: result){
         info += std::to_string((int) elem);
@@ -158,15 +163,16 @@ TEST_CASE("Zig Zag San"){
 }
 
 TEST_CASE("Run Length Code"){
-    std::vector<std::pair<int, double>> acs = runLengthCode(zigzag_array);
+    std::vector<std::pair<int, int>> result = runLengthCode(zigzag_array);
     std::string info = "\ncodewords run length (acs): \n";
-    for(std::pair<int, double> ac: acs){
-        info += "(" + std::to_string(ac.first) + "," + std::to_string((int) ac.second) + ")";
+    for(std::pair<int, int> ac: result){
+        info += "(" + std::to_string(ac.first) + "," + std::to_string(ac.second) + ")";
         info += ", ";
     }
     info.erase(info.end() - 2, info.end());
     INFO(info);
-    CHECK(1);
+    huffmanEncode(result);
+    CHECK(std::equal(result.begin(), result.end(), acs.begin()));
 }
 
 #endif //VIDEOCODING_TESTQUANTIZATION_HPP
