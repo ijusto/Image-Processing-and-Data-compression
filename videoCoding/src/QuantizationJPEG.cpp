@@ -64,7 +64,7 @@ void divideImageIn8x8Blocks(cv::Mat &frame){
 }
 
 //! DCT following the Transformation Matrix Approach
-cv::Mat dct(cv::Mat &block){
+void dct(cv::Mat &block){
     int m = 8;
 
     // DCT of the block: T*block*T'
@@ -85,49 +85,55 @@ cv::Mat dct(cv::Mat &block){
         }
     }
 
-    return dct;
+    for(int r = 0; r < 8; r++) {
+        for (int c = 0; c < 8; c++) {
+            block.at<double>(r, c) = (int)(dct.at<double>(r, c) + 0.5 - (dct.at<double>(r, c)<0)); // https://stackoverflow.com/questions/9695329/c-how-to-round-a-double-to-an-int
+        }
+    }
 }
 
-cv::Mat applyingDCT2TheBlock(cv::Mat &block){
-    for(int r = 0; r <8; r++){
+void applyingDCT2TheBlock(cv::Mat &block){
+    for(int r = 0; r  <8; r++){
         for (int c = 0; c < 8; c++) {
             // Subtract 2^(b−1) to each pixel value, where b is the number of bits used to represent the pixels.
             block.at<double>(r, c) -= pow(2, 7);
-
-            //double vector[1] = {block.at<double>(r,c)};
-            // Calculate the DCT 2D
-            //block.at<double>(r, c) = *NaiveDct_transform(vector, 1);
-
-            // ******************************* Quantization of the DCT coefficients ****************************
-            // Quantization of the DCT coefficients, in order to eliminate less relevant information, according
-            // to the characteristics of the human visual system.
-
-            // The DCT coefficients are quantized using a quantization matrix, previously scaled by a
-            // compression quality factor.
-            //block.at<double>(r, c) = floor(block.at<double>(r, c) / quantMatrix.at<double>(r, c)); // ỹ(r,c)=ROUND(y(r,c)/q(r,c))
         }
     }
 
-    return dct(block);
+    dct(block);
 }
 
-double jpeg_matrix_grayscale [8][8] = {{16, 11, 10, 16, 24, 40, 51, 61},
-                                      {12, 12, 14, 19, 26, 58, 60, 55},
-                                      {14, 13, 16, 24, 40, 57, 69, 56},
-                                      {14, 17, 22, 29, 51, 87, 80, 62},
-                                      {18, 22, 37, 56, 68, 109, 103, 77},
-                                      {24, 35, 55, 64, 81, 104, 113, 92},
-                                      {49, 64, 78, 87, 103, 121, 120, 101},
-                                      {72, 92, 95, 98, 112, 100, 103, 99}};
+void quantDCTCoeff(cv::Mat &block, cv::Mat quantMatrix){
+    for(int r = 0; r < 8; r++){
+        for (int c = 0; c < 8; c++) {
+            // ******************************* Quantization of the DCT coefficients ****************************
+            // Quantization of the DCT coefficients, in order to eliminate less relevant information, according
+            // to the characteristics of the human visual system.
+            // The DCT coefficients are quantized using a quantization matrix, previously scaled by a compression
+            // quality factor.
+            float temp = block.at<double>(r, c) / quantMatrix.at<double>(r, c); // ỹ(r,c)=ROUND(y(r,c)/q(r,c))
+            block.at<double>(r, c) = (int)(temp + 0.5 - (temp<0)); // https://stackoverflow.com/questions/9695329/c-how-to-round-a-double-to-an-int
+        }
+    }
+}
 
-double jpeg_matrix_color [8][8] = {{17, 18, 24, 47, 99, 99, 99, 99},
-                                  {18, 21, 26, 66, 99, 99, 99, 99},
-                                  {24, 26, 56, 99, 99, 99, 99, 99},
-                                  {47, 66, 99, 99, 99, 99, 80, 99},
-                                  {99, 99, 99, 99, 99, 99, 99, 99},
-                                  {99, 99, 99, 99, 99, 99, 99, 99},
-                                  {99, 99, 99, 99, 99, 99, 99, 99},
-                                  {99, 99, 99, 99, 99, 99, 99, 99}};
+int jpeg_matrix_grayscale [8][8] = {{16, 11, 10, 16, 24, 40, 51, 61},
+                                    {12, 12, 14, 19, 26, 58, 60, 55},
+                                    {14, 13, 16, 24, 40, 57, 69, 56},
+                                    {14, 17, 22, 29, 51, 87, 80, 62},
+                                    {18, 22, 37, 56, 68, 109, 103, 77},
+                                    {24, 35, 55, 64, 81, 104, 113, 92},
+                                    {49, 64, 78, 87, 103, 121, 120, 101},
+                                    {72, 92, 95, 98, 112, 100, 103, 99}};
+
+int jpeg_matrix_color [8][8] = {{17, 18, 24, 47, 99, 99, 99, 99},
+                                {18, 21, 26, 66, 99, 99, 99, 99},
+                                {24, 26, 56, 99, 99, 99, 99, 99},
+                                {47, 66, 99, 99, 99, 99, 80, 99},
+                                {99, 99, 99, 99, 99, 99, 99, 99},
+                                {99, 99, 99, 99, 99, 99, 99, 99},
+                                {99, 99, 99, 99, 99, 99, 99, 99},
+                                {99, 99, 99, 99, 99, 99, 99, 99}};
 
 void quantizeDctBaselineJPEG(cv::Mat frame,  /*cv::Mat prev_frame,*/ bool isColor) {
 

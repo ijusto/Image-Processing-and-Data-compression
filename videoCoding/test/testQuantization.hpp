@@ -31,14 +31,14 @@ int Y [8][8] = {{313,56,-27,18,78,-60,27,-27},
                    {4,4,-1,-2,-9,0,2,4},
                    {3,1,0,-4,-2,-1,3,1}};
 
-double final_Y [8][8] = {{20,5,-3,1,3,-2,1,0},
-                         {-3,-2,1,2,1,0,0,0},
-                         {-1,-1,1,1,1,0,0,0},
-                         {-1,0,0,1,0,0,0,0},
-                         {0,0,0,0,0,0,0,0},
-                         {0,0,0,0,0,0,0,0},
-                         {0,0,0,0,0,0,0,0},
-                         {0,0,0,0,0,0,0,0}};
+int final_Y [8][8] = {{20,5,-3,1,3,-2,1,0},
+                      {-3,-2,1,2,1,0,0,0},
+                      {-1,-1,1,1,1,0,0,0},
+                      {-1,0,0,1,0,0,0,0},
+                      {0,0,0,0,0,0,0,0},
+                      {0,0,0,0,0,0,0,0},
+                      {0,0,0,0,0,0,0,0},
+                      {0,0,0,0,0,0,0,0}};
 
 TEST_CASE("Quantization divideImageIn8x8Blocks") {
 
@@ -91,24 +91,32 @@ TEST_CASE("Applying the DCT to the block") {
         }
     }
 
-    cv::Mat dct = applyingDCT2TheBlock(block);
-
-    for(int r = 0; r < 8; r++) {
-        for (int c = 0; c < 8; c++) {
-            dct.at<double>(r, c) = (int)(dct.at<double>(r, c) + 0.5 - (dct.at<double>(r, c)<0)); // https://stackoverflow.com/questions/9695329/c-how-to-round-a-double-to-an-int
-        }
-    }
+    applyingDCT2TheBlock(block);
 
     INFO("\ndct: \n");
-    INFO(dct);
+    INFO(block);
     INFO("\nY: \n");
     INFO(Y_matrix);
-    CHECK(std::equal(Y_matrix.begin<double>(), Y_matrix.end<double>(), dct.begin<double>()));
+    CHECK(std::equal(Y_matrix.begin<double>(), Y_matrix.end<double>(), block.begin<double>()));
 }
 
 
 TEST_CASE("Applying the quantization matrix") {
-
-
+    cv::Mat block = cv::Mat::ones(8, 8, CV_64F);
+    cv::Mat quantMatrix = cv::Mat::ones(8, 8, CV_64F);
+    cv::Mat finalY = cv::Mat::ones(8, 8, CV_64F);
+    for(int r = 0; r < 8; r++){
+        for(int c = 0; c < 8; c++){
+            block.at<double>(r,c) = Y[r][c];
+            quantMatrix.at<double>(r,c) = jpeg_matrix_grayscale[r][c];
+            finalY.at<double>(r,c) = final_Y[r][c];
+        }
+    }
+    quantDCTCoeff(block, quantMatrix);
+    INFO("\nblock: \n");
+    INFO(block);
+    INFO("\nfinalY: \n");
+    INFO(finalY);
+    CHECK(std::equal(block.begin<double>(), block.end<double>(), finalY.begin<double>()));
 }
 #endif //VIDEOCODING_TESTQUANTIZATION_HPP
