@@ -7,7 +7,25 @@
 #include <opencv2/core.hpp>
 #include <opencv2/opencv.hpp>
 #include <cmath>
-#include <naive-dct.h>
+
+//! Transformation matrix (T)
+cv::Mat transformationMatrix(){
+    int m = 8;
+    cv::Mat t = cv::Mat::zeros(m, m, CV_64F);
+    for(int r = 0; r <m; r++) {
+        for (int c = 0; c < m; c++) {
+            if(r == 0){
+                t.at<double>(r, c) = 1/(sqrt(m));
+            } else {
+                t.at<double>(r, c) = sqrt((2/(double)m))*cos((M_PI*(2*c+1)*r) / (2*(double)m));
+            }
+        }
+    }
+
+    return t;
+}
+
+cv::Mat t = transformationMatrix();
 
 void divideImageIn8x8Blocks(cv::Mat &frame){
 
@@ -45,7 +63,55 @@ void divideImageIn8x8Blocks(cv::Mat &frame){
     //std::cout << "frame ncols: " << frame.cols << std::endl;
 }
 
-float jpeg_matrix_grayscale [8][8] = {{16, 11, 10, 16, 24, 40, 51, 61},
+//! DCT following the Transformation Matrix Approach
+cv::Mat dct(cv::Mat &block){
+    int m = 8;
+
+    // DCT of the block: T*block*T'
+    cv::Mat mult1 = cv::Mat::zeros(m, m, CV_64F);
+    cv::Mat dct = cv::Mat::zeros(m, m, CV_64F);
+    for(int r = 0; r < m; ++r) {
+        for (int c = 0; c < m; ++c) {
+            for (int s = 0; s < m; ++s) {
+                mult1.at<double>(r, c) += t.at<double>(r, s) * block.at<double>(s, c);
+            }
+        }
+    }
+    for(int r = 0; r < m; ++r) {
+        for (int c = 0; c < m; ++c) {
+            for (int s = 0; s < m; ++s) {
+                dct.at<double>(r, c) += mult1.at<double>(r, s) * t.at<double>(c, s) /* transpose of T */;
+            }
+        }
+    }
+
+    return dct;
+}
+
+cv::Mat applyingDCT2TheBlock(cv::Mat &block){
+    for(int r = 0; r <8; r++){
+        for (int c = 0; c < 8; c++) {
+            // Subtract 2^(b−1) to each pixel value, where b is the number of bits used to represent the pixels.
+            block.at<double>(r, c) -= pow(2, 7);
+
+            //double vector[1] = {block.at<double>(r,c)};
+            // Calculate the DCT 2D
+            //block.at<double>(r, c) = *NaiveDct_transform(vector, 1);
+
+            // ******************************* Quantization of the DCT coefficients ****************************
+            // Quantization of the DCT coefficients, in order to eliminate less relevant information, according
+            // to the characteristics of the human visual system.
+
+            // The DCT coefficients are quantized using a quantization matrix, previously scaled by a
+            // compression quality factor.
+            //block.at<double>(r, c) = floor(block.at<double>(r, c) / quantMatrix.at<double>(r, c)); // ỹ(r,c)=ROUND(y(r,c)/q(r,c))
+        }
+    }
+
+    return dct(block);
+}
+
+double jpeg_matrix_grayscale [8][8] = {{16, 11, 10, 16, 24, 40, 51, 61},
                                       {12, 12, 14, 19, 26, 58, 60, 55},
                                       {14, 13, 16, 24, 40, 57, 69, 56},
                                       {14, 17, 22, 29, 51, 87, 80, 62},
@@ -54,7 +120,7 @@ float jpeg_matrix_grayscale [8][8] = {{16, 11, 10, 16, 24, 40, 51, 61},
                                       {49, 64, 78, 87, 103, 121, 120, 101},
                                       {72, 92, 95, 98, 112, 100, 103, 99}};
 
-float jpeg_matrix_color [8][8] = {{17, 18, 24, 47, 99, 99, 99, 99},
+double jpeg_matrix_color [8][8] = {{17, 18, 24, 47, 99, 99, 99, 99},
                                   {18, 21, 26, 66, 99, 99, 99, 99},
                                   {24, 26, 56, 99, 99, 99, 99, 99},
                                   {47, 66, 99, 99, 99, 99, 80, 99},
@@ -73,7 +139,7 @@ void quantizeDctBaselineJPEG(cv::Mat frame,  /*cv::Mat prev_frame,*/ bool isColo
     //std::cout << "frame ncols: " << frame.cols << std::endl;
 
     // ***************************************** Calculation of the DCT ************************************************
-    float current_dc[frame.rows][frame.cols];
+    double current_dc[frame.rows][frame.cols];
     for(int r = 0; r < frame.rows; r += 8) {
         for (int c = 0; c < frame.cols; c += 8) {
 
@@ -93,7 +159,7 @@ void quantizeDctBaselineJPEG(cv::Mat frame,  /*cv::Mat prev_frame,*/ bool isColo
             double twoDDCTBlock[8][8];
 
             // base quantization matrix of JPEG (luminance)
-            float jpeg_matrix[8][8];
+            double jpeg_matrix[8][8];
             memcpy(jpeg_matrix,
                    (isColor) ? jpeg_matrix_color : jpeg_matrix_grayscale,
                    sizeof((isColor) ? jpeg_matrix_color : jpeg_matrix_grayscale));
@@ -102,7 +168,7 @@ void quantizeDctBaselineJPEG(cv::Mat frame,  /*cv::Mat prev_frame,*/ bool isColo
             for (int i = 0; i < 8; i++) {
                 for (int j = 0; j < 8; j++) {
                     double vector[1] = {block.at<double>(i,j)};
-                    twoDDCTBlock[i][j] = *NaiveDct_transform(vector, 1);
+                    //twoDDCTBlock[i][j] = *NaiveDct_transform(vector, 1);
 
                     // ******************************* Quantization of the DCT coefficients ****************************
                     // Quantization of the DCT coefficients, in order to eliminate less relevant information, according
@@ -162,7 +228,7 @@ void quantizeDctBaselineJPEG(cv::Mat frame,  /*cv::Mat prev_frame,*/ bool isColo
             int nZeros = 0;
             std::vector<std::pair<int, double>> ac;
 
-            for(float coef : zigzag_array){
+            for(double coef : zigzag_array){
                 if (coef != 0) {
                     ac.push_back(std::pair<int, double>(nZeros, coef));
                     nZeros = 0;
@@ -174,7 +240,7 @@ void quantizeDctBaselineJPEG(cv::Mat frame,  /*cv::Mat prev_frame,*/ bool isColo
 
             // The DC coefficient of each block is predicatively encoded in relation to the DC coefficient of the
             // previous block.
-            // float dc = zig_zag_dc - previous_dc[r][c];
+            // double dc = zig_zag_dc - previous_dc[r][c];
             // current_dc[r][c] = zigzag_array.at(0);
             // TODO get previous_dc
 
@@ -187,7 +253,7 @@ void inverseQuantizeDctBaselineJPEG(cv::Mat frame, cv::Mat prev_frame, bool isCo
 
     cv::Mat return_frame  = cv::Mat::zeros(frame.rows, frame.cols, CV_64F);
 
-    float current_dc[frame.rows][frame.cols];
+    double current_dc[frame.rows][frame.cols];
 
     // *********************** Statistical decoding (Golomb) of the quantized DCT coefficients *************************
     // TODO
@@ -200,7 +266,7 @@ void inverseQuantizeDctBaselineJPEG(cv::Mat frame, cv::Mat prev_frame, bool isCo
             double twoIDDCTBlock[8][8];
 
             // base quantization matrix of JPEG (luminance)
-            float jpeg_matrix[8][8];
+            double jpeg_matrix[8][8];
             memcpy(jpeg_matrix,
                    (isColor) ? jpeg_matrix_color : jpeg_matrix_grayscale,
                    sizeof((isColor) ? jpeg_matrix_color : jpeg_matrix_grayscale));
@@ -212,7 +278,7 @@ void inverseQuantizeDctBaselineJPEG(cv::Mat frame, cv::Mat prev_frame, bool isCo
 
                     // ************************************** Inverse DCT **********************************************
                     double vector[1] = {twoIDDCTBlock[i][j]};
-                    twoIDDCTBlock[i][j] = *NaiveDct_inverseTransform(vector, 1);
+                    //twoIDDCTBlock[i][j] = *NaiveDct_inverseTransform(vector, 1);
 
                     // Add 2^(b−1) to each pixel value, where b is the number of bits used to represent the pixels.
                     return_frame.at<double>(r + i, c + j) = twoIDDCTBlock[i][j] + pow(2, 7);
