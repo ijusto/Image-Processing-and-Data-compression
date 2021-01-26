@@ -4,9 +4,10 @@
  *  @author Inês Justo
 */
 
-#include <opencv2/core.hpp>
-#include <opencv2/opencv.hpp>
-#include <cmath>
+#include    <opencv2/core.hpp>
+#include    <opencv2/opencv.hpp>
+#include    <cmath>
+#include    "../../entropyCoding/src/Golomb.cpp"
 
 double jpeg_matrix_grayscale [8][8] = {{16, 11, 10, 16, 24, 40, 51, 61},
                                        {12, 12, 14, 19, 26, 58, 60, 55},
@@ -205,30 +206,21 @@ std::vector<int> zigZagScan(cv::Mat &block){
 
 //! Run Length Code
 /*!
- * In this implementation, the code is the pair (non zero value, number of zeros succeeding this value)
- * With this approach, we save the bits to represent the EOB symbol and in the last pair, we will have this:
- * (last non zero value, -1 to represent this is the last).
- * Note: if the first ac is zero (unlikely), the first code word is (0, number of zeros succeding the first ac).
+ * In this implementation, the code is the pair (number of zeros preceding this value, non zero value)
  * @param arr
  * @return
  */
 std::vector<std::pair<int, int>> runLengthCode(std::vector<int> arr){
     std::vector<std::pair<int, int>> code;
-    int nonZeroElem = arr.at(0);
     int nZeros = 0;
-    arr.erase(arr.begin());
     for(int elem : arr){
         if (elem != 0) {
-            code.push_back(std::pair<int, int>(nonZeroElem, nZeros));
-            nonZeroElem = elem;
+            code.push_back(std::pair<int, int>(nZeros, elem));
             nZeros = 0;
         } else {
             nZeros += 1;
         }
     }
-    code.push_back(std::pair<int, int>(nonZeroElem, -1));
-
-
     return code;
 }
 
@@ -298,7 +290,7 @@ void huffmanEncode(std::vector<std::pair<int, int>> runLengthCode){
 }
 
 void huffmanDecode(){
-    
+
 }
 
 void quantizeDctBaselineJPEG(cv::Mat frame,  /*cv::Mat prev_frame,*/ bool isColor) {
@@ -324,6 +316,8 @@ void quantizeDctBaselineJPEG(cv::Mat frame,  /*cv::Mat prev_frame,*/ bool isColo
 
             // The non-zero AC coefficients are encoded using Huffman or arithmetic coding, representing the value of
             // the coefficient, as well as the number of zeros preceding it.
+            // In this case it is used golomb encoding and the symbol to represent the end of the block is -1 because
+            // the number of zeros can't be negative. (TODO)
             std::vector<std::pair<int, int>> acs = runLengthCode(zigzag_array);
 
             // The DC coefficient of each block is predicatively encoded in relation to the DC coefficient of the

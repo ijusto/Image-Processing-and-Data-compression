@@ -2,7 +2,6 @@
 #include    "../../entropyCoding/src/Golomb.cpp"
 #include    "VideoEncoder.hpp"
 #include    "LosslessJPEGPredictors.cpp"
-//#include    "BaselineJPEG.cpp"
 #include    <fstream>
 #include    <regex>
 #include    <algorithm>
