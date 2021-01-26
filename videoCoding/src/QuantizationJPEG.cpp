@@ -224,9 +224,64 @@ std::vector<std::pair<int, int>> runLengthCode(std::vector<int> arr){
     return code;
 }
 
+// Data structure to store a tree node
+struct Node {
+    int data;
+    Node *left, *right;
+};
+
+// Function to create a new tree node
+Node* newNode(int data, Node *leafLeft, Node *leafRight) {
+    Node* node = new Node;
+    node->data = data;
+    node->left = leafLeft;
+    node->right = leafRight;
+
+    return node;
+}
+
+Node* huffmanTree(std::list<std::pair<int, double>> freqs_list, std::unordered_map<int, std::vector<bool>> &codeWordMap){
+    Node* father;
+    Node* leftLeaf = newNode(1, newNode(freqs_list.front().first, nullptr, nullptr), nullptr);
+
+    std::pair<int, double> leastProbCodeWord = freqs_list.front();
+    codeWordMap[leastProbCodeWord.first].push_back(1);
+    float join_probs = leastProbCodeWord.second;
+
+    freqs_list.erase(freqs_list.begin());
+    for (std::list<std::pair<int, double>>::iterator it = freqs_list.begin(); it != freqs_list.end(); it++) {
+        Node* rightLeaf = newNode(0, newNode(it->first, nullptr, nullptr), nullptr);
+        father =  newNode(1, leftLeaf, rightLeaf);
+        leftLeaf = father;
+
+        join_probs += it->second;
+        for(const auto &cw : codeWordMap){
+            codeWordMap[cw.first].insert(codeWordMap[cw.first].begin(), 1);
+        }
+        codeWordMap[it->first].insert(codeWordMap[it->first].begin(), 0);
+    }
+    father->data = -1;
+
+    /*
+    std::cout<<std::endl;
+    while(true){
+        std::cout<<"father: "<<father->data<<std::endl;
+        Node* leftLeaf = father->left;
+        Node* rightLeaf = father->right;
+        std::cout<<"leftLeaf: "<<leftLeaf->data<<", rightLeaf: "<<rightLeaf->data<<", rightLeaf->leftLeaf: "<<rightLeaf->left->data<<std::endl;
+        father = leftLeaf;
+        if(father->right == nullptr){
+            std::cout<<"leftLeaf: "<<father->left->data<<std::endl;
+            break;
+        }
+    }
+    */
+    return father;
+}
+
 void huffmanEncode(std::vector<std::pair<int, int>> runLengthCode){
-    std::unordered_map<int, double> freqsMap; // codeword, freq
-    std::unordered_map<int, std::vector<bool>> codeWordMap;
+    std::unordered_map<int, double> freqsMap; // word, freq
+    std::unordered_map<int, std::vector<bool>> codeWordMap; // word, codeword
     double total_codewords = runLengthCode.size()*2;
     for(std::pair<int, int> ac: runLengthCode){
         freqsMap[ac.first]++;
@@ -253,19 +308,7 @@ void huffmanEncode(std::vector<std::pair<int, int>> runLengthCode){
     }
     std::cout<<std::endl;
 
-    std::pair<int, double> leastProbCodeWord = freqs_list.front();
-    codeWordMap[leastProbCodeWord.first].push_back(1);
-    float join_probs = leastProbCodeWord.second;
-    freqs_list.erase(freqs_list.begin());
-
-    for (std::list<std::pair<int, double>>::iterator it = freqs_list.begin(); it != freqs_list.end(); ++it){
-        join_probs += it->second;
-        for(const auto &cw : codeWordMap){
-            codeWordMap[cw.first].insert(codeWordMap[cw.first].begin(), 1);
-        }
-        codeWordMap[it->first].insert(codeWordMap[it->first].begin(), 0);
-    }
-
+    huffmanTree(freqs_list, codeWordMap);
 
     for(const auto &cw : codeWordMap){
         std::cout << cw.first << ", codeword: ";
