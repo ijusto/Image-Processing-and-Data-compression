@@ -10,7 +10,6 @@
 #include <opencv2/videoio.hpp>
 #include <opencv2/opencv.hpp>
 
-using namespace cv;
 using namespace std;
 
 double X [8][8] = {{183,160,94,153,194,163,132,165},
@@ -43,10 +42,15 @@ double final_Y [8][8] = {{20,5,-3,1,3,-2,1,0},
 std::vector<int> zigzag_array = {5,-3,-1,-2,-3,1,1,-1,-1,0,0,1,2,3,-2,1,1,0,0,0,0,0,0,1,1,0,1,0,0,0,0,0,0,0,0,0,
                                     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
+std::vector<bool> huffmanCode = {0,1,1,1,1,1,1,0,0,1,1,1,0,0,1,1,0,0,1,1,1,1,0,0,1,1,1,0,0,1,0,0,1,0,0,1,1,0,0,1,1,0,1,
+                                 1,1,1,1,0,1,0,0,1,1,1,1,1,0,0,1,1,1,1,1,1,1,0,0,1,1,1,1,0,0,1,0,0,1,0,1,1,1,1,1,1,1,1,
+                                 1,1,0,0,1,0,1,0,1,0};
+
 std::vector<std::pair<int, int>> acs = {{0,5}, {0, -3}, {0, -1}, {0, -2}, {0, -3},
                                         {0,1}, {0, 1}, {0, -1}, {0, -1}, {2, 1},
                                         {0, 2}, {0, 3}, {0, -2}, {0, 1}, {0, 1},
                                         {6,1}, {0, 1}, {1, 1}};
+
 
 TEST_CASE("Quantization divideImageIn8x8Blocks") {
 
@@ -171,8 +175,15 @@ TEST_CASE("Run Length Code"){
     }
     info.erase(info.end() - 2, info.end());
     INFO(info);
-    huffmanEncode(result);
     CHECK(std::equal(result.begin(), result.end(), acs.begin()));
+}
+
+TEST_CASE("Huffman Encode"){
+    Node* huffmanTreeRoot;
+    std::vector<bool> result = huffmanEncode(acs, huffmanTreeRoot);
+    CHECK(std::equal(result.begin(), result.end(), huffmanCode.begin()));
+    std::vector<std::pair<int, int>> result2 = huffmanDecode(huffmanCode, huffmanTreeRoot);
+    CHECK(std::equal(result2.begin(), result2.end(), acs.begin()));
 }
 
 #endif //VIDEOCODING_TESTQUANTIZATION_HPP

@@ -241,7 +241,7 @@ Node* newNode(int data, Node *leafLeft, Node *leafRight) {
 }
 
 Node* huffmanTree(std::list<std::pair<int, double>> freqs_list, std::unordered_map<int, std::vector<bool>> &codeWordMap){
-    Node* father;
+    Node* father = nullptr;
     Node* leftLeaf = newNode(1, newNode(freqs_list.front().first, nullptr, nullptr), nullptr);
 
     std::pair<int, double> leastProbCodeWord = freqs_list.front();
@@ -279,7 +279,7 @@ Node* huffmanTree(std::list<std::pair<int, double>> freqs_list, std::unordered_m
     return father;
 }
 
-void huffmanEncode(std::vector<std::pair<int, int>> runLengthCode){
+std::vector<bool> huffmanEncode(std::vector<std::pair<int, int>> runLengthCode, Node* &huffmanTreeRoot){
     std::unordered_map<int, double> freqsMap; // word, freq
     std::unordered_map<int, std::vector<bool>> codeWordMap; // word, codeword
     double total_codewords = runLengthCode.size()*2;
@@ -308,7 +308,7 @@ void huffmanEncode(std::vector<std::pair<int, int>> runLengthCode){
     }
     std::cout<<std::endl;
 
-    huffmanTree(freqs_list, codeWordMap);
+    huffmanTreeRoot = huffmanTree(freqs_list, codeWordMap);
 
     for(const auto &cw : codeWordMap){
         std::cout << cw.first << ", codeword: ";
@@ -330,10 +330,32 @@ void huffmanEncode(std::vector<std::pair<int, int>> runLengthCode){
         std::cout<<bit;
     }
     std::cout<<std::endl;
+
+    return code;
 }
 
-void huffmanDecode(){
+std::vector<std::pair<int, int>> huffmanDecode(std::vector<bool> code, Node* huffmanTreeRoot){
+    std::vector<std::pair<int, int>> runLengthCode; //nZeros, elem
+    Node* node = huffmanTreeRoot;
+    int nZeros = -2;
+    for(const auto &bit : code){
+        if(bit){
+            node = node->left;
+        } else if(node->right != nullptr){
+            node = node->right;
+        } else {
+            if(nZeros == -2) {
+                nZeros = node->left->data;
+            } else {
+                std::cout << "runLengthCode: (" << nZeros << ", " << node->left->data << ")" << std::endl;
+                runLengthCode.push_back(std::pair<int, int>({nZeros, node->left->data}));
+                nZeros = -2;
+                node = huffmanTreeRoot;
+            }
+        }
+    }
 
+    return runLengthCode;
 }
 
 void quantizeDctBaselineJPEG(cv::Mat frame,  /*cv::Mat prev_frame,*/ bool isColor) {
