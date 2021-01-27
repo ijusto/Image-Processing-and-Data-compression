@@ -51,6 +51,7 @@ std::vector<std::pair<int, int>> acs = {{0,5}, {0, -3}, {0, -1}, {0, -2}, {0, -3
                                         {0, 2}, {0, 3}, {0, -2}, {0, 1}, {0, 1},
                                         {6,1}, {0, 1}, {1, 1}};
 
+Node *huffmanTreeRoot;
 
 TEST_CASE("Quantization divideImageIn8x8Blocks") {
 
@@ -178,10 +179,12 @@ TEST_CASE("Run Length Code"){
     CHECK(std::equal(result.begin(), result.end(), acs.begin()));
 }
 
-TEST_CASE("Huffman Encode"){
-    Node* huffmanTreeRoot;
+TEST_CASE("Huffman Encode") {
     std::vector<bool> result = huffmanEncode(acs, huffmanTreeRoot);
     CHECK(std::equal(result.begin(), result.end(), huffmanCode.begin()));
+}
+
+TEST_CASE("Huffman Decode"){
     std::vector<std::pair<int, int>> result2 = huffmanDecode(huffmanCode, huffmanTreeRoot);
     CHECK(std::equal(result2.begin(), result2.end(), acs.begin()));
 }

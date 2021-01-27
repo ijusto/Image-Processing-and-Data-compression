@@ -256,26 +256,27 @@ Node* huffmanTree(std::list<std::pair<int, double>> freqs_list, std::unordered_m
 
         join_probs += it->second;
         for(const auto &cw : codeWordMap){
-            codeWordMap[cw.first].insert(codeWordMap[cw.first].begin(), 1);
+            codeWordMap[cw.first].insert(codeWordMap[cw.first].begin(), true);
         }
-        codeWordMap[it->first].insert(codeWordMap[it->first].begin(), 0);
+        codeWordMap[it->first].insert(codeWordMap[it->first].begin(), false);
     }
     father->data = -1;
 
-    /*
+
+    Node* printFather = father;
     std::cout<<std::endl;
     while(true){
-        std::cout<<"father: "<<father->data<<std::endl;
-        Node* leftLeaf = father->left;
-        Node* rightLeaf = father->right;
+        std::cout<<"father: "<<printFather->data<<std::endl;
+        Node* leftLeaf = printFather->left;
+        Node* rightLeaf = printFather->right;
         std::cout<<"leftLeaf: "<<leftLeaf->data<<", rightLeaf: "<<rightLeaf->data<<", rightLeaf->leftLeaf: "<<rightLeaf->left->data<<std::endl;
-        father = leftLeaf;
-        if(father->right == nullptr){
-            std::cout<<"leftLeaf: "<<father->left->data<<std::endl;
+        printFather = leftLeaf;
+        if(printFather->right == nullptr){
+            std::cout<<"leftLeaf: "<<printFather->left->data<<std::endl;
             break;
         }
     }
-    */
+
     return father;
 }
 
@@ -322,6 +323,18 @@ std::vector<bool> huffmanEncode(std::vector<std::pair<int, int>> runLengthCode, 
 
     std::vector<bool> code;
     for(std::pair<int, int> ac: runLengthCode){
+
+        std::cout << ac.first << ", codeword: ";
+        for(const auto &bit : codeWordMap[ac.first]){
+            std::cout << bit;
+        }
+        std::cout << std::endl;
+
+        std::cout << ac.second << ", codeword: ";
+        for(const auto &bit : codeWordMap[ac.second]){
+            std::cout << bit;
+        }
+        std::cout << std::endl;
         code.insert( code.end(), codeWordMap[ac.first].begin(), codeWordMap[ac.first].end());
         code.insert( code.end(), codeWordMap[ac.second].begin(), codeWordMap[ac.second].end());
     }
@@ -338,21 +351,38 @@ std::vector<std::pair<int, int>> huffmanDecode(std::vector<bool> code, Node* huf
     std::vector<std::pair<int, int>> runLengthCode; //nZeros, elem
     Node* node = huffmanTreeRoot;
     int nZeros = -2;
-    for(const auto &bit : code){
-        if(bit){
-            node = node->left;
-        } else if(node->right != nullptr){
-            node = node->right;
-        } else {
-            if(nZeros == -2) {
-                nZeros = node->left->data;
-            } else {
-                std::cout << "runLengthCode: (" << nZeros << ", " << node->left->data << ")" << std::endl;
-                runLengthCode.push_back(std::pair<int, int>({nZeros, node->left->data}));
-                nZeros = -2;
+    std::vector<bool>::iterator bit = code.begin();
+    while(bit != code.end()){
+        std::cout<< "bit: " << *bit << std::endl;
+        if(*bit){
+            if(node->left->left == nullptr){
+                if (nZeros == -2) {
+                    nZeros = node->left->data;
+                } else {
+                    std::cout << "runLengthCode node->data: (" << nZeros << ", " << node->left->data << ")" << std::endl;
+                    runLengthCode.push_back(std::pair<int, int>(nZeros, node->left->data));
+                    nZeros = -2;
+                }
                 node = huffmanTreeRoot;
+            } else {
+                node = node->left;
+            }
+        } else {
+            if(node->right->right == nullptr){
+                if (nZeros == -2) {
+                    nZeros = node->right->left->data;
+                } else {
+                    std::cout << "runLengthCode node->data: (" << nZeros << ", " << node->right->left->data << ")" << std::endl;
+                    runLengthCode.push_back(std::pair<int, int>(nZeros, node->right->left->data));
+                    nZeros = -2;
+                }
+                node = huffmanTreeRoot;
+            } else {
+                node = node->right;
             }
         }
+        bit++;
+
     }
 
     return runLengthCode;
