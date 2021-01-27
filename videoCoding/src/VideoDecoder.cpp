@@ -13,8 +13,8 @@ int VideoDecoder::boolvec2int(vector<bool> vec){
 VideoDecoder::VideoDecoder(char* encodedFileName){
     sourceFile = new BitStream(encodedFileName, 'r');
 
-    // 32 byte file header (initial_m, predictor, subsampling, mode, fps1, fps2, frame rows, frame cols)
-    headerSize = 32;        // bytes
+    // 36 byte file header (initial_m, predictor, subsampling, mode, fps1, fps2, frame rows, frame cols)
+    headerSize = 36;        // bytes
     int paramsSize = 32;    // bits 4 bytes
 
     try {
@@ -33,28 +33,23 @@ VideoDecoder::VideoDecoder(char* encodedFileName){
     }
 }
 
-void VideoDecoder::decode(){
+void VideoDecoder::decode() {
     // read all data
     vector<bool> data = sourceFile->readNbits((sourceFile->size() - headerSize) * 8);
-    cout << data.size() << endl;
+    cout << "data size " << data.size() << endl;
     unsigned int index = 0;
-
-    // residuals
-    cv :: Mat residuals = cv::Mat(rows, cols, CV_8UC3);
 
     // Golomb decoder
     Golomb *golomb = new Golomb(initial_m);
-    int framesToDecode = 100; // must be equal to Encoder's m_rate
-
-    int totalframes = 0;
-    int frames = data.size();
+    int m_rate = 100; // must be equal to Encoder's m_rate
+    int decodedFrames = 0;
 
     // Chroma subsampling dimensions
     int Y_frame_cols, Y_frame_rows;
     int U_frame_cols, U_frame_rows;
     int V_frame_cols, V_frame_rows;
 
-    switch(this->subsampling){
+    switch (this->subsampling) {
         case 444:
             Y_frame_rows = U_frame_rows = V_frame_rows = rows;
             Y_frame_cols = U_frame_cols = V_frame_cols = cols;
@@ -74,115 +69,101 @@ void VideoDecoder::decode(){
     }
 
     //vars to reconstruct de frame
-    int x = 0;
-    int y = 0;
-    int z = 0;
-    while(totalframes < frames) {
-        // to not read more than available
-        if (totalframes + framesToDecode > frames) {
-            framesToDecode = frames - totalframes;
+    while (decodedFrames < this->totalFrames) {
+        decodedFrames++;
+        cout << "decoded frames: " << decodedFrames << "/" << this->totalFrames << endl;
+        vector<uchar> frame;
+
+        vector<uchar> component_frame;
+        vector<int> samples;
+        int n_to_decode = m_rate;
+        int n_decoded = 0;
+        while (n_decoded < Y_frame_rows * Y_frame_cols) {
+            // cout << "n_decoded " << n_decoded << endl;
+            // read remaining
+            if (n_decoded + n_to_decode > Y_frame_rows * Y_frame_cols) {
+                n_to_decode = Y_frame_rows * Y_frame_cols - n_decoded;
+            }
+            n_decoded += n_to_decode;
+            // read y
+            vector<int> tmp = golomb->decode2(data, &index, n_to_decode);
+            // update m
+            update_m(tmp, golomb, m_rate);
+            // add to total samples
+            samples.insert(samples.end(), tmp.begin(), tmp.end());
         }
+        //cout << "sample size " << samples.size() << " " << Y_frame_rows << "," << Y_frame_cols << endl;
+        // decode y component and add to frame vector
+        this->decodeRes_intra(samples, component_frame, Y_frame_rows, Y_frame_cols, golomb, m_rate);
+        // add component frame to frame
+        frame.insert(frame.end(), component_frame.begin(), component_frame.end());
 
-        totalframes += framesToDecode;
-        cout << "decoded frames: " << totalframes << "/" << frames << endl;
-
-        vector<int> samples = golomb->decode2(data, &index, framesToDecode);
-        cout << index << endl;
-
-        // used to compute mean of mapped residuals
-        float res_sum = 0;
-        int numRes = 0;
-        int Mapped;
-
-        for(int i = 0; i<framesToDecode; i++){
-            residuals.at<cv::Vec3b>(x,y).val[z]= samples.at(i);
-
-            LosslessJPEGPredictors<int> predictors(
-                    (y == 0 ? 0 : frame.at<cv::Vec3b>(x,y-1).val[z]),
-                    (x == 0 ? 0 : frame.at<cv::Vec3b>(x-1,y).val[z]),
-                    ((x == 0 | y == 0) ? 0 : frame.at<cv::Vec3b>(x - 1, y - 1).val[z]));
-
-            //calculation of residuals for each predictor
-            switch (this->predictor) {
-                case 1:
-                    frame.at<cv::Vec3b>(x,y).val[z] = residuals.at<cv::Vec3b>(x,y).val[z] + predictors.usePredictor1();
-                    break;
-                case 2:
-                    frame.at<cv::Vec3b>(x,y).val[z] = residuals.at<cv::Vec3b>(x,y).val[z] + predictors.usePredictor2();
-                    break;
-                case 3:
-                    frame.at<cv::Vec3b>(x,y).val[z] = residuals.at<cv::Vec3b>(x,y).val[z] + predictors.usePredictor3();
-                    break;
-                case 4:
-                    frame.at<cv::Vec3b>(x,y).val[z] = residuals.at<cv::Vec3b>(x,y).val[z] + predictors.usePredictor4();
-                    break;
-                case 5:
-                    frame.at<cv::Vec3b>(x,y).val[z] = residuals.at<cv::Vec3b>(x,y).val[z] + predictors.usePredictor5();
-                    break;
-                case 6:
-                    frame.at<cv::Vec3b>(x,y).val[z] = residuals.at<cv::Vec3b>(x,y).val[z] + predictors.usePredictor6();
-                    break;
-                case 7:
-                    frame.at<cv::Vec3b>(x,y).val[z] = residuals.at<cv::Vec3b>(x,y).val[z] + predictors.usePredictor7();
-                    break;
-                case 8:
-                    frame.at<cv::Vec3b>(x,y).val[z] = residuals.at<cv::Vec3b>(x,y).val[z] + predictors.usePredictorJLS();
-                    break;
-                default:
-                    std::cout << "ERROR: Predictor chosen isn't correct!!!" << std::endl;
-                    exit(EXIT_FAILURE);
+        component_frame = vector<uchar>();
+        samples = vector<int>();
+        n_to_decode = m_rate;
+        n_decoded = 0;
+        while (n_decoded < U_frame_rows * U_frame_cols) {
+            // read remaining
+            if (n_decoded + n_to_decode > U_frame_rows * U_frame_cols) {
+                n_to_decode = U_frame_rows * U_frame_cols - n_decoded;
             }
-
-            Mapped = 2 * residuals.at<cv::Vec3b>(x,y).val[z];
-            if(residuals.at<cv::Vec3b>(x,y).val[z]< 0) Mapped = -Mapped-1;
-            res_sum += Mapped;
-
-            y++;
-            if(z==0) {
-                if (x == (Y_frame_rows - 1) && y == (Y_frame_cols - 1)) {
-                    x = 0;
-                    y = 0;
-                    z++;
-                }
-                if (y == (Y_frame_cols - 1)) {
-                    y = 0;
-                    x++;
-                }
-            }
-            else if(z==1){
-                if (x == (U_frame_rows - 1) && y == (Y_frame_cols - 1)) {
-                    x = 0;
-                    y = 0;
-                    z++;
-                }
-                if (y == (U_frame_cols - 1)) {
-                    y = 0;
-                    x++;
-                }
-            }
-            else{
-                if (x == (V_frame_rows - 1) && y == (Y_frame_cols - 1)) {
-                    x = 0;
-                    y = 0;
-                    z++;
-                }
-//                if(z==channels)
-//                {
-//                    //write de frame
-//                    this->write();
-//                    x=0;
-//                    y=0;
-//                    z=0;
-//                }
-                if (y == (V_frame_cols - 1)) {
-                    y = 0;
-                    x++;
-                }
-
-            }
-
+            n_decoded += n_to_decode;
+            // read u
+            vector<int> tmp = golomb->decode2(data, &index, n_to_decode);
+            // update m
+            update_m(tmp, golomb, m_rate);
+            // add to total samples
+            samples.insert(samples.end(), tmp.begin(), tmp.end());
         }
+        //cout << "sample size " << samples.size() << " " << U_frame_rows << "," << U_frame_cols << endl;
+        // decode u component and add to frame vector
+        this->decodeRes_intra(samples, component_frame, U_frame_rows, U_frame_cols, golomb, m_rate);
+        // add component frame to frame
+        frame.insert(frame.end(), component_frame.begin(), component_frame.end());
 
+        component_frame = vector<uchar>();
+        samples = vector<int>();
+        n_to_decode = m_rate;
+        n_decoded = 0;
+        while (n_decoded < V_frame_rows * V_frame_cols) {
+            // read remaining
+            if (n_decoded + n_to_decode > V_frame_rows * V_frame_cols) {
+                n_to_decode = V_frame_rows * V_frame_cols - n_decoded;
+            }
+            n_decoded += n_to_decode;
+            // read v
+            vector<int> tmp = golomb->decode2(data, &index, n_to_decode);
+            // update m
+            update_m(tmp, golomb, m_rate);
+            // add to total samples
+            samples.insert(samples.end(), tmp.begin(), tmp.end());
+            //cout << "sample size " << samples.size() << " " << V_frame_rows << "," << V_frame_cols << endl;
+            // decode v component and add to frame vector
+            this->decodeRes_intra(samples, frame, V_frame_rows, V_frame_cols, golomb, m_rate);
+            // add component frame to frame
+            frame.insert(frame.end(), component_frame.begin(), component_frame.end());
+
+            // add frame to buffer
+            this->frames.push_back(frame);
+        }
+        cout << "index" << index << endl;
+    }
+}
+void VideoDecoder::update_m(vector<int> residuals, Golomb *golomb, int m_rate){
+    // used to compute mean of mapped residuals
+    float res_sum = 0;
+    int numRes = 0;
+
+    for(int residual:residuals){
+        // compute m
+        int Mapped = 2 * residual;
+        if(residual < 0){
+            Mapped = -Mapped-1;
+        }
+        res_sum += Mapped;
+        numRes++;
+    }
+    if(numRes == m_rate){
         // calc mean from last 100 mapped pixels
         float res_mean = res_sum/numRes;
         // calc alpha of geometric dist
@@ -190,11 +171,58 @@ void VideoDecoder::decode(){
         float alpha = res_mean/(1+res_mean);
         int m = ceil(-1/log(alpha));
         if (m != 0){
+            //cout << "NEW M " << m << endl;
             golomb->setM(m);
         }
+        //reset
+        res_sum = 0;
+        numRes = 0;
     }
-
 }
+
+
+void VideoDecoder::decodeRes_intra(vector<int> &residualValues, vector<uchar> &planarValues, int f_rows, int f_cols, Golomb *golomb, int m_rate){
+    for(int i = 0; i < f_rows; i++){
+        for(int j = 0; j < f_cols; j++){
+            int idx = i * f_cols + j;
+            LosslessJPEGPredictors<int> predictors(
+                    (j == 0 ? 0 : planarValues[i * f_cols + (j-1)]),                    // (i,j-1)
+                    (i == 0 ? 0 : planarValues[(i-1) * f_cols + j]),                    // (i-1,j)
+                    ((i == 0 | j == 0) ? 0 : planarValues[(i-1) * f_cols + (j-1)]));    // (i-1,j-1)
+            uchar value;
+            switch (this->predictor) {
+                case 1:
+                    value = residualValues.at(idx) + predictors.usePredictor1();
+                    break;
+                case 2:
+                    value = residualValues.at(idx) + predictors.usePredictor2();
+                    break;
+                case 3:
+                    value = residualValues.at(idx) +predictors.usePredictor3();
+                    break;
+                case 4:
+                    value = residualValues.at(idx) +predictors.usePredictor4();
+                    break;
+                case 5:
+                    value = residualValues.at(idx) +predictors.usePredictor5();
+                    break;
+                case 6:
+                    value = residualValues.at(idx) +predictors.usePredictor6();
+                    break;
+                case 7:
+                    value = residualValues.at(idx) +predictors.usePredictor7();
+                    break;
+                case 8:
+                    value = residualValues.at(idx) +predictors.usePredictorJLS();
+                    break;
+                default:
+                    std::cout << "ERROR: Predictor chosen isn't correct!!!" << std::endl;
+                    exit(EXIT_FAILURE);
+            }
+        }
+    }
+}
+
 
 void VideoDecoder::write(char* fileName){
     // open output video file
@@ -202,14 +230,18 @@ void VideoDecoder::write(char* fileName){
     outvideo.open (fileName);
 
     // write HEADER
-    string header = format("YUV4MPEG2 W%d H%d F%d:%d\n", this->cols, this->rows, this->fps1, this->fps2);
+    // write HEADER
+    string header = format("YUV4MPEG2 W%d H%d F%d:%d C%d\n", this->cols, this->rows, this->fps1, this->fps2, this->subsampling);
     outvideo << header;
 
+    int fileSize = 0;
     //write frames
     for(vector<uchar> fr: this->frames){
+        fileSize+=fr.size();
         // write FRAME header
         outvideo << "FRAME\n";
         // write data
         outvideo.write((char *) fr.data(), fr.size());
     }
+    cout << "file size: " << fileSize << endl;
 }
