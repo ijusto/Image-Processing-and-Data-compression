@@ -256,7 +256,7 @@ Node* huffmanTree(std::list<std::pair<int, double>> freqs_listNZero, std::list<s
                                    leftLeafLeftLeaf,
                           newNode(freqs_listValue.front().first, nullptr, nullptr));
 
-    codeValueMap[freqs_listValue.front().first].push_back(true);
+    codeValueMap[freqs_listValue.front().first] = {};
     freqs_listValue.erase(freqs_listValue.begin());
     diffSizeLists--;
 
@@ -320,45 +320,44 @@ std::vector<bool> huffmanEncode(std::vector<std::pair<int, int>> runLengthCode, 
     freqs_listNZero.sort([](const auto &a, const auto &b ) { return a.second < b.second; } );
     freqs_listValue.sort([](const auto &a, const auto &b ) { return a.second < b.second; } );
 
-    std::cout << "freqs_listNZero sorted list: " << std::endl;
-    for(const auto &cw : freqs_listNZero){
-        std::cout << cw.first << ", freq: " << cw.second << std::endl;
-    }
-    std::cout<<std::endl;
+    //std::cout << "freqs_listNZero sorted list: " << std::endl;
+    //for(const auto &cw : freqs_listNZero){
+    //    std::cout << cw.first << ", freq: " << cw.second << std::endl;
+    //}
+    //std::cout<<std::endl;
 
-    std::cout << "freqs_listValue sorted list: " << std::endl;
-    for(const auto &cw : freqs_listValue){
-        std::cout << cw.first << ", freq: " << cw.second << std::endl;
-    }
-    std::cout<<std::endl;
+    //std::cout << "freqs_listValue sorted list: " << std::endl;
+    //for(const auto &cw : freqs_listValue){
+    //    std::cout << cw.first << ", freq: " << cw.second << std::endl;
+    //}
+    //std::cout<<std::endl;
 
 
     huffmanTreeRoot = huffmanTree(freqs_listNZero, freqs_listValue, codeZerosMap, codeValueMap);
 
-    std::cout<<std::endl;
+    //std::cout<<std::endl;
 
     std::vector<bool> code;
     for(std::pair<int, int> ac: runLengthCode){
+        //std::cout << ac.first << ", codeword: ";
+        //for(const auto &bit : codeZerosMap[ac.first]){
+        //    std::cout << bit;
+        //}
+        //std::cout << std::endl;
 
-        std::cout << ac.first << ", codeword: ";
-        for(const auto &bit : codeZerosMap[ac.first]){
-            std::cout << bit;
-        }
-        std::cout << std::endl;
-
-        std::cout << ac.second << ", codeword: ";
-        for(const auto &bit : codeValueMap[ac.second]){
-            std::cout << bit;
-        }
-        std::cout << std::endl;
+        //std::cout << ac.second << ", codeword: ";
+        //for(const auto &bit : codeValueMap[ac.second]){
+        //    std::cout << bit;
+        //}
+        //std::cout << std::endl;
         code.insert( code.end(), codeZerosMap[ac.first].begin(), codeZerosMap[ac.first].end());
         code.insert( code.end(), codeValueMap[ac.second].begin(), codeValueMap[ac.second].end());
     }
 
-    for(const auto &bit : code){
-        std::cout<<bit;
-    }
-    std::cout<<std::endl;
+    //for(const auto &bit : code){
+    //    std::cout<<bit;
+    //}
+    //std::cout<<std::endl;
 
     return code;
 }
@@ -368,7 +367,7 @@ std::vector<std::pair<int, int>> huffmanDecode(std::vector<bool> code, Node* huf
     Node* node = huffmanTreeRoot;
     int nZeros = -2;
     for(bool bit : code){
-        std::cout<< "bit: " << bit << std::endl;
+        //std::cout<< "bit: " << bit << std::endl;
         if(bit){
             node = node->left;
         } else {
@@ -383,7 +382,7 @@ std::vector<std::pair<int, int>> huffmanDecode(std::vector<bool> code, Node* huf
             }
         } else { // if we are decoding the value
             if(node->right->left == nullptr && node->right->right == nullptr) { // values are in the right leafs
-                std::cout << "runLengthCode node->data: (" << nZeros << ", " << node->right->data << ")" << std::endl;
+                //std::cout << "runLengthCode node->data: (" << nZeros << ", " << node->right->data << ")" << std::endl;
                 runLengthCode.push_back(std::pair<int, int>(nZeros, node->right->data));
                 nZeros = -2;
                 node = huffmanTreeRoot;

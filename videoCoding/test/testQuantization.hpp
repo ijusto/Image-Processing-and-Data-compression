@@ -47,7 +47,7 @@ std::vector<int> zigzag_array = {5,-3,-1,-2,-3,1,1,-1,-1,0,0,1,2,3,-2,1,1,0,0,0,
 //                                 1,1,0,0,1,0,1,0,1,0};
 
 std::vector<bool> huffmanCode = {0,1,1,1,1,1,0,0,1,1,1,0,0,1,0,0,1,1,0,0,1,1,1,0,0,0,0,0,0,1,0,0,1,0,1,0,0,0,1,1,1,1,0,
-                                 0,1,1,1,1,1,1,1,0,1,1,0,0,0,0,0,1,1,0,0,0,0,1,1,1,0,0};
+                                 0,1,1,1,1,1,1,0,1,1,0,0,0,0,0,1,1,0,0,0,0,1,1,1,0,0};
 
 std::vector<std::pair<int, int>> acs = {{0,5}, {0, -3}, {0, -1}, {0, -2}, {0, -3},
                                         {0,1}, {0, 1}, {0, -1}, {0, -1}, {2, 1},
@@ -205,7 +205,7 @@ TEST_CASE("Huffman Encode") {
         for(Node* father : prevLineFathers){
             if(father->left != nullptr){
                 currLineNodes.push_back(father->left);
-                nodeLine += (father->left->right == nullptr) ? "\033[34m |" : " \033[32m|";
+                nodeLine += (father->left->right == nullptr) ? "\033[36m |" : " \033[32m|";
                 nodeLine += std::to_string(father->left->data) + "|\033[39m ";
                 connectLine += (father->data == 1) ? "  \033[32m/" : "  \033[31m/";
                 connectLine += "\033[39m  ";
@@ -217,7 +217,7 @@ TEST_CASE("Huffman Encode") {
             connectLine += std::string((int)(numberOfLeftLeafs/n)*2, '\t');
             if(father->right != nullptr){
                 currLineNodes.push_back(father->right);
-                nodeLine += (father->right->right == nullptr) ? "\033[36m |" : " \033[31m|";
+                nodeLine += (father->right->right == nullptr) ? "\033[33m |" : " \033[31m|";
                 nodeLine += std::to_string(father->right->data) + "|\033[39m ";
                 connectLine += (father->data == 1) ? "  \033[32m\\" : "  \033[31m\\";
                 connectLine += "\033[39m  ";
@@ -235,6 +235,8 @@ TEST_CASE("Huffman Encode") {
         std::cout<<nodeLine<<std::endl;
         numberOfLeftLeafs -= 1;
     }
+
+    std::cout<<"Legend:\n\t\033[36mNumber of preceding zeros\033[31m\n\t\033[33mValue\033[31m"<<std::endl;
 
     CHECK(std::equal(encode.begin(), encode.end(), huffmanCode.begin()));
 }
