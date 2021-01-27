@@ -460,20 +460,22 @@ void VideoEncoder::write(char *filename) {
 void VideoEncoder::convertionTo420(Mat &FrameData){
     if(subsampling!=420) {
         Mat NewFrameData;
-        int rows, cols;
+        int rows, cols, k;
         if(subsampling==444){
+            k = 2;
             rows = FrameData.rows/4;
             cols = FrameData.cols/4;
             NewFrameData = Mat(rows,cols,CV_8UC1);
         }
         else if(subsampling==422){
+            k=1;
             rows = FrameData.rows/2;
             cols = FrameData.cols/2;
             NewFrameData = Mat(rows,cols,CV_8UC1);
         }
         int x = 0, y = 0;
-        for (int i = 0; i < FrameData.rows; i += 2) {
-            for (int j = 0; j < FrameData.cols; j += 2) {
+        for (int i = 0; i < FrameData.rows; i += 2*k) {
+            for (int j = 0; j < FrameData.cols; j += 2*k) {
                 NewFrameData.at<uchar>(x,y) = FrameData.at<uchar>(i, j);
                 y++;
             }
