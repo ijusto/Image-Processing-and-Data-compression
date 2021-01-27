@@ -2,6 +2,7 @@
 #include    "../../entropyCoding/src/Golomb.cpp"
 #include    "VideoEncoder.hpp"
 #include    "LosslessJPEGPredictors.cpp"
+//#include    "BaselineJPEG.cpp"
 #include    <fstream>
 #include    <regex>
 #include    <algorithm>
@@ -456,13 +457,29 @@ void VideoEncoder::write(char *filename) {
     wbs->endWriteFile();
 }
 
-void VideoEncoder::convertionTo420(Mat &frameData){
-    for(int i = 0; i< frameData.rows; i+=2) {
-        for (int j = 0; j < frameData.cols; j+=2) {
-            frameData.at<uchar>(i,j+1) = frameData.at<uchar>(i,j);
-            frameData.at<uchar>(i+1,j) = frameData.at<uchar>(i,j);
-            frameData.at<uchar>(i+1,j+1) = frameData.at<uchar>(i,j);
+void VideoEncoder::convertionTo420(Mat &FrameData){
+    if(subsampling!=420) {
+        Mat NewFrameData;
+        int rows, cols;
+        if(subsampling==444){
+            rows = FrameData.rows/4;
+            cols = FrameData.cols/4;
+            NewFrameData = Mat(rows,cols,CV_8UC1);
         }
+        else if(subsampling==422){
+            rows = FrameData.rows/2;
+            cols = FrameData.cols/2;
+            NewFrameData = Mat(rows,cols,CV_8UC1);
+        }
+        int x = 0, y = 0;
+        for (int i = 0; i < FrameData.rows; i += 2) {
+            for (int j = 0; j < FrameData.cols; j += 2) {
+                NewFrameData.at<uchar>(x,y) = FrameData.at<uchar>(i, j);
+                y++;
+            }
+            x++;
+        }
+        FrameData.reshape(rows,cols) = NewFrameData;
     }
 }
 
