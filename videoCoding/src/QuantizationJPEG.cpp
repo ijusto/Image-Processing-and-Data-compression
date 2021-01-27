@@ -247,66 +247,42 @@ Node* huffmanTree(std::list<std::pair<int, double>> freqs_listNZero, std::list<s
     Node* leftLeafLeftLeaf = nullptr;
     if (diffSizeLists == 0){
         leftLeafLeftLeaf = newNode(freqs_listNZero.front().first, nullptr, nullptr);
-        std::pair<int, double> leastProbCodeWordNZero = freqs_listNZero.front();
-        codeZerosMap[leastProbCodeWordNZero.first].push_back(1);
+        codeZerosMap[freqs_listNZero.front().first].push_back(true);
         freqs_listNZero.erase(freqs_listNZero.begin());
     }
-    std::pair<int, double> leastProbCodeWordValue = freqs_listValue.front();
-    codeValueMap[leastProbCodeWordValue.first].push_back(1);
-    freqs_listValue.erase(freqs_listValue.begin());
-    diffSizeLists--;
 
     Node* father = nullptr;
     Node* leftLeaf = newNode(1,
                                    leftLeafLeftLeaf,
                           newNode(freqs_listValue.front().first, nullptr, nullptr));
 
+    codeValueMap[freqs_listValue.front().first].push_back(true);
+    freqs_listValue.erase(freqs_listValue.begin());
+    diffSizeLists--;
+
     std::list<std::pair<int, double>>::iterator fNZero = freqs_listNZero.begin();
     std::list<std::pair<int, double>>::iterator fValue = freqs_listValue.begin();
     while(fNZero != freqs_listNZero.end() && fValue != freqs_listValue.end()){
         Node* rightLeafLeftLeaf = nullptr;
-        std::cout<<"difSizeList: "<<diffSizeLists<<std::endl;
         if (diffSizeLists < 1){
-            std::cout<<"Nzero!"<<std::endl;
             rightLeafLeftLeaf = newNode(fNZero->first, nullptr, nullptr);
 
-            for(const auto &cw : codeZerosMap){
-                codeZerosMap[cw.first].insert(codeZerosMap[cw.first].begin(), true);
-            }
+            for(const auto &cw : codeZerosMap){ codeZerosMap[cw.first].insert(codeZerosMap[cw.first].begin(), true); }
             codeZerosMap[fNZero->first].insert(codeZerosMap[fNZero->first].begin(), false);
             fNZero++;
         }
 
-        Node* rightLeaf = newNode(0,
-                                        rightLeafLeftLeaf,
-                               newNode(fValue->first, nullptr, nullptr));
+        Node* rightLeaf = newNode(0, rightLeafLeftLeaf, newNode(fValue->first, nullptr, nullptr));
         father =  newNode(1, leftLeaf, rightLeaf);
         leftLeaf = father;
 
-        for(const auto &cw : codeValueMap){
-            codeValueMap[cw.first].insert(codeValueMap[cw.first].begin(), true);
-        }
+        for(const auto &cw : codeValueMap){ codeValueMap[cw.first].insert(codeValueMap[cw.first].begin(), true); }
         codeValueMap[fValue->first].insert(codeValueMap[fValue->first].begin(), false);
-
         fValue++;
+
         diffSizeLists--;
-        std::cout<<"difSizeList--"<<std::endl;
     }
     father->data = -1;
-
-
-    Node* printFather = father;
-    std::cout<<std::endl;
-    while(true){
-        std::cout<<"father: "<<printFather->data<<std::endl;
-        Node* leftLeaf = printFather->left;
-        Node* rightLeaf = printFather->right;
-        if(leftLeaf == nullptr && leftLeaf == nullptr){
-            break;
-        }
-        std::cout<<"leftLeaf: "<<leftLeaf->data<<", rightLeaf: "<<rightLeaf->data<<std::endl;
-        printFather = leftLeaf;
-    }
 
     return father;
 }
@@ -344,6 +320,19 @@ std::vector<bool> huffmanEncode(std::vector<std::pair<int, int>> runLengthCode, 
     freqs_listNZero.sort([](const auto &a, const auto &b ) { return a.second < b.second; } );
     freqs_listValue.sort([](const auto &a, const auto &b ) { return a.second < b.second; } );
 
+    std::cout << "freqs_listNZero sorted list: " << std::endl;
+    for(const auto &cw : freqs_listNZero){
+        std::cout << cw.first << ", freq: " << cw.second << std::endl;
+    }
+    std::cout<<std::endl;
+
+    std::cout << "freqs_listValue sorted list: " << std::endl;
+    for(const auto &cw : freqs_listValue){
+        std::cout << cw.first << ", freq: " << cw.second << std::endl;
+    }
+    std::cout<<std::endl;
+
+
     huffmanTreeRoot = huffmanTree(freqs_listNZero, freqs_listValue, codeZerosMap, codeValueMap);
 
     std::cout<<std::endl;
@@ -378,10 +367,9 @@ std::vector<std::pair<int, int>> huffmanDecode(std::vector<bool> code, Node* huf
     std::vector<std::pair<int, int>> runLengthCode; //nZeros, elem
     Node* node = huffmanTreeRoot;
     int nZeros = -2;
-    std::vector<bool>::iterator bit = code.begin();
-    while(bit != code.end()){
-        std::cout<< "bit: " << *bit << std::endl;
-        if(*bit){
+    for(bool bit : code){
+        std::cout<< "bit: " << bit << std::endl;
+        if(bit){
             node = node->left;
         } else {
             node = node->right;
@@ -401,8 +389,6 @@ std::vector<std::pair<int, int>> huffmanDecode(std::vector<bool> code, Node* huf
                 node = huffmanTreeRoot;
             }
         }
-        bit++;
-
     }
 
     return runLengthCode;
