@@ -27,10 +27,14 @@ double jpeg_matrix_color [8][8] = {{17, 18, 24, 47, 99, 99, 99, 99},
                                    {99, 99, 99, 99, 99, 99, 99, 99},
                                    {99, 99, 99, 99, 99, 99, 99, 99}};
 
-cv::Mat quantMatrixGrayscale = cv::Mat(8, 8, CV_64F, &jpeg_matrix_grayscale);
-cv::Mat quantMatrixColor = cv::Mat(8, 8, CV_64F, &jpeg_matrix_color);
+const cv::Mat quantMatrixLuminance = cv::Mat(8, 8, CV_64F, &jpeg_matrix_grayscale);
+const cv::Mat quantMatrixChrominance = cv::Mat(8, 8, CV_64F, &jpeg_matrix_color);
 
 //! Transformation matrix (T)
+/*!
+ *
+ * @return
+ */
 cv::Mat transformationMatrix(){
     int m = 8;
     cv::Mat t = cv::Mat::zeros(m, m, CV_64F);
@@ -47,8 +51,13 @@ cv::Mat transformationMatrix(){
     return t;
 }
 
-cv::Mat t = transformationMatrix();
+const cv::Mat t = transformationMatrix();
 
+//!
+/*!
+ *
+ * @param frame
+ */
 void divideImageIn8x8Blocks(cv::Mat &frame){
 
     //std::cout << "nrows: " << frame.rows << ", rows to add: " << ((frame.rows % 8) == 0 ? 0 :  (8 - (frame.rows % 8))) << std::endl;
@@ -86,6 +95,10 @@ void divideImageIn8x8Blocks(cv::Mat &frame){
 }
 
 //! DCT following the Transformation Matrix Approach
+/*!
+ *
+ * @param block
+ */
 void dct(cv::Mat &block){
     int m = 8;
 
@@ -115,6 +128,49 @@ void dct(cv::Mat &block){
     }
 }
 
+
+//! Inverse DCT following the Transformation Matrix Approach
+/*!
+ *
+ * @param block
+ */
+void inverseDCT(cv::Mat &block){
+    int m = 8;
+
+    // inverse of the DCT: T'*dct*T
+    cv::Mat mult1 = cv::Mat::zeros(m, m, CV_64F);
+    cv::Mat inverse_dct = cv::Mat::zeros(m, m, CV_64F);
+
+    for(int r = 0; r < m; ++r) {
+        for (int c = 0; c < m; ++c) {
+            for (int s = 0; s < m; ++s) {
+                mult1.at<double>(r, c) += t.at<double>(s, r) /* transpose of T */ * block.at<double>(s, c);
+            }
+        }
+    }
+
+    for(int r = 0; r < m; ++r) {
+        for (int c = 0; c < m; ++c) {
+            for (int s = 0; s < m; ++s) {
+                inverse_dct.at<double>(r, c) += mult1.at<double>(r, s) * t.at<double>(s, c);
+            }
+        }
+    }
+
+    for(int r = 0; r < 8; r++) {
+        for (int c = 0; c < 8; c++) {
+            // Add 2^(b−1) to each pixel value, where b is the number of bits used to represent the pixels.
+            block.at<double>(r, c) = (int)(inverse_dct.at<double>(r, c) + 0.5 - (inverse_dct.at<double>(r, c)<0)  + pow(2, 7)); // https://stackoverflow.com/questions/9695329/c-how-to-round-a-double-to-an-int
+        }
+    }
+}
+
+//!
+/*!
+ *
+ * @param block
+ * @param quantMatrix
+ */
 void quantDCTCoeff(cv::Mat &block, cv::Mat quantMatrix){
     for(int r = 0; r < 8; r++){
         for (int c = 0; c < 8; c++) {
@@ -129,6 +185,32 @@ void quantDCTCoeff(cv::Mat &block, cv::Mat quantMatrix){
     }
 }
 
+//!
+/*!
+ *
+ * @param block
+ * @param quantMatrix
+ */
+void inverseQuantDCTCoeff(cv::Mat &block, cv::Mat quantMatrix){
+    for(int r = 0; r < 8; r++){
+        for (int c = 0; c < 8; c++) {
+            // ******************************* Quantization of the DCT coefficients ****************************
+            // Quantization of the DCT coefficients, in order to eliminate less relevant information, according
+            // to the characteristics of the human visual system.
+            // The DCT coefficients are quantized using a quantization matrix, previously scaled by a compression
+            // quality factor.
+            float temp = block.at<double>(r, c) * quantMatrix.at<double>(r, c); // ỹ(r,c)=ROUND(y(r,c)/q(r,c))
+            block.at<double>(r, c) = (int)(temp + 0.5 - (temp<0)); // https://stackoverflow.com/questions/9695329/c-how-to-round-a-double-to-an-int
+        }
+    }
+}
+
+//!
+/*!
+ *
+ * @param block
+ * @param quantMatrix
+ */
 void wholeDCTQuant(cv::Mat &block, cv::Mat quantMatrix){
     int m = 8;
 
@@ -167,6 +249,56 @@ void wholeDCTQuant(cv::Mat &block, cv::Mat quantMatrix){
     }
 }
 
+void inverseWholeQuant(cv::Mat &block, cv::Mat quantMatrix){
+    int m = 8;
+
+    // inverse of the DCT: T'*dct*T
+    cv::Mat mult1 = cv::Mat::zeros(m, m, CV_64F);
+    cv::Mat inverse_dct = cv::Mat::zeros(m, m, CV_64F);
+
+    for(int r = 0; r < 8; r++) {
+        for (int c = 0; c < 8; c++) {
+            // ******************************* Quantization of the DCT coefficients ****************************
+            // Quantization of the DCT coefficients, in order to eliminate less relevant information, according
+            // to the characteristics of the human visual system.
+            // The DCT coefficients are quantized using a quantization matrix, previously scaled by a compression
+            // quality factor.
+            float temp = floor(block.at<double>(r, c) * quantMatrix.at<double>(r, c)); // ỹ(r,c)=ROUND(y(r,c)/q(r,c))
+            block.at<double>(r, c) = (int)(temp - 0.5 - (temp<0)); // https://stackoverflow.com/questions/9695329/c-how-to-round-a-double-to-an-int
+        }
+    }
+
+    for(int r = 0; r < m; ++r) {
+        for (int c = 0; c < m; ++c) {
+            for (int s = 0; s < m; ++s) {
+                mult1.at<double>(r, c) += t.at<double>(s, r) /* transpose of T */ * block.at<double>(s, c);
+            }
+        }
+    }
+
+    for(int r = 0; r < m; ++r) {
+        for (int c = 0; c < m; ++c) {
+            for (int s = 0; s < m; ++s) {
+                inverse_dct.at<double>(r, c) += mult1.at<double>(r, s) * t.at<double>(s, c);
+            }
+        }
+    }
+
+    for(int r = 0; r < 8; r++) {
+        for (int c = 0; c < 8; c++) {
+            // Add 2^(b−1) to each pixel value, where b is the number of bits used to represent the pixels.
+            block.at<double>(r, c) = (int)(floor(inverse_dct.at<double>(r, c)) + pow(2, 7));
+        }
+    }
+
+}
+
+//!
+/*!
+ *
+ * @param block
+ * @return
+ */
 std::vector<int> zigZagScan(cv::Mat &block){
     std::vector<int> zigzag_array;
     double dc = block.at<double>(0, 0);
@@ -207,6 +339,7 @@ std::vector<int> zigZagScan(cv::Mat &block){
 //! Run Length Code
 /*!
  * In this implementation, the code is the pair (number of zeros preceding this value, non zero value)
+ * The pair (-1, dc) represents the end of a block.
  * @param arr
  * @return
  */
@@ -224,13 +357,20 @@ std::vector<std::pair<int, int>> runLengthCode(std::vector<int> arr){
     return code;
 }
 
-// Data structure to store a tree node
+//! Data structure to store a tree node
 struct Node {
     int data;
     Node *left, *right;
 };
 
-// Function to create a new tree node
+//! Creates a new tree node.
+/*!
+ *
+ * @param data
+ * @param leafLeft
+ * @param leafRight
+ * @return
+ */
 Node* newNode(int data, Node *leafLeft, Node *leafRight) {
     Node* node = new Node;
     node->data = data;
@@ -240,6 +380,15 @@ Node* newNode(int data, Node *leafLeft, Node *leafRight) {
     return node;
 }
 
+//!
+/*!
+ *
+ * @param freqs_listNZero
+ * @param freqs_listValue
+ * @param codeZerosMap
+ * @param codeValueMap
+ * @return
+ */
 Node* huffmanTree(std::list<std::pair<int, double>> freqs_listNZero, std::list<std::pair<int, double>> freqs_listValue,
                   std::unordered_map<int, std::vector<bool>> &codeZerosMap,
                   std::unordered_map<int, std::vector<bool>> &codeValueMap){
@@ -287,6 +436,14 @@ Node* huffmanTree(std::list<std::pair<int, double>> freqs_listNZero, std::list<s
     return father;
 }
 
+
+//!
+/*!
+ *
+ * @param runLengthCode
+ * @param huffmanTreeRoot
+ * @return
+ */
 std::vector<bool> huffmanEncode(std::vector<std::pair<int, int>> runLengthCode, Node* &huffmanTreeRoot){
     std::unordered_map<int, double> freqsMapNZero; // word, freq
     std::unordered_map<int, double> freqsMapValue; // word, freq
@@ -295,8 +452,12 @@ std::vector<bool> huffmanEncode(std::vector<std::pair<int, int>> runLengthCode, 
     std::unordered_map<int, std::vector<bool>> codeValueMap; // Value, codeword
 
     for(std::pair<int, int> ac: runLengthCode){
-        freqsMapNZero[ac.first]++;
-        freqsMapValue[ac.second]++;
+        if(ac.first != -1){
+            freqsMapNZero[ac.first]++;
+            freqsMapValue[ac.second]++;
+        } else {
+            freqsMapNZero[ac.first]++;
+        }
     }
 
     std::list<std::pair<int, double>> freqs_listNZero;
@@ -350,8 +511,12 @@ std::vector<bool> huffmanEncode(std::vector<std::pair<int, int>> runLengthCode, 
         //    std::cout << bit;
         //}
         //std::cout << std::endl;
-        code.insert( code.end(), codeZerosMap[ac.first].begin(), codeZerosMap[ac.first].end());
-        code.insert( code.end(), codeValueMap[ac.second].begin(), codeValueMap[ac.second].end());
+        if(ac.first != -1){
+            code.insert( code.end(), codeZerosMap[ac.first].begin(), codeZerosMap[ac.first].end());
+            code.insert( code.end(), codeValueMap[ac.second].begin(), codeValueMap[ac.second].end());
+        } else {
+            code.insert( code.end(), codeZerosMap[ac.first].begin(), codeZerosMap[ac.first].end());
+        }
     }
 
     //for(const auto &bit : code){
@@ -362,6 +527,14 @@ std::vector<bool> huffmanEncode(std::vector<std::pair<int, int>> runLengthCode, 
     return code;
 }
 
+
+//!
+/*!
+ *
+ * @param code
+ * @param huffmanTreeRoot
+ * @return
+ */
 std::vector<std::pair<int, int>> huffmanDecode(std::vector<bool> code, Node* huffmanTreeRoot){
     std::vector<std::pair<int, int>> runLengthCode; //nZeros, elem
     Node* node = huffmanTreeRoot;
@@ -377,7 +550,12 @@ std::vector<std::pair<int, int>> huffmanDecode(std::vector<bool> code, Node* huf
         // if we are decoding the number of zeros
         if(nZeros == -2){
             if(node->left->left == nullptr && node->left->right == nullptr) { // number of zeros are in the left leafs
-                nZeros = node->left->data;
+                if(node->left->data == -1){ // EOB
+                    runLengthCode.push_back(std::pair<int, int>(node->left->data, node->left->data));
+                    nZeros = -2;
+                } else {
+                    nZeros = node->left->data;
+                }
                 node = huffmanTreeRoot;
             }
         } else { // if we are decoding the value
@@ -393,7 +571,14 @@ std::vector<std::pair<int, int>> huffmanDecode(std::vector<bool> code, Node* huf
     return runLengthCode;
 }
 
-void quantizeDctBaselineJPEG(cv::Mat frame,  /*cv::Mat prev_frame,*/ bool isColor) {
+
+//!
+/*!
+ *
+ * @param frame
+ * @param prevDCs
+ */
+void quantizeDctBaselineJPEG(cv::Mat frame, std::vector<int> prevDCs) {
 
     cv::Mat quantizeDct = cv::Mat::zeros(frame.rows, frame.cols, CV_64F);
 
@@ -401,13 +586,13 @@ void quantizeDctBaselineJPEG(cv::Mat frame,  /*cv::Mat prev_frame,*/ bool isColo
 
     // ***************************************** Calculation of the DCT ************************************************
     cv::Mat block;
-    double current_dc[frame.rows][frame.cols];
+    std::vector<int> currDCs;
     for(int r = 0; r < frame.rows; r += 8) {
         for(int c = 0; c < frame.cols; c += 8) {
             frame(cv::Rect(r,c,8,8)).copyTo(block);
 
             // TODO see what jpeg matrix to use
-            wholeDCTQuant(block, quantMatrixGrayscale);
+            wholeDCTQuant(block, quantMatrixLuminance);
 
             // Next, the coefficients are organized in a one-dimensional vector according to a zig-zag scan.
             std::vector<int> zigzag_array = zigZagScan(block);
@@ -416,9 +601,10 @@ void quantizeDctBaselineJPEG(cv::Mat frame,  /*cv::Mat prev_frame,*/ bool isColo
 
             // The non-zero AC coefficients are encoded using Huffman or arithmetic coding, representing the value of
             // the coefficient, as well as the number of zeros preceding it.
-            // In this case it is used golomb encoding and the symbol to represent the end of the block is -1 because
-            // the number of zeros can't be negative. (TODO)
+            // In this case  the symbol to represent the end of the block is (-1, _) because the number of zeros can't
+            // be negative.
             std::vector<std::pair<int, int>> acs = runLengthCode(zigzag_array);
+            acs.push_back(std::pair(-1, -1)); // EOB
 
             // The DC coefficient of each block is predicatively encoded in relation to the DC coefficient of the
             // previous block.
@@ -429,44 +615,31 @@ void quantizeDctBaselineJPEG(cv::Mat frame,  /*cv::Mat prev_frame,*/ bool isColo
         }
     }
 
+    // TODO huffmanEncode call
+
 }
 
-void inverseQuantizeDctBaselineJPEG(cv::Mat frame, cv::Mat prev_frame, bool isColor){
+//!
+/*!
+ *
+ * @param frame
+ * @param prevDCs
+ */
+void inverseQuantizeDctBaselineJPEG(cv::Mat frame, std::vector<int> prevDCs){
 
     cv::Mat return_frame  = cv::Mat::zeros(frame.rows, frame.cols, CV_64F);
-
-    double current_dc[frame.rows][frame.cols];
+    std::vector<int> currDCs;
 
     // *********************** Statistical decoding (Golomb) of the quantized DCT coefficients *************************
-    // TODO
+    // TODO huffmanDecode call
 
-    cv::Mat block = cv::Mat::zeros(8, 8, CV_64F);
+    cv::Mat block;
     for(int r = 0; r < frame.rows; r += 8) {
         for (int c = 0; c < frame.cols; c += 8) {
+            frame(cv::Rect(r,c,8,8)).copyTo(block);
 
-            // Calculate the inverse DCT 2D of each block.
-            double twoIDDCTBlock[8][8];
-
-            // base quantization matrix of JPEG (luminance)
-            double jpeg_matrix[8][8];
-            memcpy(jpeg_matrix,
-                   (isColor) ? jpeg_matrix_color : jpeg_matrix_grayscale,
-                   sizeof((isColor) ? jpeg_matrix_color : jpeg_matrix_grayscale));
-
-            for(int i = 0; i < 8; i++) {
-                for(int j = 0; j < 8; j++) {
-                    // ******************************* Dequantization of the DCT coefficients **************************
-                    twoIDDCTBlock[i][j] = block.at<double>(i, j) * jpeg_matrix[i][j];
-
-                    // ************************************** Inverse DCT **********************************************
-                    double vector[1] = {twoIDDCTBlock[i][j]};
-                    //twoIDDCTBlock[i][j] = *NaiveDct_inverseTransform(vector, 1);
-
-                    // Add 2^(b−1) to each pixel value, where b is the number of bits used to represent the pixels.
-                    return_frame.at<double>(r + i, c + j) = twoIDDCTBlock[i][j] + pow(2, 7);
-                }
-            }
-
+            // TODO see what jpeg matrix to use
+            inverseWholeQuant(block, quantMatrixLuminance);
         }
     }
 }
@@ -475,16 +648,19 @@ void inverseQuantizeDctBaselineJPEG(cv::Mat frame, cv::Mat prev_frame, bool isCo
  * information associated to those coefficients is transmitted.
  *  The coefficients are organized in spectral bands, and those corresponding to the lower frequencies are transmitted
  * first.
+ * @param frame
+ * @param isColor
  */
 void quantizeDctProgressiveSpectralJPEG(cv::Mat frame, bool isColor){
 
 }
 
-
 /*! This mode relies on encoding the DCT coefficients using several passes, such that in each pass only part of the
  * information associated to those coefficients is transmitted.
  *  All coefficients are first transmitted using a limited precision. Afterwards, additional detail is sent using more
  * passes through the coefficients.
+ * @param frame
+ * @param isColor
  */
 void inverseQuantizeDctProgressiveApproxJPEG(cv::Mat frame, bool isColor){
 
