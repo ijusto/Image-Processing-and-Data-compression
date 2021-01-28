@@ -9,7 +9,7 @@
  *  @author Inês Justo
 */
 
-#include "../../entropyCoding/includes/Golomb.h"
+#include    "Golomb.h"
 #include    "LosslessJPEGPredictors.hpp"
 #include    <opencv2/opencv.hpp>
 #include    <vector>

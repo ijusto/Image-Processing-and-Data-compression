@@ -86,7 +86,8 @@ void VideoDecoder::decode(){
             }
             n_decoded += n_to_decode;
             // read y
-            vector<int> tmp = golomb->decode2(data, &index, n_to_decode);
+            vector<int> tmp;
+            golomb->decode2(data, tmp, &index, n_to_decode);
             // update m
             update_m(tmp, golomb, m_rate);
             // add to total samples
@@ -109,7 +110,8 @@ void VideoDecoder::decode(){
             }
             n_decoded += n_to_decode;
             // read u
-            vector<int> tmp = golomb->decode2(data, &index, n_to_decode);
+            vector<int> tmp;
+            golomb->decode2(data, tmp, &index, n_to_decode);
             // update m
             update_m(tmp, golomb, m_rate);
             // add to total samples
@@ -132,7 +134,8 @@ void VideoDecoder::decode(){
             }
             n_decoded += n_to_decode;
             // read v
-            vector<int> tmp = golomb->decode2(data, &index, n_to_decode);
+            vector<int> tmp;
+            golomb->decode2(data, tmp, &index, n_to_decode);
             // update m
             update_m(tmp, golomb, m_rate);
             // add to total samples

@@ -9,7 +9,7 @@
  *  @author Inês Justo
 */
 
-#include    "../../entropyCoding/includes/Golomb.h"
+#include    "Golomb.h"
 #include    <opencv2/opencv.hpp>
 
 class VideoEncoder{

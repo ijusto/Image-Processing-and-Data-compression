@@ -1,5 +1,4 @@
-#include    "../../audioAndImageOrVideoManipulation/src/EntropyCalculator.cpp"
-#include    "../../entropyCoding/src/Golomb.cpp"
+#include    "Golomb.cpp"
 #include    "VideoEncoder.hpp"
 #include    "LosslessJPEGPredictors.cpp"
 //#include    "BaselineJPEG.cpp"
@@ -263,7 +262,8 @@ void VideoEncoder::encodeRes_intra(Mat &frame, Golomb *golomb, int m_rate, int k
             // quantize residual here before encoding
 
             // encode residuals
-            vector<bool> encodedResidual = golomb->encode2(residual);
+            vector<bool> encodedResidual;
+            golomb->encode2(residual, encodedResidual);
             encodedRes.insert(encodedRes.end(), encodedResidual.begin(), encodedResidual.end());
 
             // compute m
@@ -375,10 +375,12 @@ void VideoEncoder::encodeRes_inter(cv::Mat &prev_frame, cv::Mat &curr_frame, Gol
             }
 
             // add motion vector to bit stream
-            vector<bool> m_x = golomb->encode2(best_pt.x);
+            vector<bool> m_x;
+            golomb->encode2(best_pt.x, m_x);
             // add encoded residuals to bit stream
             encodedRes.insert(encodedRes.end(), m_x.begin(), m_x.end());
-            vector<bool> m_y = golomb->encode2(best_pt.y);
+            vector<bool> m_y;
+            golomb->encode2(best_pt.y, m_y);
             // add encoded residuals to bit stream
             encodedRes.insert(encodedRes.end(), m_y.begin(), m_y.end());
 
@@ -394,7 +396,8 @@ void VideoEncoder::encodeRes_inter(cv::Mat &prev_frame, cv::Mat &curr_frame, Gol
                     int curr_value = curr_frame.at<uchar>(x + k, y + l);
                     int residual = prev_value - curr_value;
                     // golomb encode residuals
-                    vector<bool> encodedResidual = golomb->encode2(residual);
+                    vector<bool> encodedResidual;
+                    golomb->encode2(residual, encodedResidual);
                     // add encoded residuals to bit stream
                     encodedRes.insert(encodedRes.end(), encodedResidual.begin(), encodedResidual.end());
 
