@@ -47,6 +47,7 @@ int main(int argc, char *argv[]) {
         int predictor = stoi(argv[4]);
         int mode = stoi(argv[5]); // 0 - intra, 1 - hybrid
 
+        cout << "encoding..." << endl;
         VideoEncoder* videoEncoder = new VideoEncoder(src, predictor, mode, initial_m, calcHist);
         cout << "writing..." << endl;
         videoEncoder->write(dst);
@@ -64,6 +65,7 @@ int main(int argc, char *argv[]) {
         }
     }else if (op == "decode"){
         VideoDecoder* videoDecoder = new VideoDecoder(src);
+        cout << "decoding..." << endl;
         videoDecoder->decode();
         cout << "writing..." << endl;
         videoDecoder->write(dst);

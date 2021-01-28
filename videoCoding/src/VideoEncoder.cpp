@@ -51,6 +51,11 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int mode, int init_m, bo
     string header;
     getline(video, header);
     cout << "header: " << header << endl;
+
+    ofstream outvideo;
+    outvideo.open ("testcopy.y4m");
+    outvideo << header << "\n";
+
     smatch match;
 
     // get fps
@@ -93,19 +98,20 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int mode, int init_m, bo
         case 422:
             Y_frame_rows = rows;
             Y_frame_cols = cols;
-            U_frame_rows = V_frame_rows = rows / 2;
+            U_frame_rows = V_frame_rows = rows;
             U_frame_cols = V_frame_cols = cols / 2;
             break;
         case 420:
             Y_frame_rows = rows;
             Y_frame_cols = cols;
-            U_frame_rows = V_frame_rows = rows / 4;
-            U_frame_cols = V_frame_cols = cols / 4;
+            U_frame_rows = V_frame_rows = rows / 2;
+            U_frame_cols = V_frame_cols = cols / 2;
             break;
     }
 
     // data buffer
     Mat frameData;
+
     // intra coding rate
     const int intra_rate = 10;
     int frameCounter = 0;
@@ -128,22 +134,25 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int mode, int init_m, bo
         cout << "encoded frames " << frameCounter << endl;
         // skip word FRAME
         getline(video, header);
+        // cout << header << endl;
+
         // read data, compute and encode residuals
 
         // read y
         frameData = Mat(Y_frame_rows, Y_frame_cols, CV_8UC1);
         video.read((char *) frameData.ptr(), Y_frame_rows * Y_frame_cols);
+
+        // check if stream is empty
         if (video.gcount() == 0)
             break;
+
         totalValuesSize += Y_frame_rows * Y_frame_cols;
-        cout << header << endl;
 
         // compute residuals for y
         if(this->mode == 0 || frameCounter % intra_rate == 0){
             // intra coding
             // encode residuals
             this->encodeRes_intra(frameData, golomb, m_rate, 0);
-            //cout << "sample size y" << frameData.size() << endl;
         }else if(this->mode == 1){
             // intra + inter coding (hybrid)
             // encode motion vectors and residuals

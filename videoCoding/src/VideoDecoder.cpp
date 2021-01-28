@@ -24,6 +24,7 @@ VideoDecoder::VideoDecoder(char* encodedFileName){
         mode = boolvec2int(sourceFile->readNbits(paramsSize));
         fps1 = boolvec2int(sourceFile->readNbits(paramsSize));
         fps2 = boolvec2int(sourceFile->readNbits(paramsSize));
+        totalFrames = boolvec2int(sourceFile->readNbits(paramsSize));
         rows =  boolvec2int(sourceFile->readNbits(paramsSize));
         cols =  boolvec2int(sourceFile->readNbits(paramsSize));
 
@@ -33,7 +34,7 @@ VideoDecoder::VideoDecoder(char* encodedFileName){
     }
 }
 
-void VideoDecoder::decode() {
+void VideoDecoder::decode(){
     // read all data
     vector<bool> data = sourceFile->readNbits((sourceFile->size() - headerSize) * 8);
     cout << "data size " << data.size() << endl;
@@ -49,7 +50,7 @@ void VideoDecoder::decode() {
     int U_frame_cols, U_frame_rows;
     int V_frame_cols, V_frame_rows;
 
-    switch (this->subsampling) {
+    switch(subsampling){
         case 444:
             Y_frame_rows = U_frame_rows = V_frame_rows = rows;
             Y_frame_cols = U_frame_cols = V_frame_cols = cols;
@@ -57,19 +58,18 @@ void VideoDecoder::decode() {
         case 422:
             Y_frame_rows = rows;
             Y_frame_cols = cols;
-            U_frame_rows = V_frame_rows = rows / 2;
+            U_frame_rows = V_frame_rows = rows;
             U_frame_cols = V_frame_cols = cols / 2;
             break;
         case 420:
             Y_frame_rows = rows;
             Y_frame_cols = cols;
-            U_frame_rows = V_frame_rows = rows / 4;
-            U_frame_cols = V_frame_cols = cols / 4;
+            U_frame_rows = V_frame_rows = rows / 2;
+            U_frame_cols = V_frame_cols = cols / 2;
             break;
     }
 
-    //vars to reconstruct de frame
-    while (decodedFrames < this->totalFrames) {
+    while(decodedFrames < this->totalFrames) {
         decodedFrames++;
         cout << "decoded frames: " << decodedFrames << "/" << this->totalFrames << endl;
         vector<uchar> frame;
@@ -78,10 +78,10 @@ void VideoDecoder::decode() {
         vector<int> samples;
         int n_to_decode = m_rate;
         int n_decoded = 0;
-        while (n_decoded < Y_frame_rows * Y_frame_cols) {
+        while(n_decoded < Y_frame_rows * Y_frame_cols){
             // cout << "n_decoded " << n_decoded << endl;
             // read remaining
-            if (n_decoded + n_to_decode > Y_frame_rows * Y_frame_cols) {
+            if(n_decoded + n_to_decode > Y_frame_rows * Y_frame_cols){
                 n_to_decode = Y_frame_rows * Y_frame_cols - n_decoded;
             }
             n_decoded += n_to_decode;
@@ -94,7 +94,7 @@ void VideoDecoder::decode() {
         }
         //cout << "sample size " << samples.size() << " " << Y_frame_rows << "," << Y_frame_cols << endl;
         // decode y component and add to frame vector
-        this->decodeRes_intra(samples, component_frame, Y_frame_rows, Y_frame_cols, golomb, m_rate);
+        this->decodeRes_intra(samples, component_frame, Y_frame_rows, Y_frame_cols);
         // add component frame to frame
         frame.insert(frame.end(), component_frame.begin(), component_frame.end());
 
@@ -102,9 +102,9 @@ void VideoDecoder::decode() {
         samples = vector<int>();
         n_to_decode = m_rate;
         n_decoded = 0;
-        while (n_decoded < U_frame_rows * U_frame_cols) {
+        while(n_decoded < U_frame_rows * U_frame_cols){
             // read remaining
-            if (n_decoded + n_to_decode > U_frame_rows * U_frame_cols) {
+            if(n_decoded + n_to_decode > U_frame_rows * U_frame_cols){
                 n_to_decode = U_frame_rows * U_frame_cols - n_decoded;
             }
             n_decoded += n_to_decode;
@@ -117,7 +117,7 @@ void VideoDecoder::decode() {
         }
         //cout << "sample size " << samples.size() << " " << U_frame_rows << "," << U_frame_cols << endl;
         // decode u component and add to frame vector
-        this->decodeRes_intra(samples, component_frame, U_frame_rows, U_frame_cols, golomb, m_rate);
+        this->decodeRes_intra(samples, component_frame, U_frame_rows, U_frame_cols);
         // add component frame to frame
         frame.insert(frame.end(), component_frame.begin(), component_frame.end());
 
@@ -125,9 +125,9 @@ void VideoDecoder::decode() {
         samples = vector<int>();
         n_to_decode = m_rate;
         n_decoded = 0;
-        while (n_decoded < V_frame_rows * V_frame_cols) {
+        while(n_decoded < V_frame_rows * V_frame_cols){
             // read remaining
-            if (n_decoded + n_to_decode > V_frame_rows * V_frame_cols) {
+            if(n_decoded + n_to_decode > V_frame_rows * V_frame_cols){
                 n_to_decode = V_frame_rows * V_frame_cols - n_decoded;
             }
             n_decoded += n_to_decode;
@@ -137,18 +137,19 @@ void VideoDecoder::decode() {
             update_m(tmp, golomb, m_rate);
             // add to total samples
             samples.insert(samples.end(), tmp.begin(), tmp.end());
-            //cout << "sample size " << samples.size() << " " << V_frame_rows << "," << V_frame_cols << endl;
-            // decode v component and add to frame vector
-            this->decodeRes_intra(samples, frame, V_frame_rows, V_frame_cols, golomb, m_rate);
-            // add component frame to frame
-            frame.insert(frame.end(), component_frame.begin(), component_frame.end());
-
-            // add frame to buffer
-            this->frames.push_back(frame);
         }
-        cout << "index" << index << endl;
+        //cout << "sample size " << samples.size() << " " << V_frame_rows << "," << V_frame_cols << endl;
+        // decode v component and add to frame vector
+        this->decodeRes_intra(samples, component_frame, V_frame_rows, V_frame_cols);
+        // add component frame to frame
+        frame.insert(frame.end(), component_frame.begin(), component_frame.end());
+
+        // add frame to buffer
+        this->frames.push_back(frame);
     }
+    cout << "index" << index << endl;
 }
+
 void VideoDecoder::update_m(vector<int> residuals, Golomb *golomb, int m_rate){
     // used to compute mean of mapped residuals
     float res_sum = 0;
@@ -163,6 +164,7 @@ void VideoDecoder::update_m(vector<int> residuals, Golomb *golomb, int m_rate){
         res_sum += Mapped;
         numRes++;
     }
+
     if(numRes == m_rate){
         // calc mean from last 100 mapped pixels
         float res_mean = res_sum/numRes;
@@ -180,15 +182,16 @@ void VideoDecoder::update_m(vector<int> residuals, Golomb *golomb, int m_rate){
     }
 }
 
-
-void VideoDecoder::decodeRes_intra(vector<int> &residualValues, vector<uchar> &planarValues, int f_rows, int f_cols, Golomb *golomb, int m_rate){
+void VideoDecoder::decodeRes_intra(vector<int> &residualValues, vector<uchar> &planarValues, int f_rows, int f_cols){
     for(int i = 0; i < f_rows; i++){
         for(int j = 0; j < f_cols; j++){
             int idx = i * f_cols + j;
+
             LosslessJPEGPredictors<int> predictors(
                     (j == 0 ? 0 : planarValues[i * f_cols + (j-1)]),                    // (i,j-1)
                     (i == 0 ? 0 : planarValues[(i-1) * f_cols + j]),                    // (i-1,j)
                     ((i == 0 | j == 0) ? 0 : planarValues[(i-1) * f_cols + (j-1)]));    // (i-1,j-1)
+
             uchar value;
             switch (this->predictor) {
                 case 1:
@@ -219,6 +222,9 @@ void VideoDecoder::decodeRes_intra(vector<int> &residualValues, vector<uchar> &p
                     std::cout << "ERROR: Predictor chosen isn't correct!!!" << std::endl;
                     exit(EXIT_FAILURE);
             }
+
+            // add value to frame
+            planarValues.push_back(value);
         }
     }
 }
@@ -229,7 +235,6 @@ void VideoDecoder::write(char* fileName){
     ofstream outvideo;
     outvideo.open (fileName);
 
-    // write HEADER
     // write HEADER
     string header = format("YUV4MPEG2 W%d H%d F%d:%d C%d\n", this->cols, this->rows, this->fps1, this->fps2, this->subsampling);
     outvideo << header;
