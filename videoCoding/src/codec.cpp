@@ -16,41 +16,63 @@ void vectorToCsv(const char* fName, vector<char>* hitVec){
     csv.close();
 }
 
-int main(int argc, char *argv[]) {
+void printUsage(string name){
+    cout << "usage: " << name << " <operation>" << endl;
+    cout << "operations:\n" << endl;
+    cout << "encode\tencode SOURCE .y4m video file into DEST compressed file" << endl;
+    cout << "\tusage:" << endl;
+    cout << "\t\tencode SOURCE DEST <predictor [1,8]> <mode 0 - intra, 1 - hybrid> [options]" << endl;
+    cout << "\toptions:" << endl;
+    cout << "\t\t-hist\tcompute histograms and entropy and save to .csv" << endl;
+    cout << "\t\t-lossy\tuse lossy compression" << endl;
+    cout << "\texample:" << endl;
+    cout << "\t\t" << name << " encode video.y4m test 5 0" << endl;
+    cout << "decode\tdecode SOURCE compressed file into DEST .y4m video file" << endl;
+    cout << "\tusage:" << endl;
+    cout << "\t\tdecode SOURCE DEST" << endl;
+    cout << "\texample:" << endl;
+    cout << "\t\t" << name << " decode test test.y4m" << endl;
+}
 
+int main(int argc, char *argv[]) {
     if(argc < 4){
-        cout << "usage: " << argv[0] << " <operation> SOURCE DEST <predictor [1,8] used for encoding> <encoding mode 0 - intra, 1 - hybrid> [options]" << endl;
-        cout << "operations:" << endl;
-        cout << "\tencode\tencode SOURCE .y4m video file into DEST compressed file" << endl;
-        cout << "\tdecode\tdecode SOURCE compressed file into DEST .y4m video file" << endl;
-        cout << "options:" << endl;
-        cout << "\t-hist\tcompute histograms and entropy and save to .csv (encode operation only)" << endl;
+        printUsage(argv[0]);
         return 0;
     }
 
     string op = argv[1];
     char* src = argv[2];
     char* dst = argv[3];
-    int initial_m = 512;
-    bool calcHist = false;
-
-    // parse options
-    if(argc > 5){
-        for(int i = 4; i < 4+(argc-4); i++){
-            if(string(argv[i]) == "-hist") {
-                calcHist = true;
-            }
-        }
-    }
 
     if (op == "encode"){
+        if(argc < 6){
+            printUsage(argv[0]);
+            return 0;
+        }
+
+        int initial_m = 512;
         int predictor = stoi(argv[4]);
-        int mode = stoi(argv[5]); // 0 - intra, 1 - hybrid
+        bool mode = bool(stoi(argv[5]));
+        bool calcHist = false;
+        bool lossy = false;
+
+        // parse options
+        if(argc > 6){
+            for(int i = 4; i < 4+(argc-4); i++){
+                if(string(argv[i]) == "-hist") {
+                    calcHist = true;
+                }
+                if(string(argv[i]) == "-lossy") {
+                    lossy = true;
+                }
+            }
+        }
 
         cout << "encoding..." << endl;
-        VideoEncoder* videoEncoder = new VideoEncoder(src, predictor, mode, initial_m, calcHist);
+        VideoEncoder* videoEncoder = new VideoEncoder(src, predictor, initial_m, mode, lossy, calcHist);
         cout << "writing..." << endl;
         videoEncoder->write(dst);
+
         // histograms and entropy
         if(calcHist){
             cout << "writing histograms..." << endl;

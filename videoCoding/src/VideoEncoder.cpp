@@ -21,40 +21,7 @@ vector<bool> VideoEncoder::int2boolvec(int n){
     return bool_vec_res;
 }
 
-VideoEncoder::VideoEncoder(char* srcFileName, int pred, int mode, int init_m, bool calcHist) {
-    this->predictor = pred;
-    this->mode = mode;
-    this->initial_m = init_m;
-    this->cHist = calcHist;
-
-    // init histograms
-    if(this->cHist){
-        this->res_hists = new vector<vector<char>>;
-        this->sample_hists = new vector<vector<char>>;
-        for(int k = 0; k < 3; k++){
-            this->res_hists->push_back(vector<char>());
-            this->sample_hists->push_back(vector<char>());
-        }
-    }
-
-    // open video file
-    ifstream video;
-    video.open(srcFileName);
-
-    if (!video.is_open()){
-        cout << "Error opening file: " << srcFileName << endl;
-        exit(EXIT_FAILURE);
-    }
-
-    // parse header
-    string header;
-    getline(video, header);
-    cout << "header: " << header << endl;
-
-    ofstream outvideo;
-    outvideo.open ("testcopy.y4m");
-    outvideo << header << "\n";
-
+void VideoEncoder::parseHeader(string &header){
     smatch match;
 
     // get fps
@@ -83,13 +50,46 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int mode, int init_m, bo
     }else{
         this->subsampling = stoi(match[1]);
     }
+}
+
+VideoEncoder::VideoEncoder(char* srcFileName, int pred, int init_m, int mode, bool lossy, bool calcHist) {
+    this->predictor = pred;
+    this->initial_m = init_m;
+    this->mode = mode;
+    this->lossy = lossy;
+    this->calcHist = calcHist;
+
+    // init histograms
+    if(this->calcHist){
+        this->res_hists = new vector<vector<char>>;
+        this->sample_hists = new vector<vector<char>>;
+        for(int k = 0; k < 3; k++){
+            this->res_hists->push_back(vector<char>());
+            this->sample_hists->push_back(vector<char>());
+        }
+    }
+
+    // open video file
+    ifstream video;
+    video.open(srcFileName);
+
+    if (!video.is_open()){
+        cout << "Error opening file: " << srcFileName << endl;
+        exit(EXIT_FAILURE);
+    }
+
+    // parse header
+    string header;
+    getline(video, header);
+    this->parseHeader(header);
+    // cout << header << endl;
 
     // Chroma subsampling dimensions
     int Y_frame_cols, Y_frame_rows;
     int U_frame_cols, U_frame_rows;
     int V_frame_cols, V_frame_rows;
 
-    switch(subsampling){
+    switch(this->subsampling){
         case 444:
             Y_frame_rows = U_frame_rows = V_frame_rows = rows;
             Y_frame_cols = U_frame_cols = V_frame_cols = cols;
@@ -111,6 +111,11 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int mode, int init_m, bo
     // data buffer
     Mat frameData;
 
+    // Golomb encoder
+    auto *golomb = new Golomb(this->initial_m);
+    // calc m every m_rate frames
+    int m_rate = 100;
+
     // intra coding rate
     const int intra_rate = 10;
     int frameCounter = 0;
@@ -123,17 +128,12 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int mode, int init_m, bo
     // search area size
     int search_size = 4*block_size;
 
-    // Golomb encoder
-    auto *golomb = new Golomb(this->initial_m);
-    // calc m every m_rate frames
-    int m_rate = 100;
-
-    int totalValuesSize = 0;
     while(true){
-        cout << "encoded frames " << frameCounter << endl;
+        cout << "\rencoded frames: " << frameCounter;
+        cout.flush();
+
         // skip word FRAME
         getline(video, header);
-        // cout << header << endl;
 
         // read data, compute and encode residuals
 
@@ -145,8 +145,6 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int mode, int init_m, bo
         if (video.gcount() == 0)
             break;
 
-        totalValuesSize += Y_frame_rows * Y_frame_cols;
-
         // compute residuals for y
         if(this->mode == 0 || frameCounter % intra_rate == 0){
             // intra coding
@@ -155,7 +153,7 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int mode, int init_m, bo
         }else if(this->mode == 1){
             // intra + inter coding (hybrid)
             // encode motion vectors and residuals
-            encodeRes_inter(y_prev, frameData, golomb, m_rate, block_size, search_size,0);
+            encodeRes_inter(y_prev, frameData, golomb, m_rate, block_size, search_size, 0);
         }
         // update previous
         y_prev = frameData;
@@ -163,7 +161,6 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int mode, int init_m, bo
         // read u
         frameData = Mat(U_frame_rows, U_frame_cols, CV_8UC1);
         video.read((char *) frameData.ptr(), U_frame_rows * U_frame_cols);
-        totalValuesSize += U_frame_rows * U_frame_cols;
 
         // compute residuals for u
         if(this->mode == 0 || frameCounter % intra_rate == 0){
@@ -174,7 +171,7 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int mode, int init_m, bo
         }else if(this->mode == 1){
             // intra + inter coding (hybrid)
             // encode motion vectors and residuals
-            encodeRes_inter(u_prev, frameData, golomb, m_rate, block_size, search_size,0);
+            encodeRes_inter(u_prev, frameData, golomb, m_rate, block_size, search_size, 0);
         }
         // update previous
         u_prev = frameData;
@@ -182,7 +179,6 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int mode, int init_m, bo
         // read v
         frameData = Mat(V_frame_rows, V_frame_cols, CV_8UC1);
         video.read((char *) frameData.ptr(), V_frame_rows * V_frame_cols);
-        totalValuesSize += V_frame_rows * V_frame_cols;
 
         // compute residuals for v
         if(this->mode == 0 || frameCounter % intra_rate == 0){
@@ -193,17 +189,17 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int mode, int init_m, bo
         }else if(this->mode == 1){
             // intra + inter coding (hybrid)
             // encode motion vectors and residuals
-            encodeRes_inter(v_prev, frameData, golomb, m_rate, block_size, search_size,0);
+            encodeRes_inter(v_prev, frameData, golomb, m_rate, block_size, search_size, 0);
         }
         // update previous
         v_prev = frameData;
 
         frameCounter++;
     }
+    cout << endl;
 
     this->totalFrames = frameCounter;
 
-    cout << "file size: " << totalValuesSize << endl;
 }
 
 void VideoEncoder::encodeRes_intra(Mat &frame, Golomb *golomb, int m_rate, int k){
@@ -252,7 +248,7 @@ void VideoEncoder::encodeRes_intra(Mat &frame, Golomb *golomb, int m_rate, int k
                     exit(EXIT_FAILURE);
             }
 
-            if(this->cHist){
+            if(this->calcHist){
                 // store residuals
                 this->res_hists->at(k).push_back(residual);
                 // store samples
@@ -274,7 +270,7 @@ void VideoEncoder::encodeRes_intra(Mat &frame, Golomb *golomb, int m_rate, int k
             res_sum += Mapped;
             numRes++;
             if(numRes == m_rate){
-                // calc mean from last 100 mapped pixels
+                // calc mean from last m_rate mapped pixels
                 float res_mean = res_sum/numRes;
                 // calc alpha of geometric dist
                 // mu = alpha/(1 - alpha) <=> alpha = mu/(1 + mu)
@@ -409,7 +405,7 @@ void VideoEncoder::encodeRes_inter(cv::Mat &prev_frame, cv::Mat &curr_frame, Gol
                     res_sum += Mapped;
                     numRes++;
                     if(numRes == m_rate){
-                        // calc mean from last 100 mapped pixels
+                        // calc mean from last m_rate mapped pixels
                         float res_mean = res_sum/numRes;
                         // calc alpha of geometric dist
                         // mu = alpha/(1 - alpha) <=> alpha = mu/(1 + mu)

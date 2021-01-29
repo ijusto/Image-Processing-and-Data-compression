@@ -15,10 +15,10 @@
 class VideoEncoder{
 
 private:
-    int initial_m, subsampling, mode, predictor, totalFrames, rows, cols;
+    int initial_m, subsampling, predictor, totalFrames, rows, cols;
     int fps1, fps2;
+    bool mode, lossy, calcHist;
     std::vector<bool> encodedRes;
-    bool cHist;
     vector<vector<char>> *res_hists;
     vector<vector<char>> *sample_hists;
 
@@ -34,10 +34,12 @@ public:
     /*!
      * @param srcFileName source video file name/path.
      * @param predictor JPEG linear predictors [1,7] or non linear predictor 8
-     * @param mode intra (0) or hybrid (1)
      * @param initial m used in Golomb encoder
+     * @param mode intra (0) or hybrid (1)
+     * @param lossy bool true to use quantization false otherwise
+     * @param calchist save residuals to compute histogram
     */
-    explicit VideoEncoder(char* srcFileName, int predictor, int mode, int init_m, bool calcHist);
+    explicit VideoEncoder(char* srcFileName, int pred, int init_m, int mode, bool lossy, bool calcHist);
 
     //! Use linear and non-linear predictors to compute residuals, encode them using the Golomb encoder and add them to
     //! the bitstream.
@@ -73,6 +75,12 @@ public:
      * @param frame address in memory of first position pixel
      */
     void convertionTo420(cv::Mat &frame);
+
+    //! Parse header of .y4m file
+    /*!
+     * @param header string containing header
+     */
+    void parseHeader(string &header);
 
     //! Returns residuals from multiple channels computed during encoding to use when producing a histogram.
     /*!

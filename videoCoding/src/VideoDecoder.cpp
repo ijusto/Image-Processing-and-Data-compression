@@ -37,7 +37,7 @@ VideoDecoder::VideoDecoder(char* encodedFileName){
 void VideoDecoder::decode(){
     // read all data
     vector<bool> data = sourceFile->readNbits((sourceFile->size() - headerSize) * 8);
-    cout << "data size " << data.size() << endl;
+    // used to index data in golomb.decode2
     unsigned int index = 0;
 
     // Golomb decoder
@@ -50,7 +50,7 @@ void VideoDecoder::decode(){
     int U_frame_cols, U_frame_rows;
     int V_frame_cols, V_frame_rows;
 
-    switch(subsampling){
+    switch(this->subsampling){
         case 444:
             Y_frame_rows = U_frame_rows = V_frame_rows = rows;
             Y_frame_cols = U_frame_cols = V_frame_cols = cols;
@@ -71,7 +71,9 @@ void VideoDecoder::decode(){
 
     while(decodedFrames < this->totalFrames) {
         decodedFrames++;
-        cout << "decoded frames: " << decodedFrames << "/" << this->totalFrames << endl;
+        cout << "\rdecoded frames: " << decodedFrames << "/" << this->totalFrames;
+        cout.flush();
+
         vector<uchar> frame;
 
         vector<uchar> component_frame;
@@ -150,7 +152,9 @@ void VideoDecoder::decode(){
         // add frame to buffer
         this->frames.push_back(frame);
     }
-    cout << "index" << index << endl;
+
+    cout << endl;
+
 }
 
 void VideoDecoder::update_m(vector<int> residuals, Golomb *golomb, int m_rate){
@@ -169,7 +173,7 @@ void VideoDecoder::update_m(vector<int> residuals, Golomb *golomb, int m_rate){
     }
 
     if(numRes == m_rate){
-        // calc mean from last 100 mapped pixels
+        // calc mean from last m_rate mapped pixels
         float res_mean = res_sum/numRes;
         // calc alpha of geometric dist
         // mu = alpha/(1 - alpha) <=> alpha = mu/(1 + mu)
@@ -242,14 +246,11 @@ void VideoDecoder::write(char* fileName){
     string header = format("YUV4MPEG2 W%d H%d F%d:%d C%d\n", this->cols, this->rows, this->fps1, this->fps2, this->subsampling);
     outvideo << header;
 
-    int fileSize = 0;
     //write frames
     for(vector<uchar> fr: this->frames){
-        fileSize+=fr.size();
         // write FRAME header
         outvideo << "FRAME\n";
         // write data
         outvideo.write((char *) fr.data(), fr.size());
     }
-    cout << "file size: " << fileSize << endl;
 }
