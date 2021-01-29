@@ -7,7 +7,7 @@
 #include    <opencv2/core.hpp>
 #include    <opencv2/opencv.hpp>
 #include    <cmath>
-#include    "../../entropyCoding/src/Golomb.cpp"
+#include    "Golomb.cpp"
 
 double jpeg_matrix_grayscale [8][8] = {{16, 11, 10, 16, 24, 40, 51, 61},
                                        {12, 12, 14, 19, 26, 58, 60, 55},
@@ -301,7 +301,7 @@ void inverseWholeQuant(cv::Mat &block, cv::Mat quantMatrix){
  */
 std::vector<int> zigZagScan(cv::Mat &block){
     std::vector<int> zigzag_array;
-    double dc = block.at<double>(0, 0);
+    zigzag_array.push_back(block.at<double>(0, 0)); // dc
     int row = 0, col = 0, diagonals = 1;
     bool reachedRow8 = false;
     while(true){
@@ -436,15 +436,68 @@ Node* huffmanTree(std::list<std::pair<int, double>> freqs_listNZero, std::list<s
     return father;
 }
 
+/*! The (non zero value, Coefficient) in this implementations huffman tree are always in the 0 nodes (except for the
+ * most probable pair). So we take advantage of this to encode the tree in order to send it to the decoder.
+  * @param freqs_listNZero
+  * @param freqs_listValue
+  * @return
+  */
+std::vector<bool> huffmanTreeEncode(std::list<std::pair<int, double>> freqs_listNZero,
+                                    std::list<std::pair<int, double>> freqs_listValue,
+                                    std::unordered_map<int, std::vector<bool>> &codeZerosMap,
+                                    std::unordered_map<int, std::vector<bool>> &codeValueMap,
+                                    Golomb *golomb){
+    std::vector<int> tree;
+    std::vector<bool> encodedTree;
+    int diffSizeLists = freqs_listValue.size() - freqs_listNZero.size();
+    if (diffSizeLists == 0){
+        codeZerosMap[freqs_listNZero.front().first].push_back(true);
+        tree.push_back(freqs_listNZero.front().first);
+        freqs_listNZero.erase(freqs_listNZero.begin());
+    }
+
+    codeValueMap[freqs_listValue.front().first] = {};
+    tree.push_back(freqs_listValue.front().first);
+    freqs_listValue.erase(freqs_listValue.begin());
+    diffSizeLists--;
+
+    std::list<std::pair<int, double>>::iterator fNZero = freqs_listNZero.begin(), fValue = freqs_listValue.begin();
+    while(fNZero != freqs_listNZero.end() && fValue != freqs_listValue.end()){
+        if (diffSizeLists < 1){
+            for(const auto &cw : codeZerosMap){ codeZerosMap[cw.first].insert(codeZerosMap[cw.first].begin(), true); }
+            codeZerosMap[fNZero->first].insert(codeZerosMap[fNZero->first].begin(), false);
+            tree.push_back(fNZero->first);
+            fNZero++;
+        }
+        for(const auto &cw : codeValueMap){ codeValueMap[cw.first].insert(codeValueMap[cw.first].begin(), true); }
+        codeValueMap[fValue->first].insert(codeValueMap[fValue->first].begin(), false);
+        tree.push_back(fValue->first);
+        fValue++;
+        diffSizeLists--;
+    }
+
+    // TODO test this function
+    reverse(tree.begin(), tree.end());
+    for(int leaf : tree){
+        vector<bool> encodedLeaf;
+        golomb->encode2(leaf, encodedLeaf);
+        encodedTree.insert(encodedTree.end(), encodedLeaf.begin(), encodedLeaf.end());
+    }
+
+    return encodedTree;
+}
 
 //!
 /*!
  *
  * @param runLengthCode
- * @param huffmanTreeRoot
+ * @param currentDcs
+ * @param encodedTree
+ * @param golomb
  * @return
  */
-std::vector<bool> huffmanEncode(std::vector<std::pair<int, int>> runLengthCode, Node* &huffmanTreeRoot){
+std::vector<bool> huffmanEncode(std::vector<int> currentDcs, std::vector<std::pair<int, int>> runLengthCode,
+                                std::vector<bool> &encodedTree, Golomb* golomb){
     std::unordered_map<int, double> freqsMapNZero; // word, freq
     std::unordered_map<int, double> freqsMapValue; // word, freq
 
@@ -493,12 +546,13 @@ std::vector<bool> huffmanEncode(std::vector<std::pair<int, int>> runLengthCode, 
     //}
     //std::cout<<std::endl;
 
-
-    huffmanTreeRoot = huffmanTree(freqs_listNZero, freqs_listValue, codeZerosMap, codeValueMap);
+    //TODO: retest this function
+    encodedTree = huffmanTreeEncode(freqs_listNZero, freqs_listValue, codeZerosMap, codeValueMap, golomb);
 
     //std::cout<<std::endl;
 
     std::vector<bool> code;
+    std::vector<int>::iterator currDC = currentDcs.begin();
     for(std::pair<int, int> ac: runLengthCode){
         //std::cout << ac.first << ", codeword: ";
         //for(const auto &bit : codeZerosMap[ac.first]){
@@ -511,12 +565,16 @@ std::vector<bool> huffmanEncode(std::vector<std::pair<int, int>> runLengthCode, 
         //    std::cout << bit;
         //}
         //std::cout << std::endl;
+        std::vector<bool> dcGolombEncoded;
+        golomb->encode2(*currDC, dcGolombEncoded);
+        code.insert(code.end(), dcGolombEncoded.begin(), dcGolombEncoded.end());
         if(ac.first != -1){
-            code.insert( code.end(), codeZerosMap[ac.first].begin(), codeZerosMap[ac.first].end());
-            code.insert( code.end(), codeValueMap[ac.second].begin(), codeValueMap[ac.second].end());
+            code.insert(code.end(), codeZerosMap[ac.first].begin(), codeZerosMap[ac.first].end());
+            code.insert(code.end(), codeValueMap[ac.second].begin(), codeValueMap[ac.second].end());
         } else {
-            code.insert( code.end(), codeZerosMap[ac.first].begin(), codeZerosMap[ac.first].end());
+            code.insert(code.end(), codeZerosMap[ac.first].begin(), codeZerosMap[ac.first].end());
         }
+        currDC++;
     }
 
     //for(const auto &bit : code){
@@ -577,16 +635,18 @@ std::vector<std::pair<int, int>> huffmanDecode(std::vector<bool> code, Node* huf
  *
  * @param frame
  * @param prevDCs
+ * @param golomb
+ * @return
  */
-void quantizeDctBaselineJPEG(cv::Mat frame, std::vector<int> prevDCs) {
-
-    cv::Mat quantizeDct = cv::Mat::zeros(frame.rows, frame.cols, CV_64F);
+void quantizeDctBaselineJPEG(cv::Mat frame, std::vector<int> prevDCs, Golomb* golomb, std::vector<bool> &encodedTree, std::vector<bool> &code) {
 
     divideImageIn8x8Blocks(frame);
 
     // ***************************************** Calculation of the DCT ************************************************
     cv::Mat block;
     std::vector<int> currDCs;
+    std::vector<int>::iterator prevDC = prevDCs.begin();
+    std::vector<std::pair<int, int>> acs;
     for(int r = 0; r < frame.rows; r += 8) {
         for(int c = 0; c < frame.cols; c += 8) {
             frame(cv::Rect(r,c,8,8)).copyTo(block);
@@ -597,26 +657,26 @@ void quantizeDctBaselineJPEG(cv::Mat frame, std::vector<int> prevDCs) {
             // Next, the coefficients are organized in a one-dimensional vector according to a zig-zag scan.
             std::vector<int> zigzag_array = zigZagScan(block);
 
+            double dc = zigzag_array.at(0);
+            zigzag_array.erase(zigzag_array.begin()); // remove dc from zigzag array
+
             // ********************* Statistical coding (Huffman) of the quantized DCT coefficients ********************
 
             // The non-zero AC coefficients are encoded using Huffman or arithmetic coding, representing the value of
             // the coefficient, as well as the number of zeros preceding it.
             // In this case  the symbol to represent the end of the block is (-1, _) because the number of zeros can't
             // be negative.
-            std::vector<std::pair<int, int>> acs = runLengthCode(zigzag_array);
+            std::vector<std::pair<int, int>> blockACs = runLengthCode(zigzag_array);
+            acs.insert(acs.end(), blockACs.begin(), blockACs.end());
             acs.push_back(std::pair(-1, -1)); // EOB
 
             // The DC coefficient of each block is predicatively encoded in relation to the DC coefficient of the
             // previous block.
-            // double dc = zig_zag_dc - previous_dc[r][c];
-            // current_dc[r][c] = zigzag_array.at(0);
-            // TODO get previous_dc
-
+            currDCs.push_back(dc - *prevDC);
+            prevDC++;
         }
     }
-
-    // TODO huffmanEncode call
-
+    code = huffmanEncode(currDCs, acs, encodedTree, golomb);
 }
 
 //!
