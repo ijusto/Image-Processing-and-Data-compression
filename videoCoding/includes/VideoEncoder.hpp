@@ -54,15 +54,23 @@ public:
     //! Use motion compensation to compute residuals, encode them and the corresponding motion vectors using the Golomb
     //! encoder and add them to the bitstream.
     /*!
-     * @param prev_frame matrix containing single channel values from previous frame.
+     * @param p_frame matrix containing single channel values from previous frame.
      * @param curr_frame matrix containing single channel values from current frame.
      * @param golomb Golomb entropy encoder
      * @param m_rate rate at which Golomb entropy encoder's m parameter is updated
      * @param block_size dimension of square frame block block_size*block_size
-     * @param search_size dimension of square search area search_size*search_size
-     * @param k used to identify channel when storing residuals for histograms
+     * @param search_size number of blocks from center to edges of square search area (square with sides = 2*search_size+1)
      */
-    void encodeRes_inter(cv::Mat &prev_frame, cv::Mat &curr_frame, Golomb *golomb, int m_rate, int block_size, int search_size,int k);
+    void encodeRes_inter(const cv::Mat &p_frame, const cv::Mat &curr_frame, Golomb *golomb, int m_rate, int block_size, int search_size);
+
+    //! Compute residuals and MSE of two equally sized single channel block
+    /*!
+     * @param prev previous block matrix
+     * @param curr current block matrix
+     * @param outRes resulting block matrix from prev - curr (residuals)
+     * @param outMSE resulting mean squared error computed using residuals
+     */
+    void submatsResiduals(const cv::Mat &prev, const cv::Mat &curr, cv::Mat &outRes, double &outMSE);
 
     //! Use BitStream to write Golomb encoded residuals to file.
     /*!
