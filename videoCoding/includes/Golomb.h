@@ -96,6 +96,8 @@ public:
     void setDecodeFile(char *_decodeFile);
 
     void closeEncodeFile();
+
+    void decode3(vector<bool> &encodedBits, vector<int> &decoded);
 };
 
 #endif //ENTROPYCODING_GOLOMB_H

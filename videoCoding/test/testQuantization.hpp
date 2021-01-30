@@ -12,6 +12,9 @@
 
 using namespace std;
 
+int golombM = 512;
+auto *golomb = new Golomb(golombM);
+
 double X [8][8] = {{183,160,94,153,194,163,132,165},
                    {183,153,116,176,187,166,130,169},
                    {179,168,171,182,179,170,131,167},
@@ -46,15 +49,24 @@ std::vector<int> zigzag_array = {5,-3,-1,-2,-3,1,1,-1,-1,0,0,1,2,3,-2,1,1,0,0,0,
 //                                 1,1,1,1,0,1,0,0,1,1,1,1,1,0,0,1,1,1,1,1,1,1,0,0,1,1,1,1,0,0,1,0,0,1,0,1,1,1,1,1,1,1,1,
 //                                 1,1,0,0,1,0,1,0,1,0};
 
-std::vector<bool> huffmanCode = {0,1,1,1,1,1,0,0,1,1,1,0,0,1,0,0,1,1,0,0,1,1,1,0,0,0,0,0,0,1,0,0,1,0,1,0,0,0,1,1,1,1,0,
-                                 0,1,1,1,1,1,1,0,1,1,0,0,0,0,0,1,1,0,0,0,0,1,1,1,0,0};
+//std::vector<bool> huffmanCode = {0,1,1,1,1,1,0,0,1,1,1,0,0,1,0,0,1,1,0,0,1,1,1,0,0,0,0,0,0,1,0,0,1,0,1,0,0,0,1,1,1,1,0,
+//                                 0,1,1,1,1,1,1,0,1,1,0,0,0,0,0,1,1,0,0,0,0,1,1,1,0,0};
+
+std::vector<bool> huffmanCode = {0,1,1,1,1,0,0,1,1,1,1,1,1,0,0,1,1,1,0,0,1,0,0,1,1,0,0,1,1,1,0,0,0,0,0,0,1,0,0,1,0,1,0,
+                                 0,0,1,1,1,1,1,1,1,0,1,1,1,1,1,0,0,1,1,0,0,0,0,0,1,1,0,0,0,0,1,1,1,0,0};
 
 std::vector<std::pair<int, int>> acs = {{0,5}, {0, -3}, {0, -1}, {0, -2}, {0, -3},
                                         {0,1}, {0, 1}, {0, -1}, {0, -1}, {2, 1},
                                         {0, 2}, {0, 3}, {0, -2}, {0, 1}, {0, 1},
                                         {6,1}, {0, 1}, {1, 1}};
 
-Node *huffmanTreeRoot;
+std::vector<bool> code;
+std::vector<bool> encodedHuffmanTree;
+std::vector<std::pair<int, int>> runLengthCode = {{0, 20}, {0,5}, {0, -3}, {0, -1},
+                                                  {0, -2}, {0, -3}, {0,1}, {0, 1},
+                                                  {0, -1}, {0, -1}, {2, 1}, {0, 2},
+                                                  {0, 3}, {0, -2}, {0, 1}, {0, 1},
+                                                  {6,1}, {0, 1}, {1, 1}};
 
 TEST_CASE("Quantization divideImageIn8x8Blocks") {
 
@@ -169,7 +181,7 @@ TEST_CASE("Applying the quantization matrix") {
 
     INFO("\nY: \n");
     INFO(block);
-    quantDCTCoeff(block, quantMatrixLuminance);
+    quantizeDCTCoeff(block, quantMatrixLuminance);
     INFO("\nQ: \n");
     INFO(quantMatrixLuminance);
     INFO("\nỸ: \n");
@@ -204,7 +216,7 @@ TEST_CASE("Removing the effect of the quantization matrix") {
     INFO(quantMatrixLuminance);
     INFO("\nỸ: \n");
     INFO(block);
-    inverseQuantDCTCoeff(block, quantMatrixLuminance);
+    inverseQuantizeDCTCoeff(block, quantMatrixLuminance);
     INFO("\nY: \n");
     INFO(initialY);
     INFO("\nresult: \n");
@@ -233,7 +245,7 @@ TEST_CASE("DCT Quantization From Start To Finish"){
 
     INFO("\nX: \n");
     INFO(block);
-    wholeDCTQuant(block, quantMatrixLuminance);
+    quantizeBlock(block, quantMatrixLuminance);
     INFO("\nQ: \n");
     INFO(quantMatrixLuminance);
     INFO("\nỸ: \n");
@@ -267,7 +279,7 @@ TEST_CASE("DCT Inverse Quantization From Start To Finish"){
 
     INFO("\nỸ: \n");
     INFO(block);
-    inverseWholeQuant(block, quantMatrixLuminance);
+    inverseQuantizeBlock(block, quantMatrixLuminance);
     INFO("\nQ: \n");
     INFO(quantMatrixLuminance);
     INFO("\nX: \n");
@@ -292,7 +304,9 @@ TEST_CASE("Zig Zag San"){
     cv::Mat block = cv::Mat(8, 8, CV_64F, &final_Y);
     INFO("\nY: \n");
     INFO(block);
-    std::vector<int> result = zigZagScan(block);
+    std::vector<int> result;
+    zigZagScan(block, result);
+    result.erase(result.begin());
     std::string info = "\ncoefficients (except dc) in zig zag order: \n";
     for(double elem: result){
         info += std::to_string((int) elem);
@@ -304,7 +318,8 @@ TEST_CASE("Zig Zag San"){
 }
 
 TEST_CASE("Run Length Code"){
-    std::vector<std::pair<int, int>> result = runLengthCode(zigzag_array);
+    std::vector<std::pair<int, int>> result;
+    runLengthPairs(zigzag_array, result);
     std::string info = "\ncodewords run length (acs): \n";
     for(std::pair<int, int> ac: result){
         info += "(" + std::to_string(ac.first) + "," + std::to_string(ac.second) + ")";
@@ -316,7 +331,31 @@ TEST_CASE("Run Length Code"){
 }
 
 TEST_CASE("Huffman Encode") {
-    std::vector<bool> encode = huffmanEncode(acs, huffmanTreeRoot);
+    huffmanEncode(runLengthCode, code, encodedHuffmanTree, golomb);
+    std::string info = "\nHuffman code: \n";
+    for(bool bit : code){
+        info +=(bit) ? '1' : '0';
+    }
+    INFO(info);
+    CHECK(std::equal(code.begin(), code.end(), huffmanCode.begin()));
+}
+
+TEST_CASE("Huffman Decode"){
+    //TODO: change
+    std::vector<std::pair<int, int>> decode;
+    huffmanDecode(huffmanCode, encodedHuffmanTree, decode, golomb);
+    CHECK(std::equal(decode.begin(), decode.end(), runLengthCode.begin()));
+}
+/*
+TEST_CASE("Get Image"){
+    //TODO: change
+    cv::Mat block;
+    getImage(runLengthCode, block);
+    cv::Mat finalY = cv::Mat(8, 8, CV_64F, &final_Y);
+    CHECK(std::equal(block.begin<double>(), block.end<double>(), finalY.begin<double>()));
+}
+
+void printHuffmanTree(Node* huffmanTreeRoot){
 
     int numberOfLeftLeafs = 0;
     Node* node = huffmanTreeRoot;
@@ -370,13 +409,6 @@ TEST_CASE("Huffman Encode") {
     }
 
     std::cout<<"Legend:\n\t\033[36mNumber of preceding zeros\033[31m\n\t\033[33mValue\033[31m"<<std::endl;
-
-    CHECK(std::equal(encode.begin(), encode.end(), huffmanCode.begin()));
 }
-
-TEST_CASE("Huffman Decode"){
-    std::vector<std::pair<int, int>> decode = huffmanDecode(huffmanCode, huffmanTreeRoot);
-    CHECK(std::equal(decode.begin(), decode.end(), acs.begin()));
-}
-
+*/
 #endif //VIDEOCODING_TESTQUANTIZATION_HPP

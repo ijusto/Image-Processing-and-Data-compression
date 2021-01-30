@@ -148,6 +148,71 @@ void Golomb::decode(vector<int> *numbers) {
     }
 }
 
+void Golomb::decode3(vector<bool> &encodedBits, vector<int> &decoded) {
+    unsigned int b = (unsigned int) ceil(log2(this->m));
+    int index = 0;
+    while(true){
+        /* Decode unary */
+        unsigned int q = 0;
+        while (!encodedBits.at(index + q)) {
+            q++;
+        }
+
+        // update index
+        index = index + (q + 1);
+
+        /* Decode truncated binary */
+        unsigned int r = 0;
+        // auto b = (unsigned int) ceil(log2(this->m));
+
+        vector<bool> nBitsRead;
+        for (int i = 0; i < b - 1; i++) {
+            bool val = encodedBits.at(index + i);
+            nBitsRead.push_back(val);
+        }
+
+        // update index
+        index = index + (b - 1);
+
+        // convert the b-1 bits read to dec/int
+        int readInt = 0;
+        for(int i = 0; i < b - 1; i++){
+            if(nBitsRead.at(b - 2 - i)){
+                readInt += pow(2, i);
+            }
+        }
+        r = readInt;
+
+        /* If the bits read are an encoded value less than 2**b-m, decoding is complete.*/
+        if(readInt >= ((int) pow(2,b) - this->m)) {
+            bool bitRead = encodedBits.at(index);
+            // update index
+            index = index + 1;
+
+            // covert the b-1 firstly read bits "concatenated" with the last bit read to dec/int
+            unsigned int bitReadInt = 0;
+            if(bitRead){ bitReadInt = 1; }
+
+            /* Otherwise, read an additional bit and subtract 2**b-m from the result. */
+            unsigned int newCodeRead = readInt*2 + bitReadInt;
+            r = newCodeRead + this->m - (int)pow(2,b);
+        }
+
+        unsigned int nMapped = this->m*q + r;
+
+        /* a positive value x is mapped to x'=2|x|=2x,x>0 and a negative value y is mapped to y'=2|y|-1=-2y-1,y<0*/
+        int n = nMapped;
+        if(nMapped % 2){ n = -(n+1);}
+        n /= 2;
+        decoded.push_back(n);
+
+        if(encodedBits.size() <= index){
+            break;
+        }
+    }
+}
+
+
 void Golomb::decode2(vector<bool> &encodedBits, vector<int> &decoded, unsigned int *index, unsigned int count) {
     unsigned int b = (unsigned int) ceil(log2(this->m));
 
