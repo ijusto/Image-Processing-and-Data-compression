@@ -169,7 +169,7 @@ TEST_CASE("Applying the quantization matrix") {
 
     INFO("\nY: \n");
     INFO(block);
-    quantDCTCoeff(block, quantMatrixLuminance);
+    quantizeDCTCoeff(block, quantMatrixLuminance);
     INFO("\nQ: \n");
     INFO(quantMatrixLuminance);
     INFO("\nỸ: \n");
@@ -204,7 +204,7 @@ TEST_CASE("Removing the effect of the quantization matrix") {
     INFO(quantMatrixLuminance);
     INFO("\nỸ: \n");
     INFO(block);
-    inverseQuantDCTCoeff(block, quantMatrixLuminance);
+    inverseQuantizeDCTCoeff(block, quantMatrixLuminance);
     INFO("\nY: \n");
     INFO(initialY);
     INFO("\nresult: \n");
@@ -233,7 +233,7 @@ TEST_CASE("DCT Quantization From Start To Finish"){
 
     INFO("\nX: \n");
     INFO(block);
-    wholeDCTQuant(block, quantMatrixLuminance);
+    quantizeBlock(block, quantMatrixLuminance);
     INFO("\nQ: \n");
     INFO(quantMatrixLuminance);
     INFO("\nỸ: \n");
@@ -267,7 +267,7 @@ TEST_CASE("DCT Inverse Quantization From Start To Finish"){
 
     INFO("\nỸ: \n");
     INFO(block);
-    inverseWholeQuant(block, quantMatrixLuminance);
+    inverseQuantizeBlock(block, quantMatrixLuminance);
     INFO("\nQ: \n");
     INFO(quantMatrixLuminance);
     INFO("\nX: \n");
