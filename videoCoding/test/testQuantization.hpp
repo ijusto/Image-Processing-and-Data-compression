@@ -49,19 +49,24 @@ std::vector<int> zigzag_array = {5,-3,-1,-2,-3,1,1,-1,-1,0,0,1,2,3,-2,1,1,0,0,0,
 //                                 1,1,1,1,0,1,0,0,1,1,1,1,1,0,0,1,1,1,1,1,1,1,0,0,1,1,1,1,0,0,1,0,0,1,0,1,1,1,1,1,1,1,1,
 //                                 1,1,0,0,1,0,1,0,1,0};
 
-std::vector<bool> huffmanCode = {0,1,1,1,1,1,0,0,1,1,1,0,0,1,0,0,1,1,0,0,1,1,1,0,0,0,0,0,0,1,0,0,1,0,1,0,0,0,1,1,1,1,0,
-                                 0,1,1,1,1,1,1,0,1,1,0,0,0,0,0,1,1,0,0,0,0,1,1,1,0,0};
+//std::vector<bool> huffmanCode = {0,1,1,1,1,1,0,0,1,1,1,0,0,1,0,0,1,1,0,0,1,1,1,0,0,0,0,0,0,1,0,0,1,0,1,0,0,0,1,1,1,1,0,
+//                                 0,1,1,1,1,1,1,0,1,1,0,0,0,0,0,1,1,0,0,0,0,1,1,1,0,0};
+
+std::vector<bool> huffmanCode = {0,1,1,1,1,0,0,1,1,1,1,1,1,0,0,1,1,1,0,0,1,0,0,1,1,0,0,1,1,1,0,0,0,0,0,0,1,0,0,1,0,1,0,
+                                 0,0,1,1,1,1,1,1,1,0,1,1,1,1,1,0,0,1,1,0,0,0,0,0,1,1,0,0,0,0,1,1,1,0,0};
 
 std::vector<std::pair<int, int>> acs = {{0,5}, {0, -3}, {0, -1}, {0, -2}, {0, -3},
                                         {0,1}, {0, 1}, {0, -1}, {0, -1}, {2, 1},
                                         {0, 2}, {0, 3}, {0, -2}, {0, 1}, {0, 1},
                                         {6,1}, {0, 1}, {1, 1}};
 
-
-//TODO: change
 std::vector<bool> code;
 std::vector<bool> encodedHuffmanTree;
-std::vector<int> currDcs;
+std::vector<std::pair<int, int>> runLengthCode = {{0, 20}, {0,5}, {0, -3}, {0, -1},
+                                                  {0, -2}, {0, -3}, {0,1}, {0, 1},
+                                                  {0, -1}, {0, -1}, {2, 1}, {0, 2},
+                                                  {0, 3}, {0, -2}, {0, 1}, {0, 1},
+                                                  {6,1}, {0, 1}, {1, 1}};
 
 TEST_CASE("Quantization divideImageIn8x8Blocks") {
 
@@ -301,6 +306,7 @@ TEST_CASE("Zig Zag San"){
     INFO(block);
     std::vector<int> result;
     zigZagScan(block, result);
+    result.erase(result.begin());
     std::string info = "\ncoefficients (except dc) in zig zag order: \n";
     for(double elem: result){
         info += std::to_string((int) elem);
@@ -313,7 +319,7 @@ TEST_CASE("Zig Zag San"){
 
 TEST_CASE("Run Length Code"){
     std::vector<std::pair<int, int>> result;
-    runLengthCode(zigzag_array, result);
+    runLengthPairs(zigzag_array, result);
     std::string info = "\ncodewords run length (acs): \n";
     for(std::pair<int, int> ac: result){
         info += "(" + std::to_string(ac.first) + "," + std::to_string(ac.second) + ")";
@@ -325,8 +331,12 @@ TEST_CASE("Run Length Code"){
 }
 
 TEST_CASE("Huffman Encode") {
-    //TODO: change
-    huffmanEncode(currDcs, acs, code, encodedHuffmanTree, golomb);
+    huffmanEncode(runLengthCode, code, encodedHuffmanTree, golomb);
+    std::string info = "\nHuffman code: \n";
+    for(bool bit : code){
+        info +=(bit) ? '1' : '0';
+    }
+    INFO(info);
     CHECK(std::equal(code.begin(), code.end(), huffmanCode.begin()));
 }
 
@@ -334,9 +344,16 @@ TEST_CASE("Huffman Decode"){
     //TODO: change
     std::vector<int> dcs;
     std::vector<std::pair<int, int>> decode;
-    huffmanDecode(code, encodedHuffmanTree, currDcs, decode, golomb);
-    CHECK(std::equal(decode.begin(), decode.end(), acs.begin()));
-    CHECK(std::equal(dcs.begin(), dcs.end(), currDcs.begin()));
+    huffmanDecode(code, encodedHuffmanTree, decode, golomb);
+    CHECK(std::equal(decode.begin(), decode.end(), runLengthCode.begin()));
+}
+
+TEST_CASE("Get Image"){
+    //TODO: change
+    cv::Mat block;
+    getImage(runLengthCode, block);
+    cv::Mat finalY = cv::Mat(8, 8, CV_64F, &final_Y);
+    CHECK(std::equal(block.begin<double>(), block.end<double>(), finalY.begin<double>()));
 }
 
 void printHuffmanTree(Node* huffmanTreeRoot){
