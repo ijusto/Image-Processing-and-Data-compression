@@ -342,12 +342,11 @@ TEST_CASE("Huffman Encode") {
 
 TEST_CASE("Huffman Decode"){
     //TODO: change
-    std::vector<int> dcs;
     std::vector<std::pair<int, int>> decode;
-    huffmanDecode(code, encodedHuffmanTree, decode, golomb);
+    huffmanDecode(huffmanCode, encodedHuffmanTree, decode, golomb);
     CHECK(std::equal(decode.begin(), decode.end(), runLengthCode.begin()));
 }
-
+/*
 TEST_CASE("Get Image"){
     //TODO: change
     cv::Mat block;
@@ -411,5 +410,5 @@ void printHuffmanTree(Node* huffmanTreeRoot){
 
     std::cout<<"Legend:\n\t\033[36mNumber of preceding zeros\033[31m\n\t\033[33mValue\033[31m"<<std::endl;
 }
-
+*/
 #endif //VIDEOCODING_TESTQUANTIZATION_HPP

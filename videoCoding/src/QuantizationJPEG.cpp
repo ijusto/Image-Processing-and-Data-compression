@@ -353,7 +353,13 @@ struct Node {
  * @return pointer to new node
  */
 Node* newNode(int data, Node *leafLeft, Node *leafRight) {
-    Node* node = new Node;
+    Node* node;
+    try{
+        node = new Node;
+    } catch(std::bad_alloc&) {
+        std::cout<< "AAAAAAAAAAAAAAAAAAAAAaaa" <<std::endl;
+        std::exit(0);     // handling the case of non-allocation
+    }
     node->data = data;
     node->left = leafLeft;
     node->right = leafRight;
@@ -446,11 +452,14 @@ std::vector<bool> huffmanTreeEncode(std::list<std::pair<int, double>> freqs_list
 
     // TODO test this function
     for(int leaf : tree){
-        vector<bool> encodedLeaf;
-        golomb->encode2(leaf, encodedLeaf);
-        encodedTree.insert(encodedTree.end(), encodedLeaf.begin(), encodedLeaf.end());
+        golomb->encode2(leaf, encodedTree);
     }
 
+    for(bool bit : encodedTree){
+        std::cout << (bit) ? '1' : '0';
+    }
+    std::cout << std::endl;
+    std::exit(0);
     return encodedTree;
 }
 
@@ -543,7 +552,7 @@ void huffmanEncode(std::vector<std::pair<int, int>> runLengthCode, std::vector<b
  * @param golomb pointer to Golomb Object.
  */
 void huffmanDecode(std::vector<bool> &code, std::vector<bool> &encodedTree,
-                   std::vector<std::pair<int, int>> runLengthCode, Golomb* golomb){
+                   std::vector<std::pair<int, int>> &runLengthCode, Golomb* golomb){
     Node* huffmanTreeRoot = huffmanTree(encodedTree, golomb);
     Node* node = huffmanTreeRoot;
     int nZeros = -2;
@@ -691,6 +700,7 @@ void quantizeDctBaselineJPEG(cv::Mat frame, std::vector<int> prevDCs, Golomb* go
             runLength.insert(runLength.end(), blockACs.begin(), blockACs.end());
         }
     }
+    
     huffmanEncode(runLength, code, encodedTree, golomb);
 }
 
