@@ -125,8 +125,8 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int init_m, int mode, bo
     Mat v_prev = Mat(V_frame_rows, V_frame_cols, CV_8UC1);
     // block size
     int block_size = 10;
-    // search area size
-    int search_size = 4*block_size;
+    // search area size (in number of blocks)
+    int search_size = 4;
 
     while(true){
         cout << "\rencoded frames: " << frameCounter;
@@ -153,7 +153,7 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int init_m, int mode, bo
         }else if(this->mode == 1){
             // intra + inter coding (hybrid)
             // encode motion vectors and residuals
-            encodeRes_inter(y_prev, frameData, golomb, m_rate, block_size, search_size, 0);
+            encodeRes_inter(y_prev, frameData, golomb, m_rate, block_size, search_size);
         }
         // update previous
         y_prev = frameData;
@@ -171,7 +171,7 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int init_m, int mode, bo
         }else if(this->mode == 1){
             // intra + inter coding (hybrid)
             // encode motion vectors and residuals
-            encodeRes_inter(u_prev, frameData, golomb, m_rate, block_size, search_size, 0);
+            encodeRes_inter(u_prev, frameData, golomb, m_rate, block_size, search_size);
         }
         // update previous
         u_prev = frameData;
@@ -189,7 +189,7 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int init_m, int mode, bo
         }else if(this->mode == 1){
             // intra + inter coding (hybrid)
             // encode motion vectors and residuals
-            encodeRes_inter(v_prev, frameData, golomb, m_rate, block_size, search_size, 0);
+            encodeRes_inter(v_prev, frameData, golomb, m_rate, block_size, search_size);
         }
         // update previous
         v_prev = frameData;
@@ -288,7 +288,7 @@ void VideoEncoder::encodeRes_intra(Mat &frame, Golomb *golomb, int m_rate, int k
     }
 }
 
-void VideoEncoder::encodeRes_inter(cv::Mat &prev_frame, cv::Mat &curr_frame, Golomb *golomb, int m_rate, int block_size, int search_size, int k){
+void VideoEncoder::encodeRes_inter(const Mat &prev_frame, const Mat &curr_frame, Golomb *golomb, int m_rate, int block_size, int search_size){
     // split current frame into square blocks
     // grid of blocks dimensions
     int grid_h = curr_frame.rows / block_size;
@@ -302,95 +302,60 @@ void VideoEncoder::encodeRes_inter(cv::Mat &prev_frame, cv::Mat &curr_frame, Gol
         grid_w += 1;
     }
 
+    // pad prev_frame with with 0s
+    Mat padded_prev_frame;
+    int sd = search_size * block_size;
+    copyMakeBorder(prev_frame, padded_prev_frame, sd, sd, sd, sd, BORDER_CONSTANT, Scalar(0));
+
     // used to compute mean of mapped residuals
     float res_sum = 0;
     int numRes = 0;
 
-    // traverse all blocks
+    // traverse all blocks, for each block find motion vector with smallest MSE
     for(int x = 0; x < grid_w; x++){
         for(int y = 0; y < grid_h; y++){
-            // perform 2d log search on previous frame search area
-            // init center block
-            Point2i center_block_pt(x * block_size, y * block_size);
-            Point2i best_pt(center_block_pt.x, center_block_pt.y);
-            int stepSize = search_size/4 + 1;
-            vector<Point2i> old_search_blocks;
-            while(stepSize != 1){
-                // define initial search blocks
-                vector<Point2i> search_blocks;
-                search_blocks.push_back(Point2i(center_block_pt.x, center_block_pt.y));
-                search_blocks.push_back(Point2i(center_block_pt.x - stepSize, center_block_pt.y));
-                search_blocks.push_back(Point2i(center_block_pt.x + stepSize, center_block_pt.y));
-                search_blocks.push_back(Point2i(center_block_pt.x, center_block_pt.y - stepSize));
-                search_blocks.push_back(Point2i(center_block_pt.x, center_block_pt.y + stepSize));
 
-                int min_mse = -1;
-                for(Point2i pt : search_blocks){
-                    if(find(old_search_blocks.begin(), old_search_blocks.end(), pt) == old_search_blocks.end()) {
-                        // pt not in old_search_blocks
+            int best_block_x = 0;
+            int best_block_y = 0;
 
-                        // calc mse
-                        int mse = 0;
-                        for(int k = 0; k < block_size; k++){
-                            for(int l = 0; l < block_size; l++){
-                                int prev_value = 0;
-                                // within frame
-                                if( (pt.x + k >= 0) && (pt.x + k < prev_frame.cols) &&
-                                    (pt.y + l >= 0) && (pt.y + l < prev_frame.rows) ){
-                                    prev_value = prev_frame.at<uchar>(pt.x + k, pt.y + l);
-                                }
-                                int curr_value = curr_frame.at<uchar>(x + k, y + l);
-                                int error = prev_value - curr_value;
-                                mse += pow(error, 2);
-                            }
-                        }
+            Mat curr_block = curr_frame(cv::Rect(x,y, block_size, block_size));
+            Mat best_residuals(block_size, block_size, CV_16SC1);
+            double min_mse = -1;
 
-                        // update best motion vector
-                        if (mse < min_mse || min_mse == -1){
-                            min_mse = mse;
-                            best_pt = pt;
-                        }
+            // perform exhaustive search on previous frame search area
+            for(int search_x = x; search_x < (2*search_size + 1)*block_size; search_x+=block_size){
+                for(int search_y = y; search_y < (2*search_size + 1)*block_size; search_y+=block_size){
+                    Mat prev_block = padded_prev_frame(cv::Rect(search_x, search_y, block_size, block_size));
 
-                        // add to already seen blocks
-                        old_search_blocks.push_back(pt);
+                    // calc mse
+                    Mat residuals(block_size, block_size, CV_16SC1);
+                    double mse = 0;
+                    submatsResiduals(prev_block, curr_block, residuals, mse);
+
+                    // update best motion vector
+                    if (min_mse == -1 || mse < min_mse){
+                        best_residuals = residuals;
+                        min_mse = mse;
+                        best_block_x = search_x;
+                        best_block_y = search_y;
                     }
                 }
-
-//                cout << stepSize << endl;
-
-                // update step size;
-                stepSize = stepSize/2;
-
-//                if(best_pt != center_block_pt){
-//                    // update center
-//                    center_block_pt = best_pt;
-//                }else{
-//                    // update step size;
-//                    stepSize = stepSize/2;
-//                }
             }
 
             // add motion vector to bit stream
             vector<bool> m_x;
-            golomb->encode2(best_pt.x, m_x);
+            golomb->encode2(best_block_x, m_x);
             // add encoded residuals to bit stream
             encodedRes.insert(encodedRes.end(), m_x.begin(), m_x.end());
             vector<bool> m_y;
-            golomb->encode2(best_pt.y, m_y);
+            golomb->encode2(best_block_y, m_y);
             // add encoded residuals to bit stream
             encodedRes.insert(encodedRes.end(), m_y.begin(), m_y.end());
 
-            // compute residuals
-            for(int k = 0; k < block_size; k++){
-                for(int l = 0; l < block_size; l++){
-                    int prev_value = 0;
-                    // within frame
-                    if( (best_pt.x + k >= 0) && (best_pt.x + k < prev_frame.cols) &&
-                        (best_pt.y + l >= 0) && (best_pt.y + l < prev_frame.rows) ){
-                        prev_value = prev_frame.at<uchar>(best_pt.x + k, best_pt.y + l);
-                    }
-                    int curr_value = curr_frame.at<uchar>(x + k, y + l);
-                    int residual = prev_value - curr_value;
+            // write residuals
+            for(int j = 0; j < best_residuals.cols; j++){
+                for(int i = 0; i < best_residuals.rows; i++){
+                    int residual = (int) best_residuals.at<short>(i,j);
                     // golomb encode residuals
                     vector<bool> encodedResidual;
                     golomb->encode2(residual, encodedResidual);
@@ -422,6 +387,18 @@ void VideoEncoder::encodeRes_inter(cv::Mat &prev_frame, cv::Mat &curr_frame, Gol
             }
         }
     }
+}
+
+void VideoEncoder::submatsResiduals(const Mat &prev, const Mat &curr, Mat &outRes, double &outMSE){
+    // calc residuals
+    subtract(prev, curr, outRes);
+    // calc MSE
+    Mat newRes;
+    outRes.copyTo(newRes);
+    newRes.convertTo(newRes, CV_32F);
+    newRes = newRes.mul(newRes);
+    Scalar s = sum(newRes);
+    outMSE = s.val[0] / (double) (newRes.total());
 }
 
 void VideoEncoder::write(char *filename) {
