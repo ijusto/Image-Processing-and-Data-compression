@@ -397,7 +397,7 @@ Node* huffmanTree(std::vector<bool> encodedHuffmanTree, Golomb *golomb){
 /*! Construct the huffman tree of the run length code and encode it in order to be sent to the decoder.
  * In this implementation, the non zero values and the values representing the number of zeros can have the same code,
  * because the the non zero values are always on the right leafs and the values representing the number of zeros are
- * always on the left leafs. Moreover, they are always leafs of nodes with data 0 (except for the most probable ones).
+ * always on the left leafs. Moreover, they are always leafs of nodes with data 0 (except for the least probable ones).
  * So we take advantage of this to encode the tree in order to send it to the decoder.
  * The values on the leafs are Golomb encoded from bottom to top in depth. When there are no left leaf values, the -1
  * value is encoded.
@@ -458,11 +458,11 @@ std::vector<bool> huffmanTreeEncode(std::list<std::pair<int, double>> freqs_list
  *
  * @param currentDcs
  * @param runLengthCode
+ * @param code
  * @param encodedTree
  * @param golomb pointer to Golomb Object.
- * @return
  */
-std::vector<bool> huffmanEncode(std::vector<int> currentDcs, std::vector<std::pair<int, int>> runLengthCode,
+void huffmanEncode(std::vector<int> currentDcs, std::vector<std::pair<int, int>> runLengthCode, std::vector<bool> &code,
                                 std::vector<bool> &encodedTree, Golomb* golomb){
     std::unordered_map<int, double> freqsMapNZero; // word, freq
     std::unordered_map<int, double> freqsMapValue; // word, freq
@@ -517,7 +517,6 @@ std::vector<bool> huffmanEncode(std::vector<int> currentDcs, std::vector<std::pa
 
     //std::cout<<std::endl;
 
-    std::vector<bool> code;
     std::vector<int>::iterator currDC = currentDcs.begin();
     for(std::pair<int, int> ac: runLengthCode){
         //std::cout << ac.first << ", codeword: ";
@@ -547,20 +546,19 @@ std::vector<bool> huffmanEncode(std::vector<int> currentDcs, std::vector<std::pa
     //    std::cout<<bit;
     //}
     //std::cout<<std::endl;
-
-    return code;
 }
 
 /*!
  *
  * @param code
- * @param encodedHuffmanTree
- * @param golomb
- * @return
+ * @param encodedTree
+ * @param currentDcs
+ * @param runLengthCode
+ * @param golomb pointer to Golomb Object.
  */
-std::vector<std::pair<int, int>> huffmanDecode(std::vector<bool> code, std::vector<bool> encodedHuffmanTree, Golomb* golomb){
-    std::vector<std::pair<int, int>> runLengthCode; //nZeros, elem
-    Node* huffmanTreeRoot = huffmanTree(encodedHuffmanTree, golomb);
+void huffmanDecode(std::vector<bool> &code, std::vector<bool> &encodedTree, std::vector<int> currentDcs,
+                   std::vector<std::pair<int, int>> runLengthCode, Golomb* golomb){
+    Node* huffmanTreeRoot = huffmanTree(encodedTree, golomb);
     Node* node = huffmanTreeRoot;
     int nZeros = -2;
     for(bool bit : code){
@@ -591,7 +589,6 @@ std::vector<std::pair<int, int>> huffmanDecode(std::vector<bool> code, std::vect
             }
         }
     }
-    return runLengthCode;
 }
 
 /*!
@@ -644,7 +641,7 @@ void quantizeDctBaselineJPEG(cv::Mat frame, std::vector<int> prevDCs, Golomb* go
             prevDC++;
         }
     }
-    code = huffmanEncode(currDCs, acs, encodedTree, golomb);
+    huffmanEncode(currDCs, acs, code, encodedTree, golomb);
 }
 
 //!
@@ -670,26 +667,4 @@ void inverseQuantizeDctBaselineJPEG(cv::Mat frame, std::vector<int> prevDCs){
             inverseQuantizeBlock(block, quantMatrixLuminance);
         }
     }
-}
-
-/*! This mode relies on encoding the DCT coefficients using several passes, such that in each pass only part of the
- * information associated to those coefficients is transmitted.
- *  The coefficients are organized in spectral bands, and those corresponding to the lower frequencies are transmitted
- * first.
- * @param frame
- * @param isColor
- */
-void quantizeDctProgressiveSpectralJPEG(cv::Mat frame, bool isColor){
-
-}
-
-/*! This mode relies on encoding the DCT coefficients using several passes, such that in each pass only part of the
- * information associated to those coefficients is transmitted.
- *  All coefficients are first transmitted using a limited precision. Afterwards, additional detail is sent using more
- * passes through the coefficients.
- * @param frame
- * @param isColor
- */
-void inverseQuantizeDctProgressiveApproxJPEG(cv::Mat frame, bool isColor){
-
 }
