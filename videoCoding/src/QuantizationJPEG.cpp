@@ -357,14 +357,10 @@ Node* newNode(int data, Node *leafLeft, Node *leafRight) {
 }
 
 /*! Decode the huffman tree and store it in Node pointers so the decoder can decode faster.
- * @param encodedHuffmanTree golomb encoded huffman tree.
- * @param golomb pointer to Golomb Object.
+ * @param decodedLeafs golomb decoded huffman tree (leafs).
  * @return huffman tree root node pointer.
  */
-Node* huffmanTree(std::vector<bool> encodedHuffmanTree, Golomb *golomb){
-    std::vector<int> decodedLeafs;
-    golomb->decode3(encodedHuffmanTree, decodedLeafs);
-    decodedLeafs.pop_back(); // -3 golomb encoded to represent the end of the huffman tree
+Node* huffmanTree(std::vector<int> decodedLeafs){
     std::vector<int>::iterator leafIt = decodedLeafs.begin();
 
     Node* father = nullptr;
@@ -566,7 +562,11 @@ void printHuffmanTree(Node* huffmanTreeRoot){
  */
 void huffmanDecode(std::vector<bool> &code, std::vector<bool> &encodedTree,
                    std::vector<std::pair<int, int>> &runLengthCode, Golomb* golomb){
-    Node* huffmanTreeRoot = huffmanTree(encodedTree, golomb);
+    std::vector<int> decodedLeafs;
+    golomb->decode3(encodedTree, decodedLeafs);
+    decodedLeafs.pop_back(); // -3 golomb encoded to represent the end of the huffman tree
+
+    Node* huffmanTreeRoot = huffmanTree(decodedLeafs);
     printHuffmanTree(huffmanTreeRoot); // TODO: comment this line
     Node* node = huffmanTreeRoot;
     int nZeros = -4;
@@ -738,8 +738,7 @@ void inverseQuantizeDctBaselineJPEG(std::vector<int> &prevDCs, std::vector<std::
     while(rlIt != runLengthCode.end()){
         /* int bob = rlIt->first == -1; // Beginning of block */
         frame.at<double>(row, col) = rlIt->second + *dcIt; // dc
-        // refresh prevDCs
-        *dcIt += rlIt->second; //TODO: check if right
+        *dcIt = rlIt->second; // refresh prevDCs
         dcIt++;
         if(col == frame.cols - 1){
             col = 0;

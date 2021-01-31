@@ -444,7 +444,11 @@ TEST_CASE("inverseQuantizeDctBaselineJPEG"){
 
 
 TEST_CASE("Huffman Decoder"){
-    Node* huffmanTreeRoot = huffmanTree(quantEncodedTree, golomb);
+    std::vector<int> decodedLeafs;
+    golomb->decode3(quantEncodedTree, decodedLeafs);
+    decodedLeafs.pop_back(); // -3 golomb encoded to represent the end of the huffman tree
+
+    Node* huffmanTreeRoot = huffmanTree(decodedLeafs);
     auto* huffDec = new HuffmanDecoder(huffmanTreeRoot);
     std::vector<std::pair<int, int>> rlCode;
     vector<bool>::iterator bit = quantCode.begin();
@@ -459,4 +463,64 @@ TEST_CASE("Huffman Decoder"){
     INFO(info);
     CHECK(std::equal(rlCode.begin(), rlCode.end(), runLengthCode.begin()));
 }
+
+TEST_CASE("inverseQuantizeDctBaselineJPEG 2"){
+
+    double X [8][8] = {{183,160,94,153,194,163,132,165},
+                       {183,153,116,176,187,166,130,169},
+                       {179,168,171,182,179,170,131,167},
+                       {177,177,179,177,179,165,131,167},
+                       {178,178,179,176,182,164,130,171},
+                       {179,180,180,179,183,169,132,169},
+                       {179,179,180,182,183,170,129,173},
+                       {180,179,181,179,181,170,130,169}};
+    cv::Mat Xmatrix = cv::Mat(8, 8, CV_64F, &X);
+    cv::Mat result = cv::Mat(8, 8, CV_64F);
+    std::vector<std::pair<int, int>> rlCode;
+    std::string info = "\nPrevious dcs: \n";
+    prevDCs = {0};
+    for(int n : prevDCs){ info += std::to_string(n); }
+    INFO(info);
+
+    std::vector<int> decodedLeafs;
+    golomb->decode3(quantEncodedTree, decodedLeafs);
+    decodedLeafs.pop_back(); // -3 golomb encoded to represent the end of the huffman tree
+
+    Node* huffmanTreeRoot = huffmanTree(decodedLeafs);
+    auto* huffDec = new HuffmanDecoder(huffmanTreeRoot);
+    vector<bool>::iterator bit = quantCode.begin();
+    while(huffDec->decode(*bit, rlCode)){ bit++; }
+
+    inverseQuantizeDctBaselineJPEG(prevDCs, rlCode, result);
+    INFO("\nX: \n");
+    INFO(Xmatrix);
+    INFO("\nresult: \n");
+    INFO(result);
+    info = "\nRefreshed previous dcs: \n";
+    for(int n : prevDCs){ info += std::to_string(n); }
+    INFO(info);
+    INFO("\nDifferences between X and inverse of the quantization: \n");
+    INFO(Xmatrix-result);
+    bool is_small_diff = cv::checkRange(Xmatrix-result, true, nullptr, -60, 60);
+    CHECK(is_small_diff);
+}
+
+TEST_CASE("Huffman Decoder in Video Decoder"){
+    /*
+    cv::Mat frame;
+    std::vector<int> decodedLeafs;
+    // Ler com o golomb numero a numero ate um -3 (inclusivo) -> folhas da huffman tree
+    // while(golomb decode number != -3) { golomb decode one more number; push back to decodedLeafs}
+    decodedLeafs.pop_back(); // -3 golomb encoded to represent the end of the huffman tree
+
+    Node* huffmanTreeRoot = huffmanTree(decodedLeafs);   // folhas da huffman tree
+    auto* huffDec = new HuffmanDecoder(huffmanTreeRoot);
+    std::vector<std::pair<int, int>> rlCode;  // run length code
+    //while(huffDec->decode(read bit from file (huffman code), rlCode)){ bit++; }
+    inverseQuantizeDctBaselineJPEG(prevDCs, // vector of previous dcs;
+                                       rlCode,
+                                       frame); // decoded frame! (has to have the same number of columns and rows as the original)
+    */
+}
+
 #endif //VIDEOCODING_TESTQUANTIZATION_HPP
