@@ -92,9 +92,9 @@ public:
      * @param
      * @param
      */
-    void decodeRes_intra(vector<int> &residualValues, vector<uchar> &planarValues, int f_rows, int f_cols);
+    void decodeRes_intra(vector<int> &residualValues, vector<uchar> &outPlanarValues, int f_rows, int f_cols);
 
-    void decodeRes_inter(vector<int> &residualValues, vector<uchar> &planarValues, int f_rows, int f_cols, int block_size, int search_size);
+    void decodeRes_inter(Mat &prev_frame, vector<int> &currFrameResiduals, int grid_h, int grid_w, vector<uchar> &outPlanarValues, int block_size, int search_size);
 
     //! Write decoded video
     /*!

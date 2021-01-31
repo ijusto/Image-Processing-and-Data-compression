@@ -89,20 +89,23 @@ void VideoDecoder::decode(){
 
         // iterate channels
         for(int channel = 0; channel < 3; channel++){
+            Mat prev;
             int frame_rows, frame_cols;
-            // get dims
             if(channel == 0 ){
                 // Y
                 frame_rows = Y_frame_rows;
                 frame_cols = Y_frame_cols;
+                prev = y_prev;
             }else if(channel == 1 ){
                 // U
                 frame_rows = U_frame_rows;
                 frame_cols = U_frame_cols;
+                prev = u_prev;
             }else if(channel == 2 ){
                 // V
                 frame_rows = V_frame_rows;
                 frame_cols = V_frame_cols;
+                prev = v_prev;
             }
 
             vector<uchar> component_frame;
@@ -136,12 +139,12 @@ void VideoDecoder::decode(){
                 vector<int> residuals;
                 getResAndUpdate(data, &index, size, golomb, m_rate, residuals);
                 // decode y component residuals + motion vectors
-                this->decodeRes_inter(residuals, component_frame, frame_rows, frame_cols, block_size, search_size);
+                this->decodeRes_inter(prev, residuals, grid_h, grid_w, component_frame, block_size, search_size);
             }
             if(this->mode == 1){
                 // hybrid
                 // update prev
-                y_prev.data = component_frame.data();
+                prev.data = component_frame.data();
             }
             // add component to frame
             frame.insert(frame.end(), component_frame.begin(), component_frame.end());
@@ -209,15 +212,15 @@ void VideoDecoder::getResAndUpdate(vector<bool> &data, unsigned int *indexPtr, i
     }
 }
 
-void VideoDecoder::decodeRes_intra(vector<int> &residualValues, vector<uchar> &planarValues, int f_rows, int f_cols){
+void VideoDecoder::decodeRes_intra(vector<int> &residualValues, vector<uchar> &outPlanarValues, int f_rows, int f_cols){
     for(int i = 0; i < f_rows; i++){
         for(int j = 0; j < f_cols; j++){
             int idx = i * f_cols + j;
 
             LosslessJPEGPredictors<int> predictors(
-                    (j == 0 ? 0 : planarValues[i * f_cols + (j-1)]),                    // (i,j-1)
-                    (i == 0 ? 0 : planarValues[(i-1) * f_cols + j]),                    // (i-1,j)
-                    ((i == 0 | j == 0) ? 0 : planarValues[(i-1) * f_cols + (j-1)]));    // (i-1,j-1)
+                    (j == 0 ? 0 : outPlanarValues[i * f_cols + (j - 1)]),                    // (i,j-1)
+                    (i == 0 ? 0 : outPlanarValues[(i - 1) * f_cols + j]),                    // (i-1,j)
+                    ((i == 0 | j == 0) ? 0 : outPlanarValues[(i - 1) * f_cols + (j - 1)]));    // (i-1,j-1)
 
             uchar value;
             switch (this->predictor) {
@@ -251,13 +254,41 @@ void VideoDecoder::decodeRes_intra(vector<int> &residualValues, vector<uchar> &p
             }
 
             // add value to frame
-            planarValues.push_back(value);
+            outPlanarValues.push_back(value);
         }
     }
 }
 
-void VideoDecoder::decodeRes_inter(vector<int> &residualValues, vector<uchar> &planarValues, int f_rows, int f_cols, int block_size, int search_size){
+void VideoDecoder::decodeRes_inter(Mat &prev_frame, vector<int> &currFrameResiduals, int grid_h, int grid_w, vector<uchar> &outPlanarValues, int block_size, int search_size){
+    // pad prev_frame with with 0s
+    Mat padded_prev_frame;
+    int sd = search_size * block_size; // search distance (in pixels)
+    copyMakeBorder(prev_frame, padded_prev_frame, sd, sd, sd, sd, BORDER_CONSTANT, Scalar(0));
 
+    int idx = 0;
+    // traverse all blocks
+    for(int x = 0; x < grid_w; x++){
+        for(int y = 0; y < grid_h; y++){
+            // read 2 ints (motion vector)
+            int motion_x = currFrameResiduals.at(idx);
+            int motion_y = currFrameResiduals.at(idx+1);
+            // update index
+            idx+=2;
+            // get rect from prev using motion vect
+            Mat prev_block = padded_prev_frame(cv::Rect(motion_x, motion_y, block_size, block_size));
+            // compute value using residuals
+            for(int i = 0; i < block_size; i++){
+                for(int j = 0; j < block_size; j++){
+                    // add residuals to prev rect
+                    int value = prev_block.at<uchar>(i, j) + currFrameResiduals.at(idx+(i*block_size+j));
+                    // add result to outPlanarValues
+                    outPlanarValues.push_back(value);
+                }
+            }
+            // update index
+            idx+=block_size*block_size;
+        }
+    }
 }
 
 void VideoDecoder::write(char* fileName){

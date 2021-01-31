@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
         cout << "writing..." << endl;
         videoDecoder->write(dst);
     }else{
-        printf("\n ERROR : This option doesn't exist!!");
+        printf("ERROR : This option doesn't exist!!\n");
     }
 
     return 0;

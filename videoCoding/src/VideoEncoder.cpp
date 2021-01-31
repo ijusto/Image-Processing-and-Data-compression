@@ -377,6 +377,7 @@ void VideoEncoder::encodeRes_inter(const Mat &prev_frame, const Mat &curr_frame,
                         float alpha = res_mean/(1+res_mean);
                         int m = ceil(-1/log(alpha));
                         if (m != 0){
+                            //cout << "NEW M " << m << "hybrid" << endl;
                             golomb->setM(m);
                         }
                         //reset
