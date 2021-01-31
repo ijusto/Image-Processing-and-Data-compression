@@ -578,29 +578,16 @@ void huffmanDecode(std::vector<bool> &code, std::vector<bool> &encodedTree,
     Node* node = huffmanTreeRoot;
     int nZeros = -4;
     for(bool bit : code){
-        //std::cout<< "bit: " << bit << std::endl;
-        if(bit){
-            node = node->left;
-        } else {
-            node = node->right;
-        }
+        node = bit ? node->left : node->right;
 
         // if we are decoding the number of zeros
         if(nZeros == -4){
             if(node->left->left == nullptr && node->left->right == nullptr) { // number of zeros are in the left leafs
-                /*
-                if(node->left->data == 0){ // EOB
-                    runLengthPairs.push_back(std::pair<int, int>(node->left->data, node->left->data));
-                    nZeros = -2;
-                } else {
-                */
                 nZeros = node->left->data;
-
                 node = huffmanTreeRoot;
             }
         } else { // if we are decoding the value
             if(node->right->left == nullptr && node->right->right == nullptr) { // values are in the right leafs
-                //std::cout << "runLengthPairs node->data: (" << nZeros << ", " << node->right->data << ")" << std::endl;
                 runLengthCode.push_back(std::pair<int, int>(nZeros, node->right->data));
                 nZeros = -4;
                 node = huffmanTreeRoot;
@@ -610,36 +597,44 @@ void huffmanDecode(std::vector<bool> &code, std::vector<bool> &encodedTree,
 }
 
 void getImage(std::vector<std::pair<int, int>> runLengthCode, cv::Mat &frame){
-
-    cv::Mat block = cv::Mat::zeros(8, 8, CV_64F);
-
     std::vector<std::pair<int, int>>::iterator rlIt = runLengthCode.begin();
-    int row, col, diagonals;
+    int diagonals, row = 8, col = -1;
     bool reachedRow8;
-    std::vector<int> zigzag, nzeros;
-    std::vector<int>::iterator zigzagIt;
+    std::vector<int> zigzag = std::vector(64, 0);
+    std::vector<int>::iterator zigzagIt = zigzag.begin();
     while(rlIt != runLengthCode.end()){
         /* int bob = rlIt->first == -1; // Beginning of block */
-        block.at<double>(0, 0) = rlIt->second; // dc
+        frame.at<double>(0, 0) = rlIt->second; // dc
         rlIt++;
-        row = 0, col = 0, diagonals = 1;
+        diagonals = 1;
+        if(col == frame.cols - 1){
+            col = 0;
+            row += 1;
+        } else {
+            col += 1;
+            row -= 8;
+        }
         reachedRow8 = false;
+
         while(rlIt->first != -1 && rlIt != runLengthCode.end()){
-            nzeros = std::vector(rlIt->first, 0);
-            zigzag.insert(zigzag.begin(), zigzag.end(), nzeros.begin());
-            zigzag.push_back(rlIt->second);
+            if(rlIt->first != 0){
+                zigzagIt += rlIt->first;
+            }
+            *zigzagIt = rlIt->second;
+            zigzagIt++;
+            rlIt++;
         }
         zigzagIt = zigzag.begin();
         while(zigzagIt != zigzag.end()){
             if(!reachedRow8){ col += 1; /* right */ } else { row = row + 1; /* down */ }
-            block.at<double>(row, col) = *zigzagIt;
+            frame.at<double>(row, col) = *zigzagIt;
             zigzagIt++;
 
             // down diagonal
             int temp_diagonals = diagonals;
             while(temp_diagonals != 0){
                 row += 1; col -= 1;
-                block.at<double>(row, col) = *zigzagIt;
+                frame.at<double>(row, col) = *zigzagIt;
                 zigzagIt++;
                 temp_diagonals -= 1;
             }
@@ -647,7 +642,7 @@ void getImage(std::vector<std::pair<int, int>> runLengthCode, cv::Mat &frame){
             if(!reachedRow8){ diagonals += 1; } else { diagonals -= 1; }
 
             if(!reachedRow8){ row = row + 1; /* down */ } else { col += 1; /* right */ }
-            block.at<double>(row, col) = *zigzagIt;
+            frame.at<double>(row, col) = *zigzagIt;
             zigzagIt++;
 
             if(diagonals == 0){ break; }
@@ -656,18 +651,14 @@ void getImage(std::vector<std::pair<int, int>> runLengthCode, cv::Mat &frame){
             temp_diagonals = diagonals;
             while(temp_diagonals != 0){
                 row -= 1; col += 1;
-                block.at<double>(row, col) = *zigzagIt;
+                frame.at<double>(row, col) = *zigzagIt;
                 zigzagIt++;
                 temp_diagonals -= 1;
             }
             if(!reachedRow8){ diagonals += 1; } else { diagonals -= 1; }
         }
-
-        //TODO: join block to the image
-
         zigzag.clear();
     }
-
 }
 
 
