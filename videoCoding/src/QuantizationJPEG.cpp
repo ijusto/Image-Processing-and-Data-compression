@@ -423,6 +423,8 @@ std::vector<bool> huffmanTreeEncode(std::list<std::pair<int, double>> freqs_list
         codeZerosMap[freqs_listNZero.front().first].push_back(true);
         tree.push_back(freqs_listNZero.front().first);
         freqs_listNZero.erase(freqs_listNZero.begin());
+    } else {
+        tree.push_back(-2);
     }
 
     codeValueMap[freqs_listValue.front().first] = {};
@@ -504,6 +506,64 @@ void huffmanEncode(std::vector<std::pair<int, int>> runLengthCode, std::vector<b
     }
 }
 
+
+
+void printHuffmanTree(Node* huffmanTreeRoot){
+
+    int numberOfLeftLeafs = 0;
+    Node* node = huffmanTreeRoot;
+    while(node != nullptr){
+        node = node->left;
+        numberOfLeftLeafs += 1;
+    }
+    numberOfLeftLeafs *= 2;
+    std::cout<<std::string(numberOfLeftLeafs + 1, '\t')<<"*"<<std::endl;
+    std::string nodeLine = "";
+    std::string connectLine = "";
+    std::vector<Node*> prevLineFathers = {huffmanTreeRoot};
+    std::vector<Node*> currLineNodes;
+    int n = 5;
+    while(prevLineFathers.at(0)->right != nullptr){
+        currLineNodes.clear();
+        nodeLine = std::string(numberOfLeftLeafs, '\t');
+        connectLine = std::string(numberOfLeftLeafs, '\t');
+        for(Node* father : prevLineFathers){
+            if(father->left != nullptr){
+                currLineNodes.push_back(father->left);
+                nodeLine += (father->left->right == nullptr) ? "\033[36m |" : " \033[32m|";
+                nodeLine += std::to_string(father->left->data) + "|\033[39m ";
+                connectLine += (father->data == 1) ? "  \033[32m/" : "  \033[31m/";
+                connectLine += "\033[39m  ";
+            } else {
+                nodeLine += "     ";
+                connectLine += "     ";
+            }
+            nodeLine += std::string((int)(numberOfLeftLeafs/n)*2, '\t');
+            connectLine += std::string((int)(numberOfLeftLeafs/n)*2, '\t');
+            if(father->right != nullptr){
+                currLineNodes.push_back(father->right);
+                nodeLine += (father->right->right == nullptr) ? "\033[33m |" : " \033[31m|";
+                nodeLine += std::to_string(father->right->data) + "|\033[39m ";
+                connectLine += (father->data == 1) ? "  \033[32m\\" : "  \033[31m\\";
+                connectLine += "\033[39m  ";
+            } else {
+                nodeLine += "     ";
+                connectLine += "     ";
+            }
+            nodeLine += std::string((int)(numberOfLeftLeafs/n), '\t');
+            connectLine += std::string((int)(numberOfLeftLeafs/n), '\t');
+        }
+        prevLineFathers = currLineNodes;
+
+        n *= 2;
+        std::cout<<connectLine<<std::endl;
+        std::cout<<nodeLine<<std::endl;
+        numberOfLeftLeafs -= 1;
+    }
+
+    std::cout<<"Legend:\n\t\033[36mNumber of preceding zeros\033[31m\n\t\033[33mValue\033[31m"<<std::endl;
+}
+
 /*!
  *
  * @param code
@@ -514,6 +574,7 @@ void huffmanEncode(std::vector<std::pair<int, int>> runLengthCode, std::vector<b
 void huffmanDecode(std::vector<bool> &code, std::vector<bool> &encodedTree,
                    std::vector<std::pair<int, int>> &runLengthCode, Golomb* golomb){
     Node* huffmanTreeRoot = huffmanTree(encodedTree, golomb);
+    //printHuffmanTree(huffmanTreeRoot);
     Node* node = huffmanTreeRoot;
     int nZeros = -4;
     for(bool bit : code){
@@ -688,61 +749,4 @@ void inverseQuantizeDctBaselineJPEG(cv::Mat frame, std::vector<int> prevDCs){
             inverseQuantizeBlock(block, quantMatrixLuminance);
         }
     }
-}
-
-
-void printHuffmanTree(Node* huffmanTreeRoot){
-
-    int numberOfLeftLeafs = 0;
-    Node* node = huffmanTreeRoot;
-    while(node != nullptr){
-        node = node->left;
-        numberOfLeftLeafs += 1;
-    }
-    numberOfLeftLeafs *= 2;
-    std::cout<<std::string(numberOfLeftLeafs + 1, '\t')<<"*"<<std::endl;
-    std::string nodeLine = "";
-    std::string connectLine = "";
-    std::vector<Node*> prevLineFathers = {huffmanTreeRoot};
-    std::vector<Node*> currLineNodes;
-    int n = 5;
-    while(prevLineFathers.at(0)->right != nullptr){
-        currLineNodes.clear();
-        nodeLine = std::string(numberOfLeftLeafs, '\t');
-        connectLine = std::string(numberOfLeftLeafs, '\t');
-        for(Node* father : prevLineFathers){
-            if(father->left != nullptr){
-                currLineNodes.push_back(father->left);
-                nodeLine += (father->left->right == nullptr) ? "\033[36m |" : " \033[32m|";
-                nodeLine += std::to_string(father->left->data) + "|\033[39m ";
-                connectLine += (father->data == 1) ? "  \033[32m/" : "  \033[31m/";
-                connectLine += "\033[39m  ";
-            } else {
-                nodeLine += "     ";
-                connectLine += "     ";
-            }
-            nodeLine += std::string((int)(numberOfLeftLeafs/n)*2, '\t');
-            connectLine += std::string((int)(numberOfLeftLeafs/n)*2, '\t');
-            if(father->right != nullptr){
-                currLineNodes.push_back(father->right);
-                nodeLine += (father->right->right == nullptr) ? "\033[33m |" : " \033[31m|";
-                nodeLine += std::to_string(father->right->data) + "|\033[39m ";
-                connectLine += (father->data == 1) ? "  \033[32m\\" : "  \033[31m\\";
-                connectLine += "\033[39m  ";
-            } else {
-                nodeLine += "     ";
-                connectLine += "     ";
-            }
-            nodeLine += std::string((int)(numberOfLeftLeafs/n), '\t');
-            connectLine += std::string((int)(numberOfLeftLeafs/n), '\t');
-        }
-        prevLineFathers = currLineNodes;
-
-        n *= 2;
-        std::cout<<connectLine<<std::endl;
-        std::cout<<nodeLine<<std::endl;
-        numberOfLeftLeafs -= 1;
-    }
-
-    std::cout<<"Legend:\n\t\033[36mNumber of preceding zeros\033[31m\n\t\033[33mValue\033[31m"<<std::endl;
 }
