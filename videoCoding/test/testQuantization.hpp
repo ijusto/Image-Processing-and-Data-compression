@@ -6,11 +6,9 @@
 #define VIDEOCODING_TESTQUANTIZATION_HPP
 
 #include    "../src/QuantizationJPEG.cpp"
-#include <opencv2/core.hpp>
-#include <opencv2/videoio.hpp>
-#include <opencv2/opencv.hpp>
-
-using namespace std;
+#include    <opencv2/core.hpp>
+#include    <opencv2/videoio.hpp>
+#include    <opencv2/opencv.hpp>
 
 int golombM = 512;
 auto *golomb = new Golomb(golombM);
@@ -423,28 +421,42 @@ TEST_CASE("inverseQuantizeDctBaselineJPEG"){
                        {179,180,180,179,183,169,132,169},
                        {179,179,180,182,183,170,129,173},
                        {180,179,181,179,181,170,130,169}};
-    double final_Y [8][8] = {{20,5,-3,1,3,-2,1,0},
-                             {-3,-2,1,2,1,0,0,0},
-                             {-1,-1,1,1,1,0,0,0},
-                             {-1,0,0,1,0,0,0,0},
-                             {0,0,0,0,0,0,0,0},
-                             {0,0,0,0,0,0,0,0},
-                             {0,0,0,0,0,0,0,0},
-                             {0,0,0,0,0,0,0,0}};
     cv::Mat Xmatrix = cv::Mat(8, 8, CV_64F, &X);
-    cv::Mat finalY = cv::Mat(8, 8, CV_64F, &final_Y);
-    INFO("\nY: \n");
-    INFO(finalY);
+    cv::Mat result = cv::Mat(8, 8, CV_64F);
     std::vector<std::pair<int, int>> rlCode;
+    std::string info = "\nPrevious dcs: \n";
+    for(int n : prevDCs){ info += std::to_string(n); }
+    INFO(info);
     huffmanDecode(quantCode, quantEncodedTree, rlCode, golomb);
-    inverseQuantizeDctBaselineJPEG(prevDCs, rlCode, finalY);
+    inverseQuantizeDctBaselineJPEG(prevDCs, rlCode, result);
     INFO("\nX: \n");
     INFO(Xmatrix);
     INFO("\nresult: \n");
-    INFO(finalY);
+    INFO(result);
+    info = "\nRefreshed previous dcs: \n";
+    for(int n : prevDCs){ info += std::to_string(n); }
+    INFO(info);
     INFO("\nDifferences between X and inverse of the quantization: \n");
-    INFO(Xmatrix-finalY);
-    bool is_small_diff = cv::checkRange(Xmatrix-finalY, true, nullptr, -60, 60);
+    INFO(Xmatrix-result);
+    bool is_small_diff = cv::checkRange(Xmatrix-result, true, nullptr, -60, 60);
     CHECK(is_small_diff);
+}
+
+
+TEST_CASE("Huffman Decoder"){
+    Node* huffmanTreeRoot = huffmanTree(quantEncodedTree, golomb);
+    auto* huffDec = new HuffmanDecoder(huffmanTreeRoot);
+    std::vector<std::pair<int, int>> rlCode;
+    vector<bool>::iterator bit = quantCode.begin();
+    while(huffDec->decode(*bit, rlCode)){ bit++; }
+
+    std::string info = "\nDecoded codewords run length: \n";
+    for(std::pair<int, int> ac: rlCode){
+        info += "(" + std::to_string(ac.first) + "," + std::to_string(ac.second) + ")";
+        info += ", ";
+    }
+    info.erase(info.end() - 2, info.end());
+    INFO(info);
+    CHECK(std::equal(rlCode.begin(), rlCode.end(), runLengthCode.begin()));
 }
 #endif //VIDEOCODING_TESTQUANTIZATION_HPP

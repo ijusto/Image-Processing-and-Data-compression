@@ -8,7 +8,7 @@
 #include    <opencv2/opencv.hpp>
 #include    <cmath>
 #include    "Golomb.cpp"
-#include    "HuffmanDecoder.cpp"
+#include    "../src/HuffmanDecoder.cpp"
 
 double jpeg_matrix_grayscale [8][8] = {{16, 11, 10, 16, 24, 40, 51, 61},
                                        {12, 12, 14, 19, 26, 58, 60, 55},
@@ -326,7 +326,7 @@ void zigZagScan(cv::Mat &block, std::vector<int> &zigzagVector){
 /*! Run Length Code
  * In this implementation, the code is the pair (number of zeros preceding this value, non zero value).
  * The pair (-1, dc) represents the beginning of a block.
- * @param arr zig zag vector.
+ * @param vec zig zag vector.
  * @param code run length code.
  */
 void runLengthPairs(std::vector<int> vec, std::vector<std::pair<int, int>> &code){
@@ -399,6 +399,7 @@ Node* huffmanTree(std::vector<bool> encodedHuffmanTree, Golomb *golomb){
  * The values on the leafs are Golomb encoded from bottom to top in depth. When there are no left leaf values, the -2
  * value is encoded.
  * We golomb encode -3 to represent the end of the tree.
+ * The very last two values of the huffman code are -3 to represent the end of the code.
  * @param freqs_listNZero list of (number of zeros of the run length code, frequency of that number) pairs.
  * @param freqs_listValue list of (non zero number of the run length code, frequency of that number) pairs.
  * @param codeZerosMap map with the number of zeros values from the run length code as keys and their frequency as value.
@@ -454,7 +455,6 @@ std::vector<bool> huffmanTreeEncode(std::list<std::pair<int, double>> freqs_list
 
 /*!
  *
- * @param currentDcs
  * @param runLengthCode
  * @param code
  * @param encodedTree
@@ -493,12 +493,15 @@ void huffmanEncode(std::vector<std::pair<int, int>> runLengthCode, std::vector<b
 
     for(std::pair<int, int> coeff: runLengthCode){
         code.insert(code.end(), codeZerosMap[coeff.first].begin(), codeZerosMap[coeff.first].end());
-        code.insert(code.end(), codeValueMap[coeff.second].begin(), codeValueMap[coeff.second].end());
+        if(coeff.first != -3){
+            code.insert(code.end(), codeValueMap[coeff.second].begin(), codeValueMap[coeff.second].end());
+        }
     }
 }
 
-
-
+/*!
+ * @param huffmanTreeRoot
+ */
 void printHuffmanTree(Node* huffmanTreeRoot){
 
     int numberOfLeftLeafs = 0;
@@ -556,7 +559,6 @@ void printHuffmanTree(Node* huffmanTreeRoot){
 }
 
 /*!
- *
  * @param code
  * @param encodedTree
  * @param runLengthCode
@@ -574,6 +576,9 @@ void huffmanDecode(std::vector<bool> &code, std::vector<bool> &encodedTree,
         // if we are decoding the number of zeros
         if(nZeros == -4){
             if(node->left->left == nullptr && node->left->right == nullptr) { // number of zeros are in the left leafs
+                if(node->left->data == -3){
+                    break;
+                }
                 nZeros = node->left->data;
                 node = huffmanTreeRoot;
             }
@@ -587,6 +592,11 @@ void huffmanDecode(std::vector<bool> &code, std::vector<bool> &encodedTree,
     }
 }
 
+/*!
+ *
+ * @param runLengthCode
+ * @param frame
+ */
 void getImage(std::vector<std::pair<int, int>> runLengthCode, cv::Mat &frame){
     std::vector<std::pair<int, int>>::iterator rlIt = runLengthCode.begin();
     int diagonals, row = 0, col = 0;
@@ -712,8 +722,9 @@ void quantizeDctBaselineJPEG(cv::Mat &frame, std::vector<int> prevDCs, Golomb* g
 //!
 /*!
  *
- * @param frame
  * @param prevDCs
+ * @param runLengthCode
+ * @param frame
  */
 void inverseQuantizeDctBaselineJPEG(std::vector<int> &prevDCs, std::vector<std::pair<int, int>> runLengthCode,
                                     cv::Mat &frame){
