@@ -81,7 +81,9 @@ public:
      */
     void update_m(vector<int> residuals, Golomb *golomb, int m_rate);
 
-    //!
+    void getResAndUpdate(vector<bool> &data, unsigned int *indexPtr, int n_residuals, Golomb *golomb, int m_rate, vector<int> &outRes);
+
+        //!
     /*!
      * @param
      * @param
@@ -91,6 +93,8 @@ public:
      * @param
      */
     void decodeRes_intra(vector<int> &residualValues, vector<uchar> &planarValues, int f_rows, int f_cols);
+
+    void decodeRes_inter(vector<int> &residualValues, vector<uchar> &planarValues, int f_rows, int f_cols, int block_size, int search_size);
 
     //! Write decoded video
     /*!

@@ -40,11 +40,6 @@ void VideoDecoder::decode(){
     // used to index data in golomb.decode2
     unsigned int index = 0;
 
-    // Golomb decoder
-    Golomb *golomb = new Golomb(initial_m);
-    int m_rate = 100; // must be equal to Encoder's m_rate
-    int decodedFrames = 0;
-
     // Chroma subsampling dimensions
     int Y_frame_cols, Y_frame_rows;
     int U_frame_cols, U_frame_rows;
@@ -69,94 +64,100 @@ void VideoDecoder::decode(){
             break;
     }
 
-    while(decodedFrames < this->totalFrames) {
-        decodedFrames++;
-        cout << "\rdecoded frames: " << decodedFrames << "/" << this->totalFrames;
+    // Golomb decoder
+    Golomb *golomb = new Golomb(initial_m);
+    int m_rate = 100; // must be equal to Encoder's m_rate
+
+    // intra coding rate
+    const int intra_rate = 10;
+    int frameCounter = 0;
+    // previous data buffer
+    Mat y_prev = Mat(Y_frame_rows, Y_frame_cols, CV_8UC1); // init with 0s
+    Mat u_prev = Mat(U_frame_rows, U_frame_cols, CV_8UC1);
+    Mat v_prev = Mat(V_frame_rows, V_frame_cols, CV_8UC1);
+    // block size (in pixels)
+    int block_size = 10;
+    // search area size (in number of blocks)
+    int search_size = 4;
+
+    while(frameCounter < this->totalFrames) {
+        cout << "\rdecoded frames: " << frameCounter << "/" << this->totalFrames;
         cout.flush();
 
+        // decoded frame
         vector<uchar> frame;
 
-        vector<uchar> component_frame;
-        vector<int> samples;
-        int n_to_decode = m_rate;
-        int n_decoded = 0;
-        while(n_decoded < Y_frame_rows * Y_frame_cols){
-            // cout << "n_decoded " << n_decoded << endl;
-            // read remaining
-            if(n_decoded + n_to_decode > Y_frame_rows * Y_frame_cols){
-                n_to_decode = Y_frame_rows * Y_frame_cols - n_decoded;
+        // iterate channels
+        for(int channel = 0; channel < 3; channel++){
+            int frame_rows, frame_cols;
+            // get dims
+            if(channel == 0 ){
+                // Y
+                frame_rows = Y_frame_rows;
+                frame_cols = Y_frame_cols;
+            }else if(channel == 1 ){
+                // U
+                frame_rows = U_frame_rows;
+                frame_cols = U_frame_cols;
+            }else if(channel == 2 ){
+                // V
+                frame_rows = V_frame_rows;
+                frame_cols = V_frame_cols;
             }
-            n_decoded += n_to_decode;
-            // read y
-            vector<int> tmp;
-            golomb->decode2(data, tmp, &index, n_to_decode);
-            // update m
-            update_m(tmp, golomb, m_rate);
-            // add to total samples
-            samples.insert(samples.end(), tmp.begin(), tmp.end());
-        }
-        //cout << "sample size " << samples.size() << " " << Y_frame_rows << "," << Y_frame_cols << endl;
-        // decode y component and add to frame vector
-        this->decodeRes_intra(samples, component_frame, Y_frame_rows, Y_frame_cols);
-        // add component frame to frame
-        frame.insert(frame.end(), component_frame.begin(), component_frame.end());
 
-        component_frame = vector<uchar>();
-        samples = vector<int>();
-        n_to_decode = m_rate;
-        n_decoded = 0;
-        while(n_decoded < U_frame_rows * U_frame_cols){
-            // read remaining
-            if(n_decoded + n_to_decode > U_frame_rows * U_frame_cols){
-                n_to_decode = U_frame_rows * U_frame_cols - n_decoded;
-            }
-            n_decoded += n_to_decode;
-            // read u
-            vector<int> tmp;
-            golomb->decode2(data, tmp, &index, n_to_decode);
-            // update m
-            update_m(tmp, golomb, m_rate);
-            // add to total samples
-            samples.insert(samples.end(), tmp.begin(), tmp.end());
-        }
-        //cout << "sample size " << samples.size() << " " << U_frame_rows << "," << U_frame_cols << endl;
-        // decode u component and add to frame vector
-        this->decodeRes_intra(samples, component_frame, U_frame_rows, U_frame_cols);
-        // add component frame to frame
-        frame.insert(frame.end(), component_frame.begin(), component_frame.end());
+            vector<uchar> component_frame;
+            if(this->mode == 0 || frameCounter % intra_rate == 0){
+                // intra
 
-        component_frame = vector<uchar>();
-        samples = vector<int>();
-        n_to_decode = m_rate;
-        n_decoded = 0;
-        while(n_decoded < V_frame_rows * V_frame_cols){
-            // read remaining
-            if(n_decoded + n_to_decode > V_frame_rows * V_frame_cols){
-                n_to_decode = V_frame_rows * V_frame_cols - n_decoded;
+                // only residuals
+                int size = frame_rows * frame_cols;
+                // decode residuals and update m
+                vector<int> residuals;
+                getResAndUpdate(data, &index, size, golomb, m_rate, residuals);
+                // decode y component and add to frame vector
+                this->decodeRes_intra(residuals, component_frame, frame_rows, frame_cols);
+            }else{
+                // hybrid
+
+                // split frame into square blocks
+                int grid_h = frame_rows / block_size;
+                // add block partially outside frame
+                if(frame_rows % block_size != 0){
+                    grid_h += 1;
+                }
+                int grid_w = frame_cols / block_size;
+                // add block partially outside frame
+                if(frame_cols % block_size != 0){
+                    grid_w += 1;
+                }
+                // residuals + motion vectors (2 ints for every block in the grid)
+                int size = frame_rows * frame_cols + 2*grid_h*grid_w;
+                // decode residuals and update m
+                vector<int> residuals;
+                getResAndUpdate(data, &index, size, golomb, m_rate, residuals);
+                // decode y component residuals + motion vectors
+                this->decodeRes_inter(residuals, component_frame, frame_rows, frame_cols, block_size, search_size);
             }
-            n_decoded += n_to_decode;
-            // read v
-            vector<int> tmp;
-            golomb->decode2(data, tmp, &index, n_to_decode);
-            // update m
-            update_m(tmp, golomb, m_rate);
-            // add to total samples
-            samples.insert(samples.end(), tmp.begin(), tmp.end());
+            if(this->mode == 1){
+                // hybrid
+                // update prev
+                y_prev.data = component_frame.data();
+            }
+            // add component to frame
+            frame.insert(frame.end(), component_frame.begin(), component_frame.end());
         }
-        //cout << "sample size " << samples.size() << " " << V_frame_rows << "," << V_frame_cols << endl;
-        // decode v component and add to frame vector
-        this->decodeRes_intra(samples, component_frame, V_frame_rows, V_frame_cols);
-        // add component frame to frame
-        frame.insert(frame.end(), component_frame.begin(), component_frame.end());
 
         // add frame to buffer
         this->frames.push_back(frame);
+
+        frameCounter++;
     }
 
     cout << endl;
 
 }
 
+// TODO: make it fast
 void VideoDecoder::update_m(vector<int> residuals, Golomb *golomb, int m_rate){
     // used to compute mean of mapped residuals
     float res_sum = 0;
@@ -186,6 +187,25 @@ void VideoDecoder::update_m(vector<int> residuals, Golomb *golomb, int m_rate){
         //reset
         res_sum = 0;
         numRes = 0;
+    }
+}
+
+void VideoDecoder::getResAndUpdate(vector<bool> &data, unsigned int *indexPtr, int n_residuals, Golomb *golomb, int m_rate, vector<int> &outRes){
+    int n_to_decode = m_rate;
+    int n_decoded = 0;
+    while(n_decoded < n_residuals){
+        // read remaining
+        if(n_decoded + n_to_decode > n_residuals){
+            n_to_decode = n_residuals - n_decoded;
+        }
+        n_decoded += n_to_decode;
+        // read y
+        vector<int> tmp;
+        golomb->decode2(data, tmp, indexPtr, n_to_decode);
+        // update m
+        this->update_m(tmp, golomb, m_rate);
+        // add to total outRes
+        outRes.insert(outRes.end(), tmp.begin(), tmp.end());
     }
 }
 
@@ -236,6 +256,9 @@ void VideoDecoder::decodeRes_intra(vector<int> &residualValues, vector<uchar> &p
     }
 }
 
+void VideoDecoder::decodeRes_inter(vector<int> &residualValues, vector<uchar> &planarValues, int f_rows, int f_cols, int block_size, int search_size){
+
+}
 
 void VideoDecoder::write(char* fileName){
     // open output video file

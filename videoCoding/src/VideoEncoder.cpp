@@ -123,7 +123,7 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int init_m, int mode, bo
     Mat y_prev = Mat(Y_frame_rows, Y_frame_cols, CV_8UC1); // init with 0s
     Mat u_prev = Mat(U_frame_rows, U_frame_cols, CV_8UC1);
     Mat v_prev = Mat(V_frame_rows, V_frame_cols, CV_8UC1);
-    // block size
+    // block size (in pixels)
     int block_size = 10;
     // search area size (in number of blocks)
     int search_size = 4;
@@ -304,7 +304,7 @@ void VideoEncoder::encodeRes_inter(const Mat &prev_frame, const Mat &curr_frame,
 
     // pad prev_frame with with 0s
     Mat padded_prev_frame;
-    int sd = search_size * block_size;
+    int sd = search_size * block_size; // search distance (in pixels)
     copyMakeBorder(prev_frame, padded_prev_frame, sd, sd, sd, sd, BORDER_CONSTANT, Scalar(0));
 
     // used to compute mean of mapped residuals
