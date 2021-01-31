@@ -51,8 +51,8 @@ cv::Mat transformationMatrix(){
 
 const cv::Mat t = transformationMatrix();
 
-/*! Divides an image frame into blocks of 8 by 8 and adds padding to the image if there width or the height are not
- * multiple of 8. The image padding values are copies of the edges of the original frame.
+/*! Divides an image frame into blocks of 8 by 8 and adds padding to the image if their width or the height are not
+ * multiple of 8. The image's padding values are copies of the edges of the original frame.
  * @param frame image frame.
  */
 void divideImageIn8x8Blocks(cv::Mat &frame){
@@ -324,7 +324,7 @@ void zigZagScan(cv::Mat &block, std::vector<int> &zigzagVector){
 
 /*! Run Length Code
  * In this implementation, the code is the pair (number of zeros preceding this value, non zero value).
- * The pair (0, dc) represents the beginning of a block.
+ * The pair (-1, dc) represents the beginning of a block.
  * @param arr zig zag vector.
  * @param code run length code.
  */
@@ -354,12 +354,7 @@ struct Node {
  */
 Node* newNode(int data, Node *leafLeft, Node *leafRight) {
     Node* node;
-    try{
-        node = new Node;
-    } catch(std::bad_alloc&) {
-        std::cout<< "AAAAAAAAAAAAAAAAAAAAAaaa" <<std::endl;
-        std::exit(0);     // handling the case of non-allocation
-    }
+    node = new Node;
     node->data = data;
     node->left = leafLeft;
     node->right = leafRight;
@@ -374,11 +369,12 @@ Node* newNode(int data, Node *leafLeft, Node *leafRight) {
 Node* huffmanTree(std::vector<bool> encodedHuffmanTree, Golomb *golomb){
     std::vector<int> decodedLeafs;
     golomb->decode3(encodedHuffmanTree, decodedLeafs);
+    decodedLeafs.pop_back(); // -3 golomb encoded to represent the end of the huffman tree
     std::vector<int>::iterator leafIt = decodedLeafs.begin();
 
     Node* father = nullptr;
     Node* leftLeaf = newNode(1,
-                             (decodedLeafs.at(0) == -1) ? nullptr : newNode(decodedLeafs.at(0),
+                             (decodedLeafs.at(0) == -2) ? nullptr : newNode(decodedLeafs.at(0),
                                                                                      nullptr, nullptr),
                              newNode(decodedLeafs.at(1), nullptr, nullptr));
     Node* rightLeaf = nullptr;
@@ -388,14 +384,14 @@ Node* huffmanTree(std::vector<bool> encodedHuffmanTree, Golomb *golomb){
         leftLeafData = *leafIt;
         leafIt++;
         rightLeaf = newNode(0,
-                          (leftLeafData == -1) ? nullptr : newNode(leftLeafData, nullptr, nullptr),
+                          (leftLeafData == -2) ? nullptr : newNode(leftLeafData, nullptr, nullptr),
                          newNode(*leafIt, nullptr, nullptr));
         leafIt++;
 
         father =  newNode(1, leftLeaf, rightLeaf);
         leftLeaf = father;
     }
-    father->data = -1;
+    father->data = -4;
 
     return father;
 }
@@ -405,8 +401,9 @@ Node* huffmanTree(std::vector<bool> encodedHuffmanTree, Golomb *golomb){
  * because the the non zero values are always on the right leafs and the values representing the number of zeros are
  * always on the left leafs. Moreover, they are always leafs of nodes with data 0 (except for the least probable ones).
  * So we take advantage of this to encode the tree in order to send it to the decoder.
- * The values on the leafs are Golomb encoded from bottom to top in depth. When there are no left leaf values, the -1
+ * The values on the leafs are Golomb encoded from bottom to top in depth. When there are no left leaf values, the -2
  * value is encoded.
+ * We golomb encode -3 to represent the end of the tree.
  * @param freqs_listNZero list of (number of zeros of the run length code, frequency of that number) pairs.
  * @param freqs_listValue list of (non zero number of the run length code, frequency of that number) pairs.
  * @param codeZerosMap map with the number of zeros values from the run length code as keys and their frequency as value.
@@ -441,7 +438,7 @@ std::vector<bool> huffmanTreeEncode(std::list<std::pair<int, double>> freqs_list
             tree.push_back(fNZero->first);
             fNZero++;
         } else {
-            tree.push_back(-1);
+            tree.push_back(-2);
         }
         for(const auto &cw : codeValueMap){ codeValueMap[cw.first].insert(codeValueMap[cw.first].begin(), true); }
         codeValueMap[fValue->first].insert(codeValueMap[fValue->first].begin(), false);
@@ -449,17 +446,16 @@ std::vector<bool> huffmanTreeEncode(std::list<std::pair<int, double>> freqs_list
         fValue++;
         diffSizeLists--;
     }
+    tree.push_back(-3);  // end of tree
 
-    // TODO test this function
     for(int leaf : tree){
         golomb->encode2(leaf, encodedTree);
     }
 
+    std::cout << "encodedTree: ";
     for(bool bit : encodedTree){
         std::cout << (bit) ? '1' : '0';
     }
-    std::cout << std::endl;
-    std::exit(0);
     return encodedTree;
 }
 
@@ -473,22 +469,16 @@ std::vector<bool> huffmanTreeEncode(std::list<std::pair<int, double>> freqs_list
  */
 void huffmanEncode(std::vector<std::pair<int, int>> runLengthCode, std::vector<bool> &code,
                                 std::vector<bool> &encodedTree, Golomb* golomb){
-    std::unordered_map<int, double> freqsMapNZero; // word, freq
-    std::unordered_map<int, double> freqsMapValue; // word, freq
-
-    std::unordered_map<int, std::vector<bool>> codeZerosMap; // Nzeros, codeword
-    std::unordered_map<int, std::vector<bool>> codeValueMap; // Value, codeword
+    std::unordered_map<int, double> freqsMapNZero, freqsMapValue;
+    std::unordered_map<int, std::vector<bool>> codeZerosMap, codeValueMap;
 
     for(std::pair<int, int> coeff: runLengthCode){
         freqsMapNZero[coeff.first]++;
         freqsMapValue[coeff.second]++;
     }
 
-    std::list<std::pair<int, double>> freqs_listNZero;
-    std::list<std::pair<int, double>> freqs_listValue;
-
-    std::unordered_map<int, double>::iterator fNZero = freqsMapNZero.begin();
-    std::unordered_map<int, double>::iterator fValue = freqsMapValue.begin();
+    std::list<std::pair<int, double>> freqs_listNZero, freqs_listValue;
+    std::unordered_map<int, double>::iterator fNZero = freqsMapNZero.begin(), fValue = freqsMapValue.begin();
     while(fValue != freqsMapValue.end()){
         freqsMapValue[fValue->first] = fValue->second / runLengthCode.size();
         freqs_listValue.push_back(std::pair<int, double>(fValue->first, freqsMapValue[fValue->first]));
@@ -505,43 +495,13 @@ void huffmanEncode(std::vector<std::pair<int, int>> runLengthCode, std::vector<b
     freqs_listNZero.sort([](const auto &a, const auto &b ) { return a.second < b.second; } );
     freqs_listValue.sort([](const auto &a, const auto &b ) { return a.second < b.second; } );
 
-    //std::cout << "freqs_listNZero sorted list: " << std::endl;
-    //for(const auto &cw : freqs_listNZero){
-    //    std::cout << cw.first << ", freq: " << cw.second << std::endl;
-    //}
-    //std::cout<<std::endl;
-
-    //std::cout << "freqs_listValue sorted list: " << std::endl;
-    //for(const auto &cw : freqs_listValue){
-    //    std::cout << cw.first << ", freq: " << cw.second << std::endl;
-    //}
-    //std::cout<<std::endl;
-
     //TODO: retest this function
     encodedTree = huffmanTreeEncode(freqs_listNZero, freqs_listValue, codeZerosMap, codeValueMap, golomb);
 
-    //std::cout<<std::endl;
-
     for(std::pair<int, int> coeff: runLengthCode){
-        //std::cout << ac.first << ", codeword: ";
-        //for(const auto &bit : codeZerosMap[ac.first]){
-        //    std::cout << bit;
-        //}
-        //std::cout << std::endl;
-
-        //std::cout << ac.second << ", codeword: ";
-        //for(const auto &bit : codeValueMap[ac.second]){
-        //    std::cout << bit;
-        //}
-        //std::cout << std::endl;
         code.insert(code.end(), codeZerosMap[coeff.first].begin(), codeZerosMap[coeff.first].end());
         code.insert(code.end(), codeValueMap[coeff.second].begin(), codeValueMap[coeff.second].end());
     }
-
-    //for(const auto &bit : code){
-    //    std::cout<<bit;
-    //}
-    //std::cout<<std::endl;
 }
 
 /*!
@@ -555,7 +515,7 @@ void huffmanDecode(std::vector<bool> &code, std::vector<bool> &encodedTree,
                    std::vector<std::pair<int, int>> &runLengthCode, Golomb* golomb){
     Node* huffmanTreeRoot = huffmanTree(encodedTree, golomb);
     Node* node = huffmanTreeRoot;
-    int nZeros = -2;
+    int nZeros = -4;
     for(bool bit : code){
         //std::cout<< "bit: " << bit << std::endl;
         if(bit){
@@ -565,7 +525,7 @@ void huffmanDecode(std::vector<bool> &code, std::vector<bool> &encodedTree,
         }
 
         // if we are decoding the number of zeros
-        if(nZeros == -2){
+        if(nZeros == -4){
             if(node->left->left == nullptr && node->left->right == nullptr) { // number of zeros are in the left leafs
                 /*
                 if(node->left->data == 0){ // EOB
@@ -581,7 +541,7 @@ void huffmanDecode(std::vector<bool> &code, std::vector<bool> &encodedTree,
             if(node->right->left == nullptr && node->right->right == nullptr) { // values are in the right leafs
                 //std::cout << "runLengthPairs node->data: (" << nZeros << ", " << node->right->data << ")" << std::endl;
                 runLengthCode.push_back(std::pair<int, int>(nZeros, node->right->data));
-                nZeros = -2;
+                nZeros = -4;
                 node = huffmanTreeRoot;
             }
         }
@@ -598,12 +558,12 @@ void getImage(std::vector<std::pair<int, int>> runLengthCode, cv::Mat &frame){
     std::vector<int> zigzag, nzeros;
     std::vector<int>::iterator zigzagIt;
     while(rlIt != runLengthCode.end()){
-        /* int bob = rlIt->first == 0; // Beginning of block */
+        /* int bob = rlIt->first == -1; // Beginning of block */
         block.at<double>(0, 0) = rlIt->second; // dc
         rlIt++;
         row = 0, col = 0, diagonals = 1;
         reachedRow8 = false;
-        while(rlIt->first != 0 && rlIt != runLengthCode.end()){
+        while(rlIt->first != -1 && rlIt != runLengthCode.end()){
             nzeros = std::vector(rlIt->first, 0);
             zigzag.insert(zigzag.begin(), zigzag.end(), nzeros.begin());
             zigzag.push_back(rlIt->second);
@@ -694,7 +654,7 @@ void quantizeDctBaselineJPEG(cv::Mat frame, std::vector<int> prevDCs, Golomb* go
 
             // The DC coefficient of each block is predicatively encoded in relation to the DC coefficient of the
             // previous block.
-            runLength.push_back(std::pair(0, (int)(dc - *prevDC)));
+            runLength.push_back(std::pair(-1, (int)(dc - *prevDC)));
             prevDC++;
 
             runLength.insert(runLength.end(), blockACs.begin(), blockACs.end());
@@ -728,4 +688,61 @@ void inverseQuantizeDctBaselineJPEG(cv::Mat frame, std::vector<int> prevDCs){
             inverseQuantizeBlock(block, quantMatrixLuminance);
         }
     }
+}
+
+
+void printHuffmanTree(Node* huffmanTreeRoot){
+
+    int numberOfLeftLeafs = 0;
+    Node* node = huffmanTreeRoot;
+    while(node != nullptr){
+        node = node->left;
+        numberOfLeftLeafs += 1;
+    }
+    numberOfLeftLeafs *= 2;
+    std::cout<<std::string(numberOfLeftLeafs + 1, '\t')<<"*"<<std::endl;
+    std::string nodeLine = "";
+    std::string connectLine = "";
+    std::vector<Node*> prevLineFathers = {huffmanTreeRoot};
+    std::vector<Node*> currLineNodes;
+    int n = 5;
+    while(prevLineFathers.at(0)->right != nullptr){
+        currLineNodes.clear();
+        nodeLine = std::string(numberOfLeftLeafs, '\t');
+        connectLine = std::string(numberOfLeftLeafs, '\t');
+        for(Node* father : prevLineFathers){
+            if(father->left != nullptr){
+                currLineNodes.push_back(father->left);
+                nodeLine += (father->left->right == nullptr) ? "\033[36m |" : " \033[32m|";
+                nodeLine += std::to_string(father->left->data) + "|\033[39m ";
+                connectLine += (father->data == 1) ? "  \033[32m/" : "  \033[31m/";
+                connectLine += "\033[39m  ";
+            } else {
+                nodeLine += "     ";
+                connectLine += "     ";
+            }
+            nodeLine += std::string((int)(numberOfLeftLeafs/n)*2, '\t');
+            connectLine += std::string((int)(numberOfLeftLeafs/n)*2, '\t');
+            if(father->right != nullptr){
+                currLineNodes.push_back(father->right);
+                nodeLine += (father->right->right == nullptr) ? "\033[33m |" : " \033[31m|";
+                nodeLine += std::to_string(father->right->data) + "|\033[39m ";
+                connectLine += (father->data == 1) ? "  \033[32m\\" : "  \033[31m\\";
+                connectLine += "\033[39m  ";
+            } else {
+                nodeLine += "     ";
+                connectLine += "     ";
+            }
+            nodeLine += std::string((int)(numberOfLeftLeafs/n), '\t');
+            connectLine += std::string((int)(numberOfLeftLeafs/n), '\t');
+        }
+        prevLineFathers = currLineNodes;
+
+        n *= 2;
+        std::cout<<connectLine<<std::endl;
+        std::cout<<nodeLine<<std::endl;
+        numberOfLeftLeafs -= 1;
+    }
+
+    std::cout<<"Legend:\n\t\033[36mNumber of preceding zeros\033[31m\n\t\033[33mValue\033[31m"<<std::endl;
 }
