@@ -8,6 +8,7 @@
 #include    <opencv2/opencv.hpp>
 #include    <cmath>
 #include    "Golomb.cpp"
+#include    "HuffmanDecoder.cpp"
 
 double jpeg_matrix_grayscale [8][8] = {{16, 11, 10, 16, 24, 40, 51, 61},
                                        {12, 12, 14, 19, 26, 58, 60, 55},
@@ -340,12 +341,6 @@ void runLengthPairs(std::vector<int> vec, std::vector<std::pair<int, int>> &code
     }
 }
 
-//! Data structure to store a tree node.
-struct Node {
-    int data;
-    Node *left, *right;
-};
-
 /*! Creates a new tree node.
  * @param data data to be stored in the new tree node.
  * @param leafLeft pointer to the new node's leaft leaf.
@@ -454,10 +449,6 @@ std::vector<bool> huffmanTreeEncode(std::list<std::pair<int, double>> freqs_list
         golomb->encode2(leaf, encodedTree);
     }
 
-    std::cout << "encodedTree: ";
-    for(bool bit : encodedTree){
-        std::cout << (bit) ? '1' : '0';
-    }
     return encodedTree;
 }
 
@@ -574,7 +565,7 @@ void printHuffmanTree(Node* huffmanTreeRoot){
 void huffmanDecode(std::vector<bool> &code, std::vector<bool> &encodedTree,
                    std::vector<std::pair<int, int>> &runLengthCode, Golomb* golomb){
     Node* huffmanTreeRoot = huffmanTree(encodedTree, golomb);
-    //printHuffmanTree(huffmanTreeRoot);
+    printHuffmanTree(huffmanTreeRoot); // TODO: comment this line
     Node* node = huffmanTreeRoot;
     int nZeros = -4;
     for(bool bit : code){
@@ -598,22 +589,22 @@ void huffmanDecode(std::vector<bool> &code, std::vector<bool> &encodedTree,
 
 void getImage(std::vector<std::pair<int, int>> runLengthCode, cv::Mat &frame){
     std::vector<std::pair<int, int>>::iterator rlIt = runLengthCode.begin();
-    int diagonals, row = 8, col = -1;
+    int diagonals, row = 0, col = 0;
     bool reachedRow8;
     std::vector<int> zigzag = std::vector(64, 0);
     std::vector<int>::iterator zigzagIt = zigzag.begin();
     while(rlIt != runLengthCode.end()){
         /* int bob = rlIt->first == -1; // Beginning of block */
-        frame.at<double>(0, 0) = rlIt->second; // dc
-        rlIt++;
-        diagonals = 1;
+        frame.at<double>(row, col) = rlIt->second; // dc
         if(col == frame.cols - 1){
             col = 0;
             row += 1;
-        } else {
+        } else if(rlIt != runLengthCode.begin()){
             col += 1;
             row -= 8;
         }
+        rlIt++;
+        diagonals = 1;
         reachedRow8 = false;
 
         while(rlIt->first != -1 && rlIt != runLengthCode.end()){
@@ -670,7 +661,7 @@ void getImage(std::vector<std::pair<int, int>> runLengthCode, cv::Mat &frame){
  * @param encodedTree
  * @param code
  */
-void quantizeDctBaselineJPEG(cv::Mat frame, std::vector<int> prevDCs, Golomb* golomb, std::vector<bool> &encodedTree,
+void quantizeDctBaselineJPEG(cv::Mat &frame, std::vector<int> prevDCs, Golomb* golomb, std::vector<bool> &encodedTree,
                              std::vector<bool> &code) {
 
     divideImageIn8x8Blocks(frame);
@@ -687,6 +678,7 @@ void quantizeDctBaselineJPEG(cv::Mat frame, std::vector<int> prevDCs, Golomb* go
 
             // TODO see what jpeg matrix to use
             quantizeBlock(block, quantMatrixLuminance);
+            block.copyTo(frame(cv::Rect(r,c,8,8)));
 
             // Next, the coefficients are organized in a one-dimensional vector according to a zig-zag scan.
             zigzagVector.clear();
@@ -712,7 +704,8 @@ void quantizeDctBaselineJPEG(cv::Mat frame, std::vector<int> prevDCs, Golomb* go
             runLength.insert(runLength.end(), blockACs.begin(), blockACs.end());
         }
     }
-    
+
+    runLength.push_back(std::pair(-3, -3)); // end of huffman code
     huffmanEncode(runLength, code, encodedTree, golomb);
 }
 
@@ -722,22 +715,77 @@ void quantizeDctBaselineJPEG(cv::Mat frame, std::vector<int> prevDCs, Golomb* go
  * @param frame
  * @param prevDCs
  */
-void inverseQuantizeDctBaselineJPEG(cv::Mat frame, std::vector<int> prevDCs){
-
-    cv::Mat return_frame  = cv::Mat::zeros(frame.rows, frame.cols, CV_64F);
-    std::vector<int> currDCs;
-
-    // *********************** Statistical decoding (Golomb) of the quantized DCT coefficients *************************
-    // TODO huffmanDecode call
-    // TODO getImage call
-
+void inverseQuantizeDctBaselineJPEG(std::vector<int> &prevDCs, std::vector<std::pair<int, int>> runLengthCode,
+                                    cv::Mat &frame){
+    std::vector<int>::iterator dcIt = prevDCs.begin();
+    std::vector<std::pair<int, int>>::iterator rlIt = runLengthCode.begin();
     cv::Mat block;
-    for(int r = 0; r < frame.rows; r += 8) {
-        for (int c = 0; c < frame.cols; c += 8) {
-            frame(cv::Rect(r,c,8,8)).copyTo(block);
-
-            // TODO see what jpeg matrix to use
-            inverseQuantizeBlock(block, quantMatrixLuminance);
+    int diagonals, row = 0, col = 0;
+    bool reachedRow8;
+    std::vector<int> zigzag = std::vector(64, 0);
+    std::vector<int>::iterator zigzagIt = zigzag.begin();
+    while(rlIt != runLengthCode.end()){
+        /* int bob = rlIt->first == -1; // Beginning of block */
+        frame.at<double>(row, col) = rlIt->second + *dcIt; // dc
+        // refresh prevDCs
+        *dcIt += rlIt->second; //TODO: check if right
+        dcIt++;
+        if(col == frame.cols - 1){
+            col = 0;
+            row += 1;
+        } else if(rlIt != runLengthCode.begin()){
+            col += 1;
+            row -= 8;
         }
+        rlIt++;
+        diagonals = 1;
+        reachedRow8 = false;
+
+        while(rlIt->first != -1 && rlIt != runLengthCode.end()){
+            if(rlIt->first != 0){
+                zigzagIt += rlIt->first;
+            }
+            *zigzagIt = rlIt->second;
+            zigzagIt++;
+            rlIt++;
+        }
+        zigzagIt = zigzag.begin();
+        while(zigzagIt != zigzag.end()){
+            if(!reachedRow8){ col += 1; /* right */ } else { row = row + 1; /* down */ }
+            frame.at<double>(row, col) = *zigzagIt;
+            zigzagIt++;
+
+            // down diagonal
+            int temp_diagonals = diagonals;
+            while(temp_diagonals != 0){
+                row += 1; col -= 1;
+                frame.at<double>(row, col) = *zigzagIt;
+                zigzagIt++;
+                temp_diagonals -= 1;
+            }
+            if(row == 7){ reachedRow8 = true; }
+            if(!reachedRow8){ diagonals += 1; } else { diagonals -= 1; }
+
+            if(!reachedRow8){ row = row + 1; /* down */ } else { col += 1; /* right */ }
+            frame.at<double>(row, col) = *zigzagIt;
+            zigzagIt++;
+
+            if(diagonals == 0){ break; }
+
+            // up diagonal
+            temp_diagonals = diagonals;
+            while(temp_diagonals != 0){
+                row -= 1; col += 1;
+                frame.at<double>(row, col) = *zigzagIt;
+                zigzagIt++;
+                temp_diagonals -= 1;
+            }
+            if(!reachedRow8){ diagonals += 1; } else { diagonals -= 1; }
+        }
+        zigzag.clear();
+
+        frame(cv::Rect(row - 7, col - 7, 8, 8)).copyTo(block);
+        inverseQuantizeBlock(block, quantMatrixLuminance); // TODO: check what jpeg matrix to use
+        block.copyTo(frame(cv::Rect(row - 7, col - 7, 8, 8)));
     }
 }

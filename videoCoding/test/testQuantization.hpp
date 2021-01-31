@@ -34,6 +34,11 @@ std::vector<std::pair<int, int>> runLengthCode = {{-1, 20}, {0,5}, {0, -3}, {0, 
                                                   {0, 3}, {0, -2}, {0, 1}, {0, 1},
                                                   {6,1}, {0, 1}, {1, 1}};
 
+
+std::vector<int> prevDCs = {0};
+std::vector<bool> quantEncodedTree = {}; // Golomb
+std::vector<bool> quantCode = {}; // Huffman
+
 TEST_CASE("Quantization divideImageIn8x8Blocks") {
 
     double in[6][7] = {{183,160,94,153,194,163,132},
@@ -339,12 +344,29 @@ TEST_CASE("Huffman Encode") {
         info +=(bit) ? '1' : '0';
     }
     INFO(info);
+    info = "\nGolomb Encoded Huffman Tree: \n";
+    for(bool bit : encodedHuffmanTree){
+        info +=(bit) ? '1' : '0';
+    }
+    INFO(info);
     CHECK(std::equal(code.begin(), code.end(), huffmanCode.begin()));
 }
 
 TEST_CASE("Huffman Decode"){
     std::vector<std::pair<int, int>> decode;
     huffmanDecode(huffmanCode, encodedHuffmanTree, decode, golomb);
+
+    std::string info = "\ndecoded dc: " + std::to_string(decode.at(0).second);
+    INFO(info);
+    info = "\ncodewords run length (acs): \n";
+    for(std::pair<int, int> ac: decode){
+        if(ac.first == -1){ continue; }
+        info += "(" + std::to_string(ac.first) + "," + std::to_string(ac.second) + ")";
+        info += ", ";
+    }
+    info.erase(info.end() - 2, info.end());
+    INFO(info);
+
     CHECK(std::equal(decode.begin(), decode.end(), runLengthCode.begin()));
 }
 
@@ -360,9 +382,69 @@ TEST_CASE("Get Image"){
     cv::Mat block = cv::Mat(8, 8, CV_64F);
     getImage(runLengthCode, block);
     cv::Mat finalY = cv::Mat(8, 8, CV_64F, &final_Y);
+    INFO("Image matrix from run length code");
     INFO(block);
     CHECK(std::equal(block.begin<double>(), block.end<double>(), finalY.begin<double>()));
 }
 
+TEST_CASE("quantizeDctBaselineJPEG"){
 
+    double X [8][8] = {{183,160,94,153,194,163,132,165},
+                       {183,153,116,176,187,166,130,169},
+                       {179,168,171,182,179,170,131,167},
+                       {177,177,179,177,179,165,131,167},
+                       {178,178,179,176,182,164,130,171},
+                       {179,180,180,179,183,169,132,169},
+                       {179,179,180,182,183,170,129,173},
+                       {180,179,181,179,181,170,130,169}};
+    double final_Y [8][8] = {{20,5,-3,1,3,-2,1,0},
+                             {-3,-2,1,2,1,0,0,0},
+                             {-1,-1,1,1,1,0,0,0},
+                             {-1,0,0,1,0,0,0,0},
+                             {0,0,0,0,0,0,0,0},
+                             {0,0,0,0,0,0,0,0},
+                             {0,0,0,0,0,0,0,0},
+                             {0,0,0,0,0,0,0,0}};
+    cv::Mat Xmatrix = cv::Mat(8, 8, CV_64F, &X);
+    cv::Mat finalY = cv::Mat(8, 8, CV_64F, &final_Y);
+    INFO(Xmatrix);
+    quantizeDctBaselineJPEG(Xmatrix, prevDCs, golomb, quantEncodedTree, quantCode);
+    INFO(Xmatrix);
+    CHECK(std::equal(Xmatrix.begin<double>(), Xmatrix.end<double>(), finalY.begin<double>()));
+}
+
+TEST_CASE("inverseQuantizeDctBaselineJPEG"){
+
+    double X [8][8] = {{183,160,94,153,194,163,132,165},
+                       {183,153,116,176,187,166,130,169},
+                       {179,168,171,182,179,170,131,167},
+                       {177,177,179,177,179,165,131,167},
+                       {178,178,179,176,182,164,130,171},
+                       {179,180,180,179,183,169,132,169},
+                       {179,179,180,182,183,170,129,173},
+                       {180,179,181,179,181,170,130,169}};
+    double final_Y [8][8] = {{20,5,-3,1,3,-2,1,0},
+                             {-3,-2,1,2,1,0,0,0},
+                             {-1,-1,1,1,1,0,0,0},
+                             {-1,0,0,1,0,0,0,0},
+                             {0,0,0,0,0,0,0,0},
+                             {0,0,0,0,0,0,0,0},
+                             {0,0,0,0,0,0,0,0},
+                             {0,0,0,0,0,0,0,0}};
+    cv::Mat Xmatrix = cv::Mat(8, 8, CV_64F, &X);
+    cv::Mat finalY = cv::Mat(8, 8, CV_64F, &final_Y);
+    INFO("\nY: \n");
+    INFO(finalY);
+    std::vector<std::pair<int, int>> rlCode;
+    huffmanDecode(quantCode, quantEncodedTree, rlCode, golomb);
+    inverseQuantizeDctBaselineJPEG(prevDCs, rlCode, finalY);
+    INFO("\nX: \n");
+    INFO(Xmatrix);
+    INFO("\nresult: \n");
+    INFO(finalY);
+    INFO("\nDifferences between X and inverse of the quantization: \n");
+    INFO(Xmatrix-finalY);
+    bool is_small_diff = cv::checkRange(Xmatrix-finalY, true, nullptr, -60, 60);
+    CHECK(is_small_diff);
+}
 #endif //VIDEOCODING_TESTQUANTIZATION_HPP
