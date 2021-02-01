@@ -5,10 +5,10 @@
 #ifndef VIDEOCODING_EXTRAMILE_HPP
 #define VIDEOCODING_EXTRAMILE_HPP
 
-#include    "BitStream.hpp"
 #include    <sndfile.hh>
 #include    <vector>
 #include    "Golomb.h"
+#include    "GolombVideo.h"
 #include    <opencv2/opencv.hpp>
 #include    "LosslessJPEGPredictors.hpp"
 #include    <math.h>
@@ -98,7 +98,7 @@ public:
     void encode();
 
     /**
-     * Use BitStream to write Golomb encoded residuals to file.
+     * Use BitStream to write GolombVideo encoded residuals to file.
      * @param filename
      */
     void write(char* filename);
@@ -143,34 +143,34 @@ public:
     /*!
      * @param srcFileName source video file name/path.
      * @param predictor JPEG linear predictors [1,7] or non linear predictor 8
-     * @param initial m used in Golomb encoder
+     * @param initial m used in GolombVideo encoder
      * @param mode intra (0) or hybrid (1)
      * @param lossy bool true to use quantization false otherwise
      * @param calchist save residuals to compute histogram
     */
     explicit VideoEncoder(char* srcFileName, int pred, int init_m, int mode, bool lossy, bool calcHist);
 
-    //! Use linear and non-linear predictors to compute residuals, encode them using the Golomb encoder and add them to
+    //! Use linear and non-linear predictors to compute residuals, encode them using the GolombVideo encoder and add them to
     //! the bitstream.
     /*!
      * @param frame matrix containing single channel values.
-     * @param golomb Golomb entropy encoder
-     * @param m_rate rate at which Golomb entropy encoder's m parameter is updated
+     * @param golomb GolombVideo entropy encoder
+     * @param m_rate rate at which GolombVideo entropy encoder's m parameter is updated
      * @param k used to identify channel when storing residuals for histograms
      */
-    void encodeRes_intra(cv::Mat &frame, Golomb *golomb, int m_rate, int k);
+    void encodeRes_intra(cv::Mat &frame, GolombVideo *golomb, int m_rate, int k);
 
-    //! Use motion compensation to compute residuals, encode them and the corresponding motion vectors using the Golomb
+    //! Use motion compensation to compute residuals, encode them and the corresponding motion vectors using the GolombVideo
     //! encoder and add them to the bitstream.
     /*!
      * @param p_frame matrix containing single channel values from previous frame.
      * @param curr_frame matrix containing single channel values from current frame.
-     * @param golomb Golomb entropy encoder
-     * @param m_rate rate at which Golomb entropy encoder's m parameter is updated
+     * @param golomb GolombVideo entropy encoder
+     * @param m_rate rate at which GolombVideo entropy encoder's m parameter is updated
      * @param block_size dimension of square frame block block_size*block_size
      * @param search_size number of blocks from center to edges of square search area (square with sides = 2*search_size+1)
      */
-    void encodeRes_inter(const cv::Mat &p_frame, const cv::Mat &curr_frame, Golomb *golomb, int m_rate, int block_size, int search_size);
+    void encodeRes_inter(const cv::Mat &p_frame, const cv::Mat &curr_frame, GolombVideo *golomb, int m_rate, int block_size, int search_size);
 
     //! Compute residuals and MSE of two equally sized single channel block
     /*!
@@ -181,7 +181,7 @@ public:
      */
     void submatsResiduals(const cv::Mat &prev, const cv::Mat &curr, cv::Mat &outRes, double &outMSE);
 
-    //! Use BitStream to write Golomb encoded residuals to file.
+    //! Use BitStream to write GolombVideo encoded residuals to file.
     /*!
      * @param filename
      */
@@ -279,9 +279,9 @@ public:
      * @param
      * @param
      */
-    void update_m(vector<int> residuals, Golomb *golomb, int m_rate);
+    void update_m(vector<int> residuals, GolombVideo *golomb, int m_rate);
 
-    void getResAndUpdate(vector<bool> &data, unsigned int *indexPtr, int n_residuals, Golomb *golomb, int m_rate, vector<int> &outRes);
+    void getResAndUpdate(vector<bool> &data, unsigned int *indexPtr, int n_residuals, GolombVideo *golomb, int m_rate, vector<int> &outRes);
 
     //!
     /*!

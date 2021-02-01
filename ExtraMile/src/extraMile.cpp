@@ -2,7 +2,7 @@
 // Created by irocs on 2/1/21.
 //
 
-#include "extraMile.hpp"
+#include "../includes/extraMile.hpp"
 
 
 using namespace std;
@@ -75,7 +75,7 @@ void AudioEncoder::encode(){
     short leftRes;
     short rightRes;
 
-    // Golomb encoder
+    // GolombVideo encoder
     auto *golomb = new Golomb(initial_m);
     // calc m every m_rate frames
     int m_rate = 1000;
@@ -293,7 +293,7 @@ void AudioDecoder::decode(){
     short leftRes;
     short rightRes;
 
-    // Golomb decoder
+    // GolombVideo decoder
     auto *golomb = new Golomb(initial_m);
     int framesToDecode = 1000; // must be equal to Encoder's m_rate
 
@@ -490,8 +490,8 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int init_m, int mode, bo
     // data buffer
     Mat frameData;
 
-    // Golomb encoder
-    auto *golomb = new Golomb(this->initial_m);
+    // GolombVideo encoder
+    auto *golomb = new GolombVideo(this->initial_m);
     // calc m every m_rate frames
     int m_rate = 100;
 
@@ -581,7 +581,7 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int init_m, int mode, bo
 
 }
 
-void VideoEncoder::encodeRes_intra(Mat &frame, Golomb *golomb, int m_rate, int k){
+void VideoEncoder::encodeRes_intra(Mat &frame, GolombVideo *golomb, int m_rate, int k){
     // residuals
     char residual;
     // used to compute mean of mapped residuals
@@ -667,7 +667,7 @@ void VideoEncoder::encodeRes_intra(Mat &frame, Golomb *golomb, int m_rate, int k
     }
 }
 
-void VideoEncoder::encodeRes_inter(const Mat &prev_frame, const Mat &curr_frame, Golomb *golomb, int m_rate, int block_size, int search_size){
+void VideoEncoder::encodeRes_inter(const Mat &prev_frame, const Mat &curr_frame, GolombVideo *golomb, int m_rate, int block_size, int search_size){
     // split current frame into square blocks
     // grid of blocks dimensions
     int grid_h = curr_frame.rows / block_size;
@@ -921,8 +921,8 @@ void VideoDecoder::decode(){
             break;
     }
 
-    // Golomb decoder
-    Golomb *golomb = new Golomb(initial_m);
+    // GolombVideo decoder
+    GolombVideo *golomb = new GolombVideo(initial_m);
     int m_rate = 100; // must be equal to Encoder's m_rate
 
     // intra coding rate
@@ -1018,7 +1018,7 @@ void VideoDecoder::decode(){
 }
 
 // TODO: make it fast
-void VideoDecoder::update_m(vector<int> residuals, Golomb *golomb, int m_rate){
+void VideoDecoder::update_m(vector<int> residuals, GolombVideo *golomb, int m_rate){
     // used to compute mean of mapped residuals
     float res_sum = 0;
     int numRes = 0;
@@ -1050,7 +1050,7 @@ void VideoDecoder::update_m(vector<int> residuals, Golomb *golomb, int m_rate){
     }
 }
 
-void VideoDecoder::getResAndUpdate(vector<bool> &data, unsigned int *indexPtr, int n_residuals, Golomb *golomb, int m_rate, vector<int> &outRes){
+void VideoDecoder::getResAndUpdate(vector<bool> &data, unsigned int *indexPtr, int n_residuals, GolombVideo *golomb, int m_rate, vector<int> &outRes){
     int n_to_decode = m_rate;
     int n_decoded = 0;
     while(n_decoded < n_residuals){
