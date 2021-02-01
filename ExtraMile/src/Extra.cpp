@@ -1,16 +1,7 @@
 //
 // Created by irocs on 1/30/21.
 //
-#include    "VideoEncoder.cpp"
-#include    "VideoDecoder.cpp"
-#include    <string>
-#include    <cstdio>
-#include <iostream>
-#include "../../audioCoding/src/AudioEncoder.cpp"
-#include "../../audioCoding/src/AudioDecoder.cpp"
-#include "../../audioAndImageOrVideoManipulation/src/EntropyCalculator.cpp"
-#include  <unordered_map>
-#include  <vector>
+#include "extraMile.cpp"
 
 
 using namespace std;
