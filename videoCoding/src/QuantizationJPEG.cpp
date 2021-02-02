@@ -728,8 +728,8 @@ void quantizeDctBaselineJPEG(cv::Mat &frame, std::vector<int> &prevDCs, Golomb* 
 
             // The non-zero AC coefficients are encoded using Huffman or arithmetic coding, representing the value of
             // the coefficient, as well as the number of zeros preceding it.
-            // In this case  the symbol to represent the end of the block doesn't exist. We use 0 in the value
-            // representing the number of zeros, to represent the beginning of a block, followwed by the dc.
+            // In this case  the symbol to represent the end of the block doesn't exist. We use -1 in the value
+            // representing the number of zeros, to represent the beginning of a block, followed by the dc.
             blockACs.clear();
             runLengthPairs(zigzagVector, blockACs);
 
@@ -765,8 +765,8 @@ void inverseQuantizeDctBaselineJPEG(std::vector<int> &prevDCs, std::vector<std::
     std::vector<int>::iterator zigzagIt = zigzag.begin();
     while(rlIt != runLengthCode.end()){
         /* int bob = rlIt->first == -1; // Beginning of block */
+        *dcIt += rlIt->second; // refresh prevDCs
         frame.at<double>(row, col) = rlIt->second + *dcIt; // dc
-        *dcIt = rlIt->second; // refresh prevDCs
         dcIt++;
         if(col == frame.cols - 1){
             col = 0;

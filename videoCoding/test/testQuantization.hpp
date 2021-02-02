@@ -481,7 +481,7 @@ TEST_CASE("Huffman Decoder"){
     Node* huffmanTreeRoot = huffmanTree(decodedLeafs);
     auto* huffDec = new HuffmanDecoder(huffmanTreeRoot);
     std::vector<std::pair<int, int>> rlCode;
-    std::vector<bool>::iterator bit = quantCode.begin();
+    auto bit = quantCode.begin();
     while(huffDec->decode(*bit, rlCode)){ bit++; }
 
     info = "\nDecoded codewords run length: \n";
@@ -518,7 +518,7 @@ TEST_CASE("inverseQuantizeDctBaselineJPEG 2"){
 
     Node* huffmanTreeRoot = huffmanTree(decodedLeafs);
     auto* huffDec = new HuffmanDecoder(huffmanTreeRoot);
-    std::vector<bool>::iterator bit = quantCode.begin();
+    auto bit = quantCode.begin();
     while(huffDec->decode(*bit, rlCode)){ bit++; }
 
     inverseQuantizeDctBaselineJPEG(prevDCs, rlCode, result);
