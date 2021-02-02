@@ -57,6 +57,9 @@ public:
     */
     vector<bool> readNbits(unsigned int N);
 
+    //! Reads all remaining bits
+    void readToEnd(vector<bool> &outBits);
+
     //! Write 1 bit
     /*!
         This class function has the propose of writing just 1 bit

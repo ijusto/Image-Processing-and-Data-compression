@@ -158,6 +158,12 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int init_m, int mode, bo
         // update previous
         y_prev = frameData;
 
+        if(this->lossy){
+            // this->last_res contains last residuals (Y)
+            // encode residuals using huffman/golomb
+            // append encoded residuals to this->encodedRes (vector<bool>)
+        }
+
         // read u
         frameData = Mat(U_frame_rows, U_frame_cols, CV_8UC1);
         video.read((char *) frameData.ptr(), U_frame_rows * U_frame_cols);
@@ -175,6 +181,12 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int init_m, int mode, bo
         }
         // update previous
         u_prev = frameData;
+
+        if(this->lossy){
+            // this->last_res contains last residuals (U)
+            // encode residuals using huffman/golomb
+            // append encoded residuals to this->encodedRes (vector<bool>)
+        }
 
         // read v
         frameData = Mat(V_frame_rows, V_frame_cols, CV_8UC1);
@@ -194,6 +206,12 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int init_m, int mode, bo
         // update previous
         v_prev = frameData;
 
+        if(this->lossy){
+            // this->last_res contains last residuals (V)
+            // encode residuals using huffman/golomb
+            // append encoded residuals to this->encodedRes (vector<bool>)
+        }
+
         frameCounter++;
     }
     cout << endl;
@@ -208,6 +226,8 @@ void VideoEncoder::encodeRes_intra(Mat &frame, Golomb *golomb, int m_rate, int k
     // used to compute mean of mapped residuals
     float res_sum = 0;
     int numRes = 0;
+
+    this->last_res = Mat(frame.rows, frame.cols, CV_8SC1);
 
     for(int i = 0; i < frame.rows; i++){
         for(int j = 0; j < frame.cols; j++){
@@ -257,32 +277,37 @@ void VideoEncoder::encodeRes_intra(Mat &frame, Golomb *golomb, int m_rate, int k
 
             // quantize residual here before encoding
 
-            // encode residuals
-            vector<bool> encodedResidual;
-            golomb->encode2(residual, encodedResidual);
-            encodedRes.insert(encodedRes.end(), encodedResidual.begin(), encodedResidual.end());
+            if (this->lossy){
+                // save residual
+                last_res.at<uchar>(i, j) = residual;
+            }else{
+                // encode residuals
+                vector<bool> encodedResidual;
+                golomb->encode2(residual, encodedResidual);
+                encodedRes.insert(encodedRes.end(), encodedResidual.begin(), encodedResidual.end());
 
-            // compute m
-            int Mapped = 2 * residual;
-            if(residual < 0){
-                Mapped = -Mapped-1;
-            }
-            res_sum += Mapped;
-            numRes++;
-            if(numRes == m_rate){
-                // calc mean from last m_rate mapped pixels
-                float res_mean = res_sum/numRes;
-                // calc alpha of geometric dist
-                // mu = alpha/(1 - alpha) <=> alpha = mu/(1 + mu)
-                float alpha = res_mean/(1+res_mean);
-                int m = ceil(-1/log(alpha));
-                if (m != 0){
-                    //cout << "NEW M " << m << endl;
-                    golomb->setM(m);
+                // compute m
+                int Mapped = 2 * residual;
+                if(residual < 0){
+                    Mapped = -Mapped-1;
                 }
-                //reset
-                res_sum = 0;
-                numRes = 0;
+                res_sum += Mapped;
+                numRes++;
+                if(numRes == m_rate){
+                    // calc mean from last m_rate mapped pixels
+                    float res_mean = res_sum/numRes;
+                    // calc alpha of geometric dist
+                    // mu = alpha/(1 - alpha) <=> alpha = mu/(1 + mu)
+                    float alpha = res_mean/(1+res_mean);
+                    int m = ceil(-1/log(alpha));
+                    if (m != 0){
+                        //cout << "NEW M " << m << endl;
+                        golomb->setM(m);
+                    }
+                    //reset
+                    res_sum = 0;
+                    numRes = 0;
+                }
             }
         }
     }
@@ -302,42 +327,56 @@ void VideoEncoder::encodeRes_inter(const Mat &prev_frame, const Mat &curr_frame,
         grid_w += 1;
     }
 
-    // pad prev_frame with with 0s
+    // pad curr_frame with 0s on bottom and right sides
+    Mat padded_curr_frame;
+    int bd = block_size - (curr_frame.rows % block_size);
+    int rd = block_size - (curr_frame.cols % block_size);
+    copyMakeBorder(prev_frame, padded_curr_frame, 0, bd, 0, rd, BORDER_CONSTANT, Scalar(0));
+
+    // pad prev_frame with 0s on all sides
     Mat padded_prev_frame;
     int sd = search_size * block_size; // search distance (in pixels)
-    copyMakeBorder(prev_frame, padded_prev_frame, sd, sd, sd, sd, BORDER_CONSTANT, Scalar(0));
+    copyMakeBorder(prev_frame, padded_prev_frame, sd, sd + bd, sd, sd + rd, BORDER_CONSTANT, Scalar(0));
 
     // used to compute mean of mapped residuals
     float res_sum = 0;
     int numRes = 0;
 
     // traverse all blocks, for each block find motion vector with smallest MSE
-    for(int x = 0; x < grid_w; x++){
-        for(int y = 0; y < grid_h; y++){
+    for(int grid_x = 0; grid_x < grid_w; grid_x++){
+        for(int grid_y = 0; grid_y < grid_h; grid_y++){
+            int x = grid_x * block_size;
+            int y = grid_y * block_size;
 
             int best_block_x = 0;
             int best_block_y = 0;
 
-            Mat curr_block = curr_frame(cv::Rect(x,y, block_size, block_size));
+            Mat curr_block = padded_curr_frame(cv::Rect(x, y, block_size, block_size));
             Mat best_residuals(block_size, block_size, CV_16SC1);
             double min_mse = -1;
 
             // perform exhaustive search on previous frame search area
-            for(int search_x = x; search_x < (2*search_size + 1)*block_size; search_x+=block_size){
-                for(int search_y = y; search_y < (2*search_size + 1)*block_size; search_y+=block_size){
+            for(int search_x = x; search_x - x < (2*search_size + 1)*block_size && min_mse != 0; search_x+=block_size){
+                for(int search_y = y; search_y - y < (2*search_size + 1)*block_size && min_mse != 0; search_y+=block_size){
                     Mat prev_block = padded_prev_frame(cv::Rect(search_x, search_y, block_size, block_size));
 
-                    // calc mse
+                    // calc residuals
                     Mat residuals(block_size, block_size, CV_16SC1);
-                    double mse = 0;
-                    submatsResiduals(prev_block, curr_block, residuals, mse);
+                    subtract(curr_block, prev_block, residuals, noArray(), CV_16SC1);
+                    // calc MSE
+                    Mat newRes;
+                    residuals.copyTo(newRes);
+                    newRes.convertTo(newRes, CV_32F);
+                    newRes = newRes.mul(newRes);
+                    Scalar s = sum(newRes);
+                    double mse = s.val[0] / (double) (newRes.total());
 
                     // update best motion vector
                     if (min_mse == -1 || mse < min_mse){
                         best_residuals = residuals;
-                        min_mse = mse;
                         best_block_x = search_x;
                         best_block_y = search_y;
+                        min_mse = mse;
                     }
                 }
             }
@@ -355,7 +394,7 @@ void VideoEncoder::encodeRes_inter(const Mat &prev_frame, const Mat &curr_frame,
             // write residuals
             for(int j = 0; j < best_residuals.cols; j++){
                 for(int i = 0; i < best_residuals.rows; i++){
-                    int residual = (int) best_residuals.at<short>(i,j);
+                    int residual = best_residuals.at<short>(i,j);
                     // golomb encode residuals
                     vector<bool> encodedResidual;
                     golomb->encode2(residual, encodedResidual);
@@ -388,18 +427,6 @@ void VideoEncoder::encodeRes_inter(const Mat &prev_frame, const Mat &curr_frame,
             }
         }
     }
-}
-
-void VideoEncoder::submatsResiduals(const Mat &prev, const Mat &curr, Mat &outRes, double &outMSE){
-    // calc residuals
-    subtract(prev, curr, outRes);
-    // calc MSE
-    Mat newRes;
-    outRes.copyTo(newRes);
-    newRes.convertTo(newRes, CV_32F);
-    newRes = newRes.mul(newRes);
-    Scalar s = sum(newRes);
-    outMSE = s.val[0] / (double) (newRes.total());
 }
 
 void VideoEncoder::write(char *filename) {
@@ -436,10 +463,13 @@ void VideoEncoder::write(char *filename) {
     //cols
     vector<bool> cols = int2boolvec(this->cols);
     file.insert(file.end(), cols.begin(), cols.end());
-    //data
-    file.insert(file.end(), this->encodedRes.begin(), this->encodedRes.end());
 
+    // write header
     wbs->writeNbits(file);
+
+    // write data
+    wbs->writeNbits(this->encodedRes);
+
     wbs->endWriteFile();
 }
 

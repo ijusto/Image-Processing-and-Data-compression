@@ -36,7 +36,8 @@ VideoDecoder::VideoDecoder(char* encodedFileName){
 
 void VideoDecoder::decode(){
     // read all data
-    vector<bool> data = sourceFile->readNbits((sourceFile->size() - headerSize) * 8);
+    vector<bool> data;
+    sourceFile->readToEnd(data);
     // used to index data in golomb.decode2
     unsigned int index = 0;
 
@@ -143,7 +144,7 @@ void VideoDecoder::decode(){
             }
             if(this->mode == 1){
                 // hybrid
-                // update prev
+                // update prev TODO: ?
                 prev.data = component_frame.data();
             }
             // add component to frame
@@ -184,7 +185,7 @@ void VideoDecoder::update_m(vector<int> residuals, Golomb *golomb, int m_rate){
         float alpha = res_mean/(1+res_mean);
         int m = ceil(-1/log(alpha));
         if (m != 0){
-            //cout << "NEW M " << m << endl;
+            // cout << "NEW M " << m << endl;
             golomb->setM(m);
         }
         //reset
@@ -263,7 +264,9 @@ void VideoDecoder::decodeRes_inter(Mat &prev_frame, vector<int> &currFrameResidu
     // pad prev_frame with with 0s
     Mat padded_prev_frame;
     int sd = search_size * block_size; // search distance (in pixels)
-    copyMakeBorder(prev_frame, padded_prev_frame, sd, sd, sd, sd, BORDER_CONSTANT, Scalar(0));
+    int bd = block_size - (prev_frame.rows % block_size);
+    int rd = block_size - (prev_frame.cols % block_size);
+    copyMakeBorder(prev_frame, padded_prev_frame, sd, sd + bd, sd, sd + rd, BORDER_CONSTANT, Scalar(0));
 
     int idx = 0;
     // traverse all blocks
@@ -277,12 +280,14 @@ void VideoDecoder::decodeRes_inter(Mat &prev_frame, vector<int> &currFrameResidu
             // get rect from prev using motion vect
             Mat prev_block = padded_prev_frame(cv::Rect(motion_x, motion_y, block_size, block_size));
             // compute value using residuals
-            for(int i = 0; i < block_size; i++){
-                for(int j = 0; j < block_size; j++){
+            for(int j = 0; j < block_size; j++){
+                for(int i = 0; i < block_size; i++){
                     // add residuals to prev rect
                     int value = prev_block.at<uchar>(i, j) + currFrameResiduals.at(idx+(i*block_size+j));
-                    // add result to outPlanarValues
-                    outPlanarValues.push_back(value);
+                    if(x*block_size+j < prev_frame.cols || y*block_size+i < prev_frame.rows){
+                        // add result to outPlanarValues
+                        outPlanarValues.push_back(value);
+                    }
                 }
             }
             // update index

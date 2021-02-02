@@ -21,6 +21,8 @@ private:
     std::vector<bool> encodedRes;
     vector<vector<char>> *res_hists;
     vector<vector<char>> *sample_hists;
+    //! used for quantization in lossy mode
+    Mat last_res;
 
     //! Converts integer to bool vector representing bits.
     /*!

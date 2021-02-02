@@ -77,6 +77,17 @@ vector<bool> BitStream::readNbits(unsigned int N){
     return bits;
 }
 
+void BitStream::readToEnd(vector<bool> &outBits) {
+    while(true){
+        try {
+            outBits.push_back(readBit());
+        } catch (string mess){
+            cout << mess << endl;
+            break;
+        }
+    }
+}
+
 void BitStream :: writeBit(bool bit){
     unsigned int b;
     if(bit){ b = 1; } else { b = 0; }
@@ -92,8 +103,8 @@ void BitStream :: writeBit(bool bit){
 }
 
 void BitStream :: writeNbits(vector<bool> bits){
-    for(int i = 0 ; i < bits.size(); i++){
-        writeBit(bits.at(i));
+    for(bool bit : bits){
+        writeBit(bit);
     }
 }
 
