@@ -6,54 +6,18 @@
 #define VIDEOCODING_TESTQUANTIZATION_HPP
 
 #include    "../src/QuantizationJPEG.cpp"
-#include <opencv2/core.hpp>
-#include <opencv2/videoio.hpp>
-#include <opencv2/opencv.hpp>
-
-using namespace std;
+#include    <opencv2/core.hpp>
+#include    <opencv2/videoio.hpp>
+#include    <opencv2/opencv.hpp>
 
 int golombM = 512;
 auto *golomb = new Golomb(golombM);
 
-double X [8][8] = {{183,160,94,153,194,163,132,165},
-                   {183,153,116,176,187,166,130,169},
-                   {179,168,171,182,179,170,131,167},
-                   {177,177,179,177,179,165,131,167},
-                   {178,178,179,176,182,164,130,171},
-                   {179,180,180,179,183,169,132,169},
-                   {179,179,180,182,183,170,129,173},
-                   {180,179,181,179,181,170,130,169}};
-
-double Y [8][8] = {{313,56,-27,18,78,-60,27,-27},
-                   {-38,-27,13,44,32,-1,-24,-10},
-                   {-20,-17,10,33,21,-6,-16,-9},
-                   {-10,-8,9,17,9,-10,-13,1},
-                   {-6,1,6,4,-3,-7,-5,5},
-                   {2,3,0,-3,-7,-4,0,3},
-                   {4,4,-1,-2,-9,0,2,4},
-                   {3,1,0,-4,-2,-1,3,1}};
-
-double final_Y [8][8] = {{20,5,-3,1,3,-2,1,0},
-                         {-3,-2,1,2,1,0,0,0},
-                         {-1,-1,1,1,1,0,0,0},
-                         {-1,0,0,1,0,0,0,0},
-                         {0,0,0,0,0,0,0,0},
-                         {0,0,0,0,0,0,0,0},
-                         {0,0,0,0,0,0,0,0},
-                         {0,0,0,0,0,0,0,0}};
-
 std::vector<int> zigzag_array = {5,-3,-1,-2,-3,1,1,-1,-1,0,0,1,2,3,-2,1,1,0,0,0,0,0,0,1,1,0,1,0,0,0,0,0,0,0,0,0,
                                     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
-//std::vector<bool> huffmanCode = {0,1,1,1,1,1,1,0,0,1,1,1,0,0,1,1,0,0,1,1,1,1,0,0,1,1,1,0,0,1,0,0,1,0,0,1,1,0,0,1,1,0,1,
-//                                 1,1,1,1,0,1,0,0,1,1,1,1,1,0,0,1,1,1,1,1,1,1,0,0,1,1,1,1,0,0,1,0,0,1,0,1,1,1,1,1,1,1,1,
-//                                 1,1,0,0,1,0,1,0,1,0};
-
-//std::vector<bool> huffmanCode = {0,1,1,1,1,1,0,0,1,1,1,0,0,1,0,0,1,1,0,0,1,1,1,0,0,0,0,0,0,1,0,0,1,0,1,0,0,0,1,1,1,1,0,
-//                                 0,1,1,1,1,1,1,0,1,1,0,0,0,0,0,1,1,0,0,0,0,1,1,1,0,0};
-
-std::vector<bool> huffmanCode = {0,1,1,1,1,0,0,1,1,1,1,1,1,0,0,1,1,1,0,0,1,0,0,1,1,0,0,1,1,1,0,0,0,0,0,0,1,0,0,1,0,1,0,
-                                 0,0,1,1,1,1,1,1,1,0,1,1,1,1,1,0,0,1,1,0,0,0,0,0,1,1,0,0,0,0,1,1,1,0,0};
+std::vector<bool> huffmanCode = {1,0,1,1,1,1,0,0,1,1,1,1,1,0,0,1,1,1,0,0,1,0,0,1,1,0,0,1,1,1,0,0,0,0,0,0,1,0,0,1,0,1,1,
+                                 1,0,0,0,1,1,1,1,1,1,0,1,1,1,1,0,0,1,1,0,0,0,0,0,1,1,1,1,0,0,0,0,1,1,0,0,1,1,1,1,1,0};
 
 std::vector<std::pair<int, int>> acs = {{0,5}, {0, -3}, {0, -1}, {0, -2}, {0, -3},
                                         {0,1}, {0, 1}, {0, -1}, {0, -1}, {2, 1},
@@ -62,11 +26,16 @@ std::vector<std::pair<int, int>> acs = {{0,5}, {0, -3}, {0, -1}, {0, -2}, {0, -3
 
 std::vector<bool> code;
 std::vector<bool> encodedHuffmanTree;
-std::vector<std::pair<int, int>> runLengthCode = {{0, 20}, {0,5}, {0, -3}, {0, -1},
+std::vector<std::pair<int, int>> runLengthCode = {{-1, 3}, {0,5}, {0, -3}, {0, -1},
                                                   {0, -2}, {0, -3}, {0,1}, {0, 1},
                                                   {0, -1}, {0, -1}, {2, 1}, {0, 2},
                                                   {0, 3}, {0, -2}, {0, 1}, {0, 1},
                                                   {6,1}, {0, 1}, {1, 1}};
+
+
+std::vector<int> prevDCs = {17};
+std::vector<bool> quantEncodedTree = {}; // Golomb
+std::vector<bool> quantCode = {}; // Huffman
 
 TEST_CASE("Quantization divideImageIn8x8Blocks") {
 
@@ -110,6 +79,25 @@ TEST_CASE("Quantization divideImageIn8x8Blocks") {
 }
 
 TEST_CASE("Applying the DCT to the block") {
+    double X [8][8] = {{183,160,94,153,194,163,132,165},
+                       {183,153,116,176,187,166,130,169},
+                       {179,168,171,182,179,170,131,167},
+                       {177,177,179,177,179,165,131,167},
+                       {178,178,179,176,182,164,130,171},
+                       {179,180,180,179,183,169,132,169},
+                       {179,179,180,182,183,170,129,173},
+                       {180,179,181,179,181,170,130,169}};
+
+    double Y [8][8] = {{313,56,-27,18,78,-60,27,-27},
+                       {-38,-27,13,44,32,-1,-24,-10},
+                       {-20,-17,10,33,21,-6,-16,-9},
+                       {-10,-8,9,17,9,-10,-13,1},
+                       {-6,1,6,4,-3,-7,-5,5},
+                       {2,3,0,-3,-7,-4,0,3},
+                       {4,4,-1,-2,-9,0,2,4},
+                       {3,1,0,-4,-2,-1,3,1}};
+
+
     cv::Mat block = cv::Mat(8, 8, CV_64F, &X);
     cv::Mat Y_matrix = cv::Mat(8, 8, CV_64F, &Y);
 
@@ -176,6 +164,15 @@ TEST_CASE("Applying the quantization matrix") {
                        {2,3,0,-3,-7,-4,0,3},
                        {4,4,-1,-2,-9,0,2,4},
                        {3,1,0,-4,-2,-1,3,1}};
+
+    double final_Y [8][8] = {{20,5,-3,1,3,-2,1,0},
+                             {-3,-2,1,2,1,0,0,0},
+                             {-1,-1,1,1,1,0,0,0},
+                             {-1,0,0,1,0,0,0,0},
+                             {0,0,0,0,0,0,0,0},
+                             {0,0,0,0,0,0,0,0},
+                             {0,0,0,0,0,0,0,0},
+                             {0,0,0,0,0,0,0,0}};
     cv::Mat block = cv::Mat(8, 8, CV_64F, &Y);
     cv::Mat finalY = cv::Mat(8, 8, CV_64F, &final_Y);
 
@@ -240,6 +237,14 @@ TEST_CASE("DCT Quantization From Start To Finish"){
                        {179,179,180,182,183,170,129,173},
                        {180,179,181,179,181,170,130,169}};
 
+    double final_Y [8][8] = {{20,5,-3,1,3,-2,1,0},
+                             {-3,-2,1,2,1,0,0,0},
+                             {-1,-1,1,1,1,0,0,0},
+                             {-1,0,0,1,0,0,0,0},
+                             {0,0,0,0,0,0,0,0},
+                             {0,0,0,0,0,0,0,0},
+                             {0,0,0,0,0,0,0,0},
+                             {0,0,0,0,0,0,0,0}};
     cv::Mat block = cv::Mat(8, 8, CV_64F, &X);
     cv::Mat finalY = cv::Mat(8, 8, CV_64F, &final_Y);
 
@@ -337,23 +342,215 @@ TEST_CASE("Huffman Encode") {
         info +=(bit) ? '1' : '0';
     }
     INFO(info);
+    info = "\nGolomb Encoded Huffman Tree: \n";
+    for(bool bit : encodedHuffmanTree){
+        info +=(bit) ? '1' : '0';
+    }
+    INFO(info);
     CHECK(std::equal(code.begin(), code.end(), huffmanCode.begin()));
 }
 
 TEST_CASE("Huffman Decode"){
-    //TODO: change
     std::vector<std::pair<int, int>> decode;
     huffmanDecode(huffmanCode, encodedHuffmanTree, decode, golomb);
+
+    std::string info = "\ndecoded dc: " + std::to_string(decode.at(0).second);
+    INFO(info);
+    info = "\ncodewords run length (acs): \n";
+    for(std::pair<int, int> ac: decode){
+        if(ac.first == -1){ continue; }
+        info += "(" + std::to_string(ac.first) + "," + std::to_string(ac.second) + ")";
+        info += ", ";
+    }
+    info.erase(info.end() - 2, info.end());
+    INFO(info);
+
     CHECK(std::equal(decode.begin(), decode.end(), runLengthCode.begin()));
 }
-/*
+
 TEST_CASE("Get Image"){
-    //TODO: change
-    cv::Mat block;
+    double final_Y [8][8] = {{3,5,-3,1,3,-2,1,0},
+                             {-3,-2,1,2,1,0,0,0},
+                             {-1,-1,1,1,1,0,0,0},
+                             {-1,0,0,1,0,0,0,0},
+                             {0,0,0,0,0,0,0,0},
+                             {0,0,0,0,0,0,0,0},
+                             {0,0,0,0,0,0,0,0},
+                             {0,0,0,0,0,0,0,0}};
+    cv::Mat block = cv::Mat(8, 8, CV_64F);
     getImage(runLengthCode, block);
     cv::Mat finalY = cv::Mat(8, 8, CV_64F, &final_Y);
+    INFO("Image matrix from run length code");
+    INFO(block);
     CHECK(std::equal(block.begin<double>(), block.end<double>(), finalY.begin<double>()));
 }
-*/
+
+TEST_CASE("quantizeDctBaselineJPEG"){
+
+    double X [8][8] = {{183,160,94,153,194,163,132,165},
+                       {183,153,116,176,187,166,130,169},
+                       {179,168,171,182,179,170,131,167},
+                       {177,177,179,177,179,165,131,167},
+                       {178,178,179,176,182,164,130,171},
+                       {179,180,180,179,183,169,132,169},
+                       {179,179,180,182,183,170,129,173},
+                       {180,179,181,179,181,170,130,169}};
+    double final_Y [8][8] = {{3,5,-3,1,3,-2,1,0},
+                             {-3,-2,1,2,1,0,0,0},
+                             {-1,-1,1,1,1,0,0,0},
+                             {-1,0,0,1,0,0,0,0},
+                             {0,0,0,0,0,0,0,0},
+                             {0,0,0,0,0,0,0,0},
+                             {0,0,0,0,0,0,0,0},
+                             {0,0,0,0,0,0,0,0}};
+    cv::Mat Xmatrix = cv::Mat(8, 8, CV_64F, &X);
+    cv::Mat finalY = cv::Mat(8, 8, CV_64F, &final_Y);
+    prevDCs = {17};
+    INFO(Xmatrix);
+    quantizeDctBaselineJPEG(Xmatrix, prevDCs, golomb, quantEncodedTree, quantCode);
+    INFO(Xmatrix);
+
+    std::string info = "\nHuffman code: \n";
+    for(bool bit : quantCode){
+        info +=(bit) ? '1' : '0';
+    }
+    INFO(info);
+    info = "\nGolomb Encoded Huffman Tree: \n";
+    for(bool bit : quantEncodedTree){
+        info +=(bit) ? '1' : '0';
+    }
+    INFO(info);
+    CHECK(std::equal(Xmatrix.begin<double>(), Xmatrix.end<double>(), finalY.begin<double>()));
+}
+
+TEST_CASE("inverseQuantizeDctBaselineJPEG"){
+
+    double X [8][8] = {{183,160,94,153,194,163,132,165},
+                       {183,153,116,176,187,166,130,169},
+                       {179,168,171,182,179,170,131,167},
+                       {177,177,179,177,179,165,131,167},
+                       {178,178,179,176,182,164,130,171},
+                       {179,180,180,179,183,169,132,169},
+                       {179,179,180,182,183,170,129,173},
+                       {180,179,181,179,181,170,130,169}};
+    cv::Mat Xmatrix = cv::Mat(8, 8, CV_64F, &X);
+    cv::Mat result = cv::Mat(8, 8, CV_64F);
+    std::vector<std::pair<int, int>> rlCode;
+    std::string info = "\nPrevious dcs: \n";
+    for(int n : prevDCs){ info += std::to_string(n); }
+    INFO(info);
+    huffmanDecode(quantCode, quantEncodedTree, rlCode, golomb);
+    inverseQuantizeDctBaselineJPEG(prevDCs, rlCode, result);
+    INFO("\nX: \n");
+    INFO(Xmatrix);
+    INFO("\nresult: \n");
+    INFO(result);
+    info = "\nRefreshed previous dcs: \n";
+    for(int n : prevDCs){ info += std::to_string(n); }
+    INFO(info);
+    INFO("\nDifferences between X and inverse of the quantization: \n");
+    INFO(Xmatrix-result);
+    bool is_small_diff = cv::checkRange(Xmatrix-result, true, nullptr, -60, 60);
+    CHECK(is_small_diff);
+}
+
+
+TEST_CASE("Huffman Decoder"){
+    std::vector<int> decodedLeafs;
+    std::string info = "\nHuffman code: \n";
+    for(bool bit : quantCode){
+        info +=(bit) ? '1' : '0';
+    }
+    INFO(info);
+    info = "\nGolomb Encoded Huffman Tree: \n";
+    for(bool bit : quantEncodedTree){
+        info +=(bit) ? '1' : '0';
+    }
+    INFO(info);
+
+    golomb->decode3(quantEncodedTree, decodedLeafs);
+    decodedLeafs.pop_back(); // -3 golomb encoded to represent the end of the huffman tree
+
+    info = "\nGolomb Decoded Leafs of Huffman Tree: \n";
+    for(int leaf : decodedLeafs){
+        info += std::to_string(leaf) + ", ";
+    }
+    info.erase(info.end() - 2, info.end());
+    INFO(info);
+
+    Node* huffmanTreeRoot = huffmanTree(decodedLeafs);
+    auto* huffDec = new HuffmanDecoder(huffmanTreeRoot);
+    std::vector<std::pair<int, int>> rlCode;
+    auto bit = quantCode.begin();
+    while(huffDec->decode(*bit, rlCode)){ bit++; }
+
+    info = "\nDecoded codewords run length: \n";
+    for(std::pair<int, int> ac: rlCode){
+        info += "(" + std::to_string(ac.first) + "," + std::to_string(ac.second) + ")";
+        info += ", ";
+    }
+    info.erase(info.end() - 2, info.end());
+    INFO(info);
+    CHECK(std::equal(rlCode.begin(), rlCode.end(), runLengthCode.begin()));
+}
+
+TEST_CASE("inverseQuantizeDctBaselineJPEG 2"){
+
+    double X [8][8] = {{183,160,94,153,194,163,132,165},
+                       {183,153,116,176,187,166,130,169},
+                       {179,168,171,182,179,170,131,167},
+                       {177,177,179,177,179,165,131,167},
+                       {178,178,179,176,182,164,130,171},
+                       {179,180,180,179,183,169,132,169},
+                       {179,179,180,182,183,170,129,173},
+                       {180,179,181,179,181,170,130,169}};
+    cv::Mat Xmatrix = cv::Mat(8, 8, CV_64F, &X);
+    cv::Mat result = cv::Mat(8, 8, CV_64F);
+    std::vector<std::pair<int, int>> rlCode;
+    std::string info = "\nPrevious dcs: \n";
+    prevDCs = {17};
+    for(int n : prevDCs){ info += std::to_string(n); }
+    INFO(info);
+
+    std::vector<int> decodedLeafs;
+    golomb->decode3(quantEncodedTree, decodedLeafs);
+    decodedLeafs.pop_back(); // -3 golomb encoded to represent the end of the huffman tree
+
+    Node* huffmanTreeRoot = huffmanTree(decodedLeafs);
+    auto* huffDec = new HuffmanDecoder(huffmanTreeRoot);
+    auto bit = quantCode.begin();
+    while(huffDec->decode(*bit, rlCode)){ bit++; }
+
+    inverseQuantizeDctBaselineJPEG(prevDCs, rlCode, result);
+    INFO("\nX: \n");
+    INFO(Xmatrix);
+    INFO("\nresult: \n");
+    INFO(result);
+    info = "\nRefreshed previous dcs: \n";
+    for(int n : prevDCs){ info += std::to_string(n); }
+    INFO(info);
+    INFO("\nDifferences between X and inverse of the quantization: \n");
+    INFO(Xmatrix-result);
+    bool is_small_diff = cv::checkRange(Xmatrix-result, true, nullptr, -60, 60);
+    CHECK(is_small_diff);
+}
+
+TEST_CASE("Huffman Decoder in Video Decoder"){
+    /*
+    cv::Mat frame;
+    std::vector<int> decodedLeafs;
+    // Ler com o golomb numero a numero ate um -3 (inclusivo) -> folhas da huffman tree
+    // while(golomb decode number != -3) { golomb decode one more number; push back to decodedLeafs}
+    decodedLeafs.pop_back(); // -3 golomb encoded to represent the end of the huffman tree
+
+    Node* huffmanTreeRoot = huffmanTree(decodedLeafs);   // folhas da huffman tree
+    auto* huffDec = new HuffmanDecoder(huffmanTreeRoot);
+    std::vector<std::pair<int, int>> rlCode;  // run length code
+    //while(huffDec->decode(read bit from file (huffman code), rlCode)){ bit++; }
+    inverseQuantizeDctBaselineJPEG(prevDCs, // vector of previous dcs;
+                                       rlCode,
+                                       frame); // decoded frame! (has to have the same number of columns and rows as the original)
+    */
+}
 
 #endif //VIDEOCODING_TESTQUANTIZATION_HPP
