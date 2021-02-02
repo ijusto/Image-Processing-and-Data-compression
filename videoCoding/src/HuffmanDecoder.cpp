@@ -11,18 +11,21 @@ bool HuffmanDecoder::decode(bool bit, std::vector<std::pair<int, int>> &runLengt
     // if we are decoding the number of zeros
     if(this->nZeros == -4){
         if(this->node->left->left == nullptr && this->node->left->right == nullptr) { // number of zeros are in the left leafs
-            if(this->node->left->data == -3){ // end of huffman code
-                return false;
-            }
             this->nZeros = this->node->left->data;
-            this->node = huffmanTree;
+            this->node = this->huffmanTree;
         }
     } else { // if we are decoding the value
         if(this->node->right->left == nullptr && this->node->right->right == nullptr) { // values are in the right leafs
             runLengthCode.push_back(std::pair<int, int>(this->nZeros, this->node->right->data));
             this->nZeros = -4;
-            this->node = huffmanTree;
+            this->node = this->huffmanTree;
         }
     }
+
+    if(this->nZeros == -3){ // end of huffman code
+        this->nZeros = -4;
+        return false;
+    }
+
     return true;
 }
