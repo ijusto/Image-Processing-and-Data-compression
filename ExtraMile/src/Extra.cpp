@@ -1,20 +1,24 @@
 //
 // Created by irocs on 1/30/21.
 //
-#include "extraMile.cpp"
-
+#include "VideoCoder.cpp"
+#include "VideoDecoder.cpp"
 
 using namespace std;
 
 class files{
 public:
-    string audioFile = "audio.wav";
+    string audioMP3 = "audio.mp3";
+    string audioWAV = "audio.wav";
     string yuv420File = "yuv420.y4m";
+    string DecodeWAV = "decodeWAV.wav";
 
     /*
     virtual ~files() {
+        remove("audio.mp3");
         remove("audio.wav");
         remove("yuv420.y4m");
+        remove("decodeWAV.wav");
     }*/
 };
 
@@ -23,12 +27,17 @@ public:
 void extractAudio(char* src, files f){
 
     string fileName = src;
-    string command("ffmpeg -i " + fileName + " -vn -acodec copy " + f.audioFile);
+    string command("ffmpeg -i " + fileName + " -vn -acodec copy " + f.audioMP3);
     FILE* name = popen(command.c_str(),"r");
     pclose(name);
 
 }
 
+void audioToWav(files f){
+    string command("ffmpeg -i " + f.audioMP3 + " " + f.audioWAV);
+    FILE* name = popen(command.c_str(),"r");
+    pclose(name);
+}
 
 void fileToYuv420p(char* src, files f){
 
@@ -49,19 +58,20 @@ void reconstructFile( files f, char* src){
 
 void addAudio( files f, char* src){
     string fileName = src;
-    string command("ffmpeg -i " + f.audioFile + " -i " + fileName + " " + fileName);
+    string command("ffmpeg -i " + f.DecodeWAV + " -i " + fileName + " " + fileName);
     FILE* name = popen(command.c_str(),"r");
     pclose(name);
 }
+
 
 
 int main(int argc, char *argv[]) {
 
     if(argc < 5){
         cout << "If operation is encoding: " << endl;
-        cout << "usage: " << argv[0] << " <operation> SOURCE CODED_VIDEO CODED_AUDIO" << endl;
+        cout << "usage: " << argv[0] << " <operation> SOURCE CODED_AUDIO CODED_VIDEO" << endl;
         cout << "If operation is decoding: " << endl;
-        cout << "usage: " << argv[0] << " <operation> CODED_VIDEO CODED_AUDIO RECONSTRUCT_FILE" << endl;
+        cout << "usage: " << argv[0] << " <operation> CODED_AUDIO CODED_VIDEO RECONSTRUCT_FILE" << endl;
         return 0;
     }
 
@@ -80,48 +90,53 @@ int main(int argc, char *argv[]) {
     bool lossless = true;
     int unsigned quantBits = 10;
 
+    VideoCoder * videoCoder;
+    VideoDecoder * videoDecoder;
     if(op == "encode") {
 
+        //extract from the video audi file
         extractAudio(file1, name);
+
+        //transform on .wav format
+        audioToWav(name);
+
         fileToYuv420p(file1, name);
 
-        cout << "\nencoding..." << endl;
-        VideoEncoder* videoEncoder = new VideoEncoder(&name.yuv420File[0], predictor, initial_m, mode, lossy, calcHist);
+        videoCoder = new VideoCoder(&name.audioWAV[0], initial_m, lossless, quantBits, &name.yuv420File[0], predictor, mode, lossy);
+        cout << "\nencoding audio..." << endl;
+        videoCoder->encodeAudio();
+        cout << "writing audio codes..." << endl;
+        videoCoder->writeAudio(file2);
 
-        // init encoder with sound file
-        AudioEncoder* encoder = new AudioEncoder(&name.audioFile[0], initial_m, lossless, quantBits, calcHist);
-        // encode
-        encoder->encode();
+        cout << "\nencoding video..." << endl;
+        videoCoder->encodeVideo();
+        cout << "writing video codes..." << endl;
+        videoCoder->writeVideo(file3);
+        cout << "Encoding DONE!!" << endl;
 
-        cout << "writing..." << endl;
-        videoEncoder->write(file2);
+    }else if("decodeVideo"){
 
-        // write compressed file
-        encoder->write(file3);
+        videoDecoder = new VideoDecoder(file1,file2,'a');
+        cout << "\ndencoding audio codes..." << endl;
+        videoDecoder->decodeAudio();
+        cout << "writing audio file..." << endl;
+        videoDecoder->writeAudioFile(&name.DecodeWAV[0]);
+        cout << "Decoding Audio DONE!!" << endl;
 
-    }else if("decode"){
-        VideoDecoder* videoDecoder = new VideoDecoder(file1);
-        cout << "decoding..." << endl;
-        videoDecoder->decode();
+        videoDecoder = new VideoDecoder(file1,file2,'v');
+        cout << "\ndencoding video codes..." << endl;
+        videoDecoder->decodeVideo();
+        cout << "writing video file..." << endl;
+        videoDecoder->writeVideoFile(&name.yuv420File[0]);
+        cout << "Decoding Video DONE!!" << endl;
 
-        // init decoder with compressed file
-        AudioDecoder* decoder = new AudioDecoder(file1);
-        // decode
-        decoder->decode();
+        //reconstruct .y4m on .avi
+        reconstructFile( name, file3);
 
-        cout << "writing..." << endl;
-        videoDecoder->write(&name.yuv420File[0]);
+        addAudio(name,file3);
 
-        // write sound file
-        decoder->write(file2);
-
-        reconstructFile(name, file3);
-        addAudio(name, file3);
-
-
-    }else{
-        printf("\n ERROR : This option doesn't exist!!");
-    }
+    }else
+        cout<<"\n ERROR : This option doesn't exist!!"<< endl;
 
     return 0;
 }
