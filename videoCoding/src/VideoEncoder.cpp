@@ -1,4 +1,4 @@
-#include    "QuantizationJPEG.cpp"
+#include    "JPEGQuantization.cpp"
 #include    "VideoEncoder.hpp"
 #include    "LosslessJPEGPredictors.cpp"
 #include    <fstream>
@@ -57,6 +57,7 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int init_m, int mode, bo
     this->mode = mode;
     this->lossy = lossy;
     this->prevDCs = {{}, {}, {}}; // y, u, v
+    this->quantization = new JPEGQuantization();
     this->calcHist = calcHist;
 
     // init histograms
@@ -160,7 +161,7 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int init_m, int mode, bo
             // this->last_res contains last residuals (Y)
             // encode residuals using huffman/golomb
             // append encoded residuals to this->encodedRes
-            quantizeDctBaselineJPEG(this->last_res, this->prevDCs.at(0), golomb, this->encodedRes, true);
+            quantization->quantizeDctBaselineJPEG(this->last_res, this->prevDCs.at(0), golomb, this->encodedRes, true);
         }
         // update previous
         y_prev = frameData;
@@ -186,7 +187,7 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int init_m, int mode, bo
             // this->last_res contains last residuals (U)
             // encode residuals using huffman/golomb
             // append encoded residuals to this->encodedRes
-            quantizeDctBaselineJPEG(this->last_res, this->prevDCs.at(1), golomb, this->encodedRes, false);
+            quantization->quantizeDctBaselineJPEG(this->last_res, this->prevDCs.at(1), golomb, this->encodedRes, false);
         }
         // update previous
         u_prev = frameData;
@@ -210,7 +211,7 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int init_m, int mode, bo
             // this->last_res contains last residuals (V)
             // encode residuals using huffman/golomb
             // append encoded residuals to this->encodedRes
-            quantizeDctBaselineJPEG(this->last_res, this->prevDCs.at(2), golomb, this->encodedRes, false);
+            quantization->quantizeDctBaselineJPEG(this->last_res, this->prevDCs.at(2), golomb, this->encodedRes, false);
         }
         // update previous
         v_prev = frameData;

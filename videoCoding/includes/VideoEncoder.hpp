@@ -11,6 +11,7 @@
 
 #include    "Golomb.h"
 #include    <opencv2/opencv.hpp>
+#include    "../includes/JPEGQuantization.hpp"
 
 class VideoEncoder{
 
@@ -24,6 +25,7 @@ private:
     //! used for quantization in lossy mode
     cv::Mat last_res;
     std::vector<std::vector<int>> prevDCs; // y, u, v
+    JPEGQuantization* quantization;
 
     //! Converts integer to bool vector representing bits.
     /*!

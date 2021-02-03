@@ -1,56 +1,19 @@
-//!  QuantizationJPEG
-/*!
- *  Quantization using the sequential (baseline) or the progressive mode of JPEG.
- *  @author Inês Justo
-*/
-
 #include    <opencv2/core.hpp>
 #include    <opencv2/opencv.hpp>
 #include    <cmath>
 #include    "Golomb.cpp"
 #include    "../src/HuffmanDecoder.cpp"
+#include    "../includes/JPEGQuantization.hpp"
 
-double jpeg_matrix_grayscale [8][8] = {{16, 11, 10, 16, 24, 40, 51, 61},
-                                       {12, 12, 14, 19, 26, 58, 60, 55},
-                                       {14, 13, 16, 24, 40, 57, 69, 56},
-                                       {14, 17, 22, 29, 51, 87, 80, 62},
-                                       {18, 22, 37, 56, 68, 109, 103, 77},
-                                       {24, 35, 55, 64, 81, 104, 113, 92},
-                                       {49, 64, 78, 87, 103, 121, 120, 101},
-                                       {72, 92, 95, 98, 112, 100, 103, 99}};
-
-double jpeg_matrix_color [8][8] = {{17, 18, 24, 47, 99, 99, 99, 99},
-                                   {18, 21, 26, 66, 99, 99, 99, 99},
-                                   {24, 26, 56, 99, 99, 99, 99, 99},
-                                   {47, 66, 99, 99, 99, 99, 99, 99},
-                                   {99, 99, 99, 99, 99, 99, 99, 99},
-                                   {99, 99, 99, 99, 99, 99, 99, 99},
-                                   {99, 99, 99, 99, 99, 99, 99, 99},
-                                   {99, 99, 99, 99, 99, 99, 99, 99}};
-
-const cv::Mat quantMatrixLuminance = cv::Mat(8, 8, CV_64F, &jpeg_matrix_grayscale);
-const cv::Mat quantMatrixChrominance = cv::Mat(8, 8, CV_64F, &jpeg_matrix_color);
-
-/*! Calculates the DCT Transformation matrix (T).
- * @return DCT Transformation matrix.
- */
-cv::Mat transformationMatrix(){
-    cv::Mat t = cv::Mat::zeros(8, 8, CV_64F);
+JPEGQuantization::JPEGQuantization() {
     for(int r = 0; r < 8; r++) {
         for (int c = 0; c < 8; c++) {
-            t.at<double>(r, c) = (r == 0) ? 1/(sqrt(8)) : sqrt((2/(double)8))*cos((M_PI*(2*c+1)*r) / (2*(double)8));
+            this->transformationMatrix.at<double>(r, c) = (r == 0) ? 1/(sqrt(8)) : sqrt((2/(double)8))*cos((M_PI*(2*c+1)*r) / (2*(double)8));
         }
     }
-    return t;
 }
 
-const cv::Mat t = transformationMatrix();
-
-/*! Divides an image frame into blocks of 8 by 8 and adds padding to the image if their width or the height are not
- * multiple of 8. The image's padding values are copies of the edges of the original frame.
- * @param frame image frame.
- */
-void divideImageIn8x8Blocks(cv::Mat &frame){
+void JPEGQuantization::divideImageIn8x8Blocks(cv::Mat &frame){
     // The image is partitioned into 8 × 8 blocks of pixels.
     // If the number of rows or columns is not multiple of 8, then they are internally adjusted (using padding).
     int nRowsToAdd = (frame.rows % 8) == 0 ? 0 :  (8 - (frame.rows % 8));
@@ -79,10 +42,7 @@ void divideImageIn8x8Blocks(cv::Mat &frame){
     }
 }
 
-/*! DCT following the Transformation Matrix Approach
- * @param block 8 by 8 block of image frame that we want to apply the dct transformation.
- */
-void dct(cv::Mat &block){
+void JPEGQuantization::dct(cv::Mat &block){
     // DCT of the block: T*block*T'
     cv::Mat mult1 = cv::Mat::zeros(8, 8, CV_64F);
     cv::Mat dct = cv::Mat::zeros(8, 8, CV_64F);
@@ -90,14 +50,14 @@ void dct(cv::Mat &block){
         for (int c = 0; c < 8; ++c) {
             for (int s = 0; s < 8; ++s) {
                 // Subtract 2^(b−1) to each pixel value, where b is the number of bits used to represent the pixels.
-                mult1.at<double>(r, c) += t.at<double>(r, s) * (block.at<double>(s, c) - pow(2, 7));
+                mult1.at<double>(r, c) += this->transformationMatrix.at<double>(r, s) * (block.at<double>(s, c) - pow(2, 7));
             }
         }
     }
     for(int r = 0; r < 8; ++r) {
         for (int c = 0; c < 8; ++c) {
             for (int s = 0; s < 8; ++s) {
-                dct.at<double>(r, c) += mult1.at<double>(r, s) * t.at<double>(c, s) /* transpose of T */;
+                dct.at<double>(r, c) += mult1.at<double>(r, s) * this->transformationMatrix.at<double>(c, s) /* transpose of T */;
             }
         }
     }
@@ -109,28 +69,23 @@ void dct(cv::Mat &block){
     }
 }
 
-/*! Inverse DCT following the Transformation Matrix Approach
- * @param block 8 by 8 block of image frame that we want to inverse the dct transformation.
- */
-void inverseDCT(cv::Mat &block){
-    int m = 8;
-
+void JPEGQuantization::inverseDCT(cv::Mat &block){
     // inverse of the DCT: T'*dct*T
-    cv::Mat mult1 = cv::Mat::zeros(m, m, CV_64F);
-    cv::Mat inverse_dct = cv::Mat::zeros(m, m, CV_64F);
+    cv::Mat mult1 = cv::Mat::zeros(8, 8, CV_64F);
+    cv::Mat inverse_dct = cv::Mat::zeros(8, 8, CV_64F);
 
-    for(int r = 0; r < m; ++r) {
-        for (int c = 0; c < m; ++c) {
-            for (int s = 0; s < m; ++s) {
-                mult1.at<double>(r, c) += t.at<double>(s, r) /* transpose of T */ * block.at<double>(s, c);
+    for(int r = 0; r < 8; ++r) {
+        for (int c = 0; c < 8; ++c) {
+            for (int s = 0; s < 8; ++s) {
+                mult1.at<double>(r, c) += this->transformationMatrix.at<double>(s, r) /* transpose of T */ * block.at<double>(s, c);
             }
         }
     }
 
-    for(int r = 0; r < m; ++r) {
-        for (int c = 0; c < m; ++c) {
-            for (int s = 0; s < m; ++s) {
-                inverse_dct.at<double>(r, c) += mult1.at<double>(r, s) * t.at<double>(s, c);
+    for(int r = 0; r < 8; ++r) {
+        for (int c = 0; c < 8; ++c) {
+            for (int s = 0; s < 8; ++s) {
+                inverse_dct.at<double>(r, c) += mult1.at<double>(r, s) * this->transformationMatrix.at<double>(s, c);
             }
         }
     }
@@ -143,12 +98,7 @@ void inverseDCT(cv::Mat &block){
     }
 }
 
-/*! Quantization of coefficients resulted from the DCT transformation.
- * @param block 8 by 8 block of image frame that has the coefficients resulted from the DCT transformation and that we
- *              want to quantize.
- * @param quantMatrix quantization matrix.
- */
-void quantizeDCTCoeff(cv::Mat &block, cv::Mat quantMatrix){
+void JPEGQuantization::quantizeDCTCoeff(cv::Mat &block, cv::Mat quantMatrix){
     double temp;
     for(int r = 0; r < 8; r++){
         for (int c = 0; c < 8; c++) {
@@ -163,11 +113,7 @@ void quantizeDCTCoeff(cv::Mat &block, cv::Mat quantMatrix){
     }
 }
 
-/*! Inverse the quantization of coefficients resulted from the DCT transformation.
- * @param block 8 by 8 block of image frame that has the quantized values.
- * @param quantMatrix quantization matrix.
- */
-void inverseQuantizeDCTCoeff(cv::Mat &block, cv::Mat quantMatrix){
+void JPEGQuantization::inverseQuantizeDCTCoeff(cv::Mat &block, cv::Mat quantMatrix){
     double temp;
     for(int r = 0; r < 8; r++){
         for (int c = 0; c < 8; c++) {
@@ -182,11 +128,7 @@ void inverseQuantizeDCTCoeff(cv::Mat &block, cv::Mat quantMatrix){
     }
 }
 
-/*! Operation of applying the DCT transformation and the quantization of an 8 by 8 block of an image frame.
- * @param block 8 by 8 block of an image frame that we want to quantize.
- * @param quantMatrix quantization matrix.
- */
-void quantizeBlock(cv::Mat &block, cv::Mat quantMatrix){
+void JPEGQuantization::quantizeBlock(cv::Mat &block, cv::Mat quantMatrix){
     // DCT of the block: T*block*T'
     cv::Mat mult1 = cv::Mat::zeros(8, 8, CV_64F);
     cv::Mat dct = cv::Mat::zeros(8, 8, CV_64F);
@@ -194,14 +136,14 @@ void quantizeBlock(cv::Mat &block, cv::Mat quantMatrix){
         for (int c = 0; c < 8; ++c) {
             for (int s = 0; s < 8; ++s) {
                 // Subtract 2^(b−1) to each pixel value, where b is the number of bits used to represent the pixels.
-                mult1.at<double>(r, c) += t.at<double>(r, s) * (block.at<double>(s, c) - pow(2, 7));
+                mult1.at<double>(r, c) += this->transformationMatrix.at<double>(r, s) * (block.at<double>(s, c) - pow(2, 7));
             }
         }
     }
     for(int r = 0; r < 8; ++r) {
         for (int c = 0; c < 8; ++c) {
             for (int s = 0; s < 8; ++s) {
-                dct.at<double>(r, c) += mult1.at<double>(r, s) * t.at<double>(c, s) /* transpose of T */;
+                dct.at<double>(r, c) += mult1.at<double>(r, s) * this->transformationMatrix.at<double>(c, s) /* transpose of T */;
             }
         }
     }
@@ -222,11 +164,7 @@ void quantizeBlock(cv::Mat &block, cv::Mat quantMatrix){
     }
 }
 
-/*! Operation of reversing the quantization and the DCT transformation of an 8 by 8 block of an image frame.
- * @param block 8 by 8 block of an image frame that we want to reverse the quantization.
- * @param quantMatrix quantization matrix.
- */
-void inverseQuantizeBlock(cv::Mat &block, cv::Mat quantMatrix){
+void JPEGQuantization::inverseQuantizeBlock(cv::Mat &block, cv::Mat quantMatrix){
     // inverse of the DCT: T'*dct*T
     cv::Mat mult1 = cv::Mat::zeros(8, 8, CV_64F);
     cv::Mat inverse_dct = cv::Mat::zeros(8, 8, CV_64F);
@@ -247,7 +185,7 @@ void inverseQuantizeBlock(cv::Mat &block, cv::Mat quantMatrix){
     for(int r = 0; r < 8; ++r) {
         for (int c = 0; c < 8; ++c) {
             for (int s = 0; s < 8; ++s) {
-                mult1.at<double>(r, c) += t.at<double>(s, r) /* transpose of T */ * block.at<double>(s, c);
+                mult1.at<double>(r, c) += this->transformationMatrix.at<double>(s, r) /* transpose of T */ * block.at<double>(s, c);
             }
         }
     }
@@ -255,7 +193,7 @@ void inverseQuantizeBlock(cv::Mat &block, cv::Mat quantMatrix){
     for(int r = 0; r < 8; ++r) {
         for (int c = 0; c < 8; ++c) {
             for (int s = 0; s < 8; ++s) {
-                inverse_dct.at<double>(r, c) += mult1.at<double>(r, s) * t.at<double>(s, c);
+                inverse_dct.at<double>(r, c) += mult1.at<double>(r, s) * this->transformationMatrix.at<double>(s, c);
             }
         }
     }
@@ -269,11 +207,7 @@ void inverseQuantizeBlock(cv::Mat &block, cv::Mat quantMatrix){
 
 }
 
-/*! Apply a zig zag scan to an 8 by 8 block of an image frame.
- * @param block  8 by 8 block of an image frame.
- * @param zigzagVector vector resulted from the zig zag scan.
- */
-void zigZagScan(cv::Mat &block, std::vector<int> &zigzagVector){
+void JPEGQuantization::zigZagScan(cv::Mat &block, std::vector<int> &zigzagVector){
     zigzagVector.push_back(block.at<double>(0, 0)); // dc
     int row = 0, col = 0, diagonals = 1, temp_diagonals;
     bool reachedRow8 = false;
@@ -307,13 +241,7 @@ void zigZagScan(cv::Mat &block, std::vector<int> &zigzagVector){
     }
 }
 
-/*! Run Length Code
- * In this implementation, the code is the pair (number of zeros preceding this value, non zero value).
- * The pair (-1, dc) represents the beginning of a block.
- * @param vec zig zag vector.
- * @param code run length code.
- */
-void runLengthPairs(std::vector<int> &vec, std::vector<std::pair<int, int>> &code){
+void JPEGQuantization::runLengthPairs(std::vector<int> &vec, std::vector<std::pair<int, int>> &code){
     int nZeros = 0;
     for(int elem : vec){
         if (elem != 0) {
@@ -325,13 +253,7 @@ void runLengthPairs(std::vector<int> &vec, std::vector<std::pair<int, int>> &cod
     }
 }
 
-/*! Creates a new tree node.
- * @param data data to be stored in the new tree node.
- * @param leafLeft pointer to the new node's leaft leaf.
- * @param leafRight pointer to the new node's right leaf.
- * @return pointer to new node
- */
-Node* newNode(int data, Node *leafLeft, Node *leafRight) {
+Node* JPEGQuantization::newNode(int data, Node *leafLeft, Node *leafRight) {
     Node* node;
     node = new Node;
     node->data = data;
@@ -340,11 +262,7 @@ Node* newNode(int data, Node *leafLeft, Node *leafRight) {
     return node;
 }
 
-/*! Decode the huffman tree and store it in Node pointers so the decoder can decode faster.
- * @param decodedLeafs golomb decoded huffman tree (leafs).
- * @return huffman tree root node pointer.
- */
-Node* huffmanTree(std::vector<int> decodedLeafs){
+Node* JPEGQuantization::huffmanTree(std::vector<int> decodedLeafs){
     auto leafIt = decodedLeafs.begin();
 
     Node* father = nullptr;
@@ -370,23 +288,7 @@ Node* huffmanTree(std::vector<int> decodedLeafs){
     return father;
 }
 
-/*! Construct the huffman tree of the run length code and encode it in order to be sent to the decoder.
- * In this implementation, the non zero values and the values representing the number of zeros can have the same code,
- * because the the non zero values are always on the right leafs and the values representing the number of zeros are
- * always on the left leafs. Moreover, they are always leafs of nodes with data 0 (except for the least probable ones).
- * So we take advantage of this to encode the tree in order to send it to the decoder.
- * The values on the leafs are Golomb encoded from bottom to top in depth. When there are no left leaf values, the -2
- * value is encoded.
- * We golomb encode -3 to represent the end of the tree.
- * The very last two values of the huffman code are -3 to represent the end of the code.
- * @param freqs_listNZero list of (number of zeros of the run length code, frequency of that number) pairs.
- * @param freqs_listValue list of (non zero number of the run length code, frequency of that number) pairs.
- * @param codeZerosMap map with the number of zeros values from the run length code as keys and their huffman code as value.
- * @param codeValueMap map with the non zero number values from the run length code as keys and their huffman code as value.
- * @param golomb pointer to Golomb Object.
- * @return golomb encoded huffman tree.
- */
-std::vector<bool> huffmanTreeEncode(std::list<std::pair<int, double>> freqs_listNZero,
+std::vector<bool> JPEGQuantization::huffmanTreeEncode(std::list<std::pair<int, double>> freqs_listNZero,
                                     std::list<std::pair<int, double>> freqs_listValue,
                                     std::unordered_map<int, std::vector<bool>> &codeZerosMap,
                                     std::unordered_map<int, std::vector<bool>> &codeValueMap,
@@ -431,14 +333,7 @@ std::vector<bool> huffmanTreeEncode(std::list<std::pair<int, double>> freqs_list
     return encodedTree;
 }
 
-/*!
- *
- * @param runLengthCode
- * @param code
- * @param encodedTree
- * @param golomb pointer to Golomb Object.
- */
-void huffmanEncode(std::vector<std::pair<int, int>> &runLengthCode, std::vector<bool> &code,
+void JPEGQuantization::huffmanEncode(std::vector<std::pair<int, int>> &runLengthCode, std::vector<bool> &code,
                                 std::vector<bool> &encodedTree, Golomb* golomb){
     std::unordered_map<int, double> freqsMapNZero, freqsMapValue;
     std::unordered_map<int, std::vector<bool>> codeZerosMap, codeValueMap;
@@ -477,13 +372,7 @@ void huffmanEncode(std::vector<std::pair<int, int>> &runLengthCode, std::vector<
     code.insert(code.end(), codeZerosMap[-3].begin(), codeZerosMap[-3].end());
 }
 
-/*!
- *
- * @param runLengthCode
- * @param code
- * @param golomb pointer to Golomb Object.
- */
-void huffmanEncode(const std::vector<std::pair<int, int>> &runLengthCode, std::vector<bool> &code, Golomb* golomb){
+void JPEGQuantization::huffmanEncode(const std::vector<std::pair<int, int>> &runLengthCode, std::vector<bool> &code, Golomb* golomb){
     std::unordered_map<int, double> freqsMapNZero, freqsMapValue;
     std::unordered_map<int, std::vector<bool>> codeZerosMap, codeValueMap;
 
@@ -524,10 +413,7 @@ void huffmanEncode(const std::vector<std::pair<int, int>> &runLengthCode, std::v
     code.insert(code.end(), codeZerosMap[-3].begin(), codeZerosMap[-3].end());
 }
 
-/*!
- * @param huffmanTreeRoot
- */
-void printHuffmanTree(Node* huffmanTreeRoot){
+void JPEGQuantization::printHuffmanTree(Node* huffmanTreeRoot){
     int numberOfLeftLeafs = 0;
     int space = 0;
     Node* node = huffmanTreeRoot;
@@ -594,13 +480,7 @@ void printHuffmanTree(Node* huffmanTreeRoot){
     std::cout<<"Legend:\n\t\033[36mNumber of preceding zeros\033[31m\n\t\033[33mValue\033[31m"<<std::endl;
 }
 
-/*!
- * @param code
- * @param encodedTree
- * @param runLengthCode
- * @param golomb pointer to Golomb Object.
- */
-void huffmanDecode(std::vector<bool> &code, std::vector<bool> &encodedTree,
+void JPEGQuantization::huffmanDecode(std::vector<bool> &code, std::vector<bool> &encodedTree,
                    std::vector<std::pair<int, int>> &runLengthCode, Golomb* golomb){
     std::vector<int> decodedLeafs;
     golomb->decode3(encodedTree, decodedLeafs);
@@ -631,12 +511,7 @@ void huffmanDecode(std::vector<bool> &code, std::vector<bool> &encodedTree,
     }
 }
 
-/*!
- *
- * @param runLengthCode
- * @param frame
- */
-void getImage(std::vector<std::pair<int, int>> runLengthCode, cv::Mat &frame){
+void JPEGQuantization::getImage(std::vector<std::pair<int, int>> runLengthCode, cv::Mat &frame){
     auto rlIt = runLengthCode.begin();
     int diagonals, row = 0, col = 0, temp_diagonals;
     bool reachedRow8;
@@ -701,15 +576,7 @@ void getImage(std::vector<std::pair<int, int>> runLengthCode, cv::Mat &frame){
     }
 }
 
-/*!
- *
- * @param frame
- * @param prevDCs
- * @param golomb
- * @param encodedTree
- * @param code
- */
-void quantizeDctBaselineJPEG(cv::Mat &frame, std::vector<int> &prevDCs, Golomb* golomb, std::vector<bool> &encodedTree,
+void JPEGQuantization::quantizeDctBaselineJPEG(cv::Mat &frame, std::vector<int> &prevDCs, Golomb* golomb, std::vector<bool> &encodedTree,
                              std::vector<bool> &code, bool luminance) {
 
     divideImageIn8x8Blocks(frame);
@@ -757,15 +624,7 @@ void quantizeDctBaselineJPEG(cv::Mat &frame, std::vector<int> &prevDCs, Golomb* 
     huffmanEncode(runLength, code, encodedTree, golomb);
 }
 
-/*!
- *
- * @param frame
- * @param prevDCs
- * @param golomb
- * @param code
- * @param luminance
- */
-void quantizeDctBaselineJPEG(cv::Mat &frame, std::vector<int> &prevDCs, Golomb* golomb, std::vector<bool> &code, bool luminance) {
+void JPEGQuantization::quantizeDctBaselineJPEG(cv::Mat &frame, std::vector<int> &prevDCs, Golomb* golomb, std::vector<bool> &code, bool luminance) {
 
     divideImageIn8x8Blocks(frame);
 
@@ -815,14 +674,7 @@ void quantizeDctBaselineJPEG(cv::Mat &frame, std::vector<int> &prevDCs, Golomb* 
     huffmanEncode(runLength, code, golomb);
 }
 
-//!
-/*!
- *
- * @param prevDCs
- * @param runLengthCode
- * @param frame
- */
-void inverseQuantizeDctBaselineJPEG(std::vector<int> &prevDCs, std::vector<std::pair<int, int>> runLengthCode,
+void JPEGQuantization::inverseQuantizeDctBaselineJPEG(std::vector<int> &prevDCs, std::vector<std::pair<int, int>> runLengthCode,
                                     cv::Mat &frame, bool luminance){
     auto dcIt = prevDCs.begin();
     auto rlIt = runLengthCode.begin();
@@ -894,4 +746,12 @@ void inverseQuantizeDctBaselineJPEG(std::vector<int> &prevDCs, std::vector<std::
         inverseQuantizeBlock(block, luminance ? quantMatrixLuminance : quantMatrixChrominance);
         block.copyTo(frame(cv::Rect(col - 7, row - 7, 8, 8)));
     }
+}
+
+cv::Mat JPEGQuantization::getQuantMatrixLuminance(){
+    return this->quantMatrixLuminance;
+}
+
+cv::Mat JPEGQuantization::getQuantMatrixChrominance(){
+    return this->quantMatrixChrominance;
 }
