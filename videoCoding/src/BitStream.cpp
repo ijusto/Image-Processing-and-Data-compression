@@ -45,7 +45,7 @@ unsigned char BitStream::getC(char mode){
 bool BitStream :: readBit(){
 
     if(cr_pos >= readFileInfo.size()){
-        throw("Read all file.");
+        throw(out_of_range("Read all file."));
     }
     unsigned char val = getC('r');
 
@@ -69,8 +69,8 @@ vector<bool> BitStream::readNbits(unsigned int N){
     for(int i = 0; i < N; i++){
         try {
             bits.push_back(readBit());
-        } catch (string mess){
-            cout << mess << endl;
+        } catch (const out_of_range &oor){
+            cerr << oor.what() << endl;
             break;
         }
     }
@@ -81,8 +81,8 @@ void BitStream::readToEnd(vector<bool> &outBits) {
     while(true){
         try {
             outBits.push_back(readBit());
-        } catch (string mess){
-            cout << mess << endl;
+        } catch (const out_of_range &oor){
+            cerr << oor.what() << endl;
             break;
         }
     }
