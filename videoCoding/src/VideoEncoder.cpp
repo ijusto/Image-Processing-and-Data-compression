@@ -230,7 +230,7 @@ void VideoEncoder::encodeRes_intra(Mat &frame, Golomb *golomb, int m_rate, int k
     float res_sum = 0;
     int numRes = 0;
 
-    this->last_res = Mat(frame.rows, frame.cols, CV_8SC1);
+    this->last_res = Mat::zeros(frame.rows, frame.cols, CV_64F);
 
     for(int i = 0; i < frame.rows; i++){
         for(int j = 0; j < frame.cols; j++){
@@ -282,7 +282,7 @@ void VideoEncoder::encodeRes_intra(Mat &frame, Golomb *golomb, int m_rate, int k
 
             if (this->lossy){
                 // save residual
-                last_res.at<uchar>(i, j) = residual;
+                this->last_res.at<double>(i, j) = residual;
             }else{
                 // encode residuals
                 vector<bool> encodedResidual;

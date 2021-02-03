@@ -440,7 +440,7 @@ TEST_CASE("inverseQuantizeDctBaselineJPEG"){
     for(int n : prevDCs){ info += std::to_string(n); }
     INFO(info);
     huffmanDecode(quantCode, quantEncodedTree, rlCode, golomb);
-    inverseQuantizeDctBaselineJPEG(prevDCs, rlCode, result);
+    inverseQuantizeDctBaselineJPEG(prevDCs, rlCode, result, true);
     INFO("\nX: \n");
     INFO(Xmatrix);
     INFO("\nresult: \n");
@@ -521,7 +521,7 @@ TEST_CASE("inverseQuantizeDctBaselineJPEG 2"){
     auto bit = quantCode.begin();
     while(huffDec->decode(*bit, rlCode)){ bit++; }
 
-    inverseQuantizeDctBaselineJPEG(prevDCs, rlCode, result);
+    inverseQuantizeDctBaselineJPEG(prevDCs, rlCode, result, true);
     INFO("\nX: \n");
     INFO(Xmatrix);
     INFO("\nresult: \n");

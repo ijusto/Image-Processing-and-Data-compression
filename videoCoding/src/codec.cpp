@@ -95,5 +95,6 @@ int main(int argc, char *argv[]) {
         printf("ERROR : This option doesn't exist!!\n");
     }
 
+    printf("The program ended with success.\n");
     return 0;
 }

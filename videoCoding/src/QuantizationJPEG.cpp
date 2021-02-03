@@ -914,11 +914,11 @@ void quantizeDctBaselineJPEG(cv::Mat &frame, std::vector<int> &prevDCs, Golomb* 
     double dc;
     for(int r = 0; r < frame.rows; r += 8) {
         for(int c = 0; c < frame.cols; c += 8) {
-            frame(cv::Rect(r,c,8,8)).copyTo(block);
+            frame(cv::Rect(c, r,8,8)).copyTo(block);
 
             // TODO see what jpeg matrix to use
             quantizeBlock(block, quantMatrixLuminance);
-            block.copyTo(frame(cv::Rect(r,c,8,8)));
+            block.copyTo(frame(cv::Rect(c, r,8,8)));
 
             // Next, the coefficients are organized in a one-dimensional vector according to a zig-zag scan.
             zigzagVector.clear();
@@ -967,17 +967,15 @@ void quantizeDctBaselineJPEG(cv::Mat &frame, std::vector<int> &prevDCs, Golomb* 
     // ***************************************** Calculation of the DCT ************************************************
     cv::Mat block;
     std::vector<int> zigzagVector;
-    std::vector<int>::iterator prevDC = prevDCs.begin();
+    int prevDCIt = 0;
     std::vector<std::pair<int, int>> runLength, blockACs;
     double dc;
     bool prevDcsEmpty = prevDCs.empty();
     for(int r = 0; r < frame.rows; r += 8) {
         for(int c = 0; c < frame.cols; c += 8) {
-            frame(cv::Rect(r,c,8,8)).copyTo(block);
-
-            // TODO see what jpeg matrix to use
+            frame(cv::Rect(c, r,8,8)).copyTo(block);
             quantizeBlock(block, luminance ? quantMatrixLuminance : quantMatrixChrominance);
-            block.copyTo(frame(cv::Rect(r,c,8,8)));
+            block.copyTo(frame(cv::Rect(c, r,8,8)));
 
             // Next, the coefficients are organized in a one-dimensional vector according to a zig-zag scan.
             zigzagVector.clear();
@@ -1000,10 +998,10 @@ void quantizeDctBaselineJPEG(cv::Mat &frame, std::vector<int> &prevDCs, Golomb* 
             if(prevDcsEmpty){
                 prevDCs.push_back(0);
             }
-            runLength.push_back(std::pair(-1, (int)(dc - *prevDC)));
-            frame.at<double>(r,c) = (int)(dc - *prevDC);
-            *prevDC = dc;
-            prevDC++;
+            runLength.push_back(std::pair(-1, (int)(dc - prevDCs.at(prevDCIt))));
+            frame.at<double>(r,c) = (int)(dc - prevDCs.at(prevDCIt));
+            prevDCs.at(prevDCIt) = dc;
+            prevDCIt++;
 
             runLength.insert(runLength.end(), blockACs.begin(), blockACs.end());
         }
@@ -1021,7 +1019,7 @@ void quantizeDctBaselineJPEG(cv::Mat &frame, std::vector<int> &prevDCs, Golomb* 
  * @param frame
  */
 void inverseQuantizeDctBaselineJPEG(std::vector<int> &prevDCs, std::vector<std::pair<int, int>> runLengthCode,
-                                    cv::Mat &frame){
+                                    cv::Mat &frame, bool luminance){
     std::vector<int>::iterator dcIt = prevDCs.begin();
     std::vector<std::pair<int, int>>::iterator rlIt = runLengthCode.begin();
     cv::Mat block;
@@ -1088,8 +1086,8 @@ void inverseQuantizeDctBaselineJPEG(std::vector<int> &prevDCs, std::vector<std::
         }
         zigzag.clear();
 
-        frame(cv::Rect(row - 7, col - 7, 8, 8)).copyTo(block);
-        inverseQuantizeBlock(block, quantMatrixLuminance); // TODO: check what jpeg matrix to use
-        block.copyTo(frame(cv::Rect(row - 7, col - 7, 8, 8)));
+        frame(cv::Rect(col - 7, row - 7, 8, 8)).copyTo(block);
+        inverseQuantizeBlock(block, luminance ? quantMatrixLuminance : quantMatrixChrominance);
+        block.copyTo(frame(cv::Rect(col - 7, row - 7, 8, 8)));
     }
 }
