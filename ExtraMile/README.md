@@ -2,8 +2,8 @@
 ## Extra mile
 sudo apt install ffmpeg
 
-### encode
-`./extra encode ../videos/input5s.avi code_video code_audio`
+### VideoEncode
+`./extra encode ../videos/input5s.avi code_audio code_video`
 
-### decode
-`./extra decode code_vide code_audio new.avi`
+### VideoDecode
+`./extra decode code_audio code_video ../videos/new.avi`

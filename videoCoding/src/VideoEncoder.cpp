@@ -174,7 +174,7 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int init_m, int mode, bo
         if(this->mode == 0 || frameCounter % intra_rate == 0){
             // intra coding
             // encode residuals
-            this->encodeRes_intra(frameData, golomb, m_rate, 0);
+            this->encodeRes_intra(frameData, golomb, m_rate, 1);
             //cout << "sample size u" << frameData.size() << endl;
         }else if(this->mode == 1){
             // intra + inter coding (hybrid)
@@ -199,7 +199,7 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int init_m, int mode, bo
         if(this->mode == 0 || frameCounter % intra_rate == 0){
             // intra coding
             // encode residuals
-            this->encodeRes_intra(frameData, golomb, m_rate, 0);
+            this->encodeRes_intra(frameData, golomb, m_rate, 2);
             //cout << "sample size v" << frameData.size() << endl;
         }else if(this->mode == 1){
             // intra + inter coding (hybrid)
