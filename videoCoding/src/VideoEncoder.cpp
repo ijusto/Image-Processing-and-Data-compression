@@ -5,7 +5,10 @@
 #include    <regex>
 #include    <algorithm>
 
-using namespace cv;
+using cv::Mat;
+using cv::Scalar;
+using cv::BORDER_CONSTANT;
+using cv::noArray;
 using namespace std;
 
 vector<bool> VideoEncoder::int2boolvec(int n){
@@ -56,8 +59,10 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int init_m, int mode, bo
     this->initial_m = init_m;
     this->mode = mode;
     this->lossy = lossy;
-    this->prevDCs = {{}, {}, {}}; // y, u, v
-    this->quantization = new JPEGQuantization();
+    if(this->lossy){
+        this->prevDCs = {{}, {}, {}}; // y, u, v
+        this->quantization = new JPEGQuantization();
+    }
     this->calcHist = calcHist;
 
     // init histograms

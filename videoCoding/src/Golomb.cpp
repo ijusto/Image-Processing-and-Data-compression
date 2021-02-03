@@ -149,7 +149,7 @@ void Golomb::decode(vector<int> *numbers) {
 }
 
 void Golomb::decode3(vector<bool> &encodedBits, vector<int> &decoded) {
-    unsigned int b = (unsigned int) ceil(log2(this->m));
+    auto b = (unsigned int) ceil(log2(this->m));
     int index = 0;
     while(true){
         /* Decode unary */

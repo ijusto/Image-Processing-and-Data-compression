@@ -578,8 +578,9 @@ void JPEGQuantization::getImage(std::vector<std::pair<int, int>> runLengthCode, 
 
 void JPEGQuantization::quantizeDctBaselineJPEG(cv::Mat &frame, std::vector<int> &prevDCs, Golomb* golomb, std::vector<bool> &encodedTree,
                              std::vector<bool> &code, bool luminance) {
-
-    divideImageIn8x8Blocks(frame);
+    if(frame.rows % 8 != 0 or frame.cols % 8 != 0){
+        divideImageIn8x8Blocks(frame);
+    }
 
     // ***************************************** Calculation of the DCT ************************************************
     cv::Mat block;
@@ -626,8 +627,9 @@ void JPEGQuantization::quantizeDctBaselineJPEG(cv::Mat &frame, std::vector<int> 
 
 void JPEGQuantization::quantizeDctBaselineJPEG(cv::Mat &frame, std::vector<int> &prevDCs, Golomb* golomb, std::vector<bool> &code, bool luminance) {
 
-    divideImageIn8x8Blocks(frame);
-
+    if(frame.rows % 8 != 0 or frame.cols % 8 != 0){
+        divideImageIn8x8Blocks(frame);
+    }
     // ***************************************** Calculation of the DCT ************************************************
     cv::Mat block;
     std::vector<int> zigzagVector;
@@ -685,8 +687,8 @@ void JPEGQuantization::inverseQuantizeDctBaselineJPEG(std::vector<int> &prevDCs,
     auto zigzagIt = zigzag.begin();
     while(rlIt != runLengthCode.end()){
         /* int bob = rlIt->first == -1; // Beginning of block */
-        *dcIt += rlIt->second; // refresh prevDCs
         frame.at<double>(row, col) = rlIt->second + *dcIt; // dc
+        *dcIt += rlIt->second; // refresh prevDCs
         dcIt++;
         if(col == frame.cols - 1){
             col = 0;
@@ -745,6 +747,90 @@ void JPEGQuantization::inverseQuantizeDctBaselineJPEG(std::vector<int> &prevDCs,
         frame(cv::Rect(col - 7, row - 7, 8, 8)).copyTo(block);
         inverseQuantizeBlock(block, luminance ? quantMatrixLuminance : quantMatrixChrominance);
         block.copyTo(frame(cv::Rect(col - 7, row - 7, 8, 8)));
+    }
+}
+void JPEGQuantization::inverseQuantizeDctBaselineJPEG(int f_rows, int f_cols, std::vector<int> &prevDCs,
+                                                      std::vector<std::pair<int, int>> runLengthCode,
+                                                      vector<int> &outRes, bool luminance){
+    auto dcIt = prevDCs.begin();
+    auto rlIt = runLengthCode.begin();
+    cv::Mat frame = cv::Mat::zeros(f_rows, f_cols, CV_64F), block;
+    if(f_rows % 8 != 0 or f_cols % 8 != 0){
+        divideImageIn8x8Blocks(frame);
+    }
+    int diagonals, row = 0, col = 0, temp_diagonals;
+    bool reachedRow8;
+    std::vector<int> zigzag = std::vector(64, 0);
+    auto zigzagIt = zigzag.begin();
+    while(rlIt != runLengthCode.end()){
+        /* int bob = rlIt->first == -1; // Beginning of block */
+        frame.at<double>(row, col) = rlIt->second + *dcIt; // dc
+        *dcIt += rlIt->second; // refresh prevDCs
+        dcIt++;
+        if(col == frame.cols - 1){
+            col = 0;
+            row += 1;
+        } else if(rlIt != runLengthCode.begin()){
+            col += 1;
+            row -= 8;
+        }
+        rlIt++;
+        diagonals = 1;
+        reachedRow8 = false;
+
+        while(rlIt->first != -1 && rlIt != runLengthCode.end()){
+            if(rlIt->first != 0){
+                zigzagIt += rlIt->first;
+            }
+            *zigzagIt = rlIt->second;
+            zigzagIt++;
+            rlIt++;
+        }
+        zigzagIt = zigzag.begin();
+        while(zigzagIt != zigzag.end()){
+            if(!reachedRow8){ col += 1; /* right */ } else { row = row + 1; /* down */ }
+            frame.at<double>(row, col) = *zigzagIt;
+            zigzagIt++;
+
+            // down diagonal
+            temp_diagonals = diagonals;
+            while(temp_diagonals != 0){
+                row += 1; col -= 1;
+                frame.at<double>(row, col) = *zigzagIt;
+                zigzagIt++;
+                temp_diagonals -= 1;
+            }
+            if(row == 7){ reachedRow8 = true; }
+            if(!reachedRow8){ diagonals += 1; } else { diagonals -= 1; }
+
+            if(!reachedRow8){ row = row + 1; /* down */ } else { col += 1; /* right */ }
+            frame.at<double>(row, col) = *zigzagIt;
+            zigzagIt++;
+
+            if(diagonals == 0){ break; }
+
+            // up diagonal
+            temp_diagonals = diagonals;
+            while(temp_diagonals != 0){
+                row -= 1; col += 1;
+                frame.at<double>(row, col) = *zigzagIt;
+                zigzagIt++;
+                temp_diagonals -= 1;
+            }
+            if(!reachedRow8){ diagonals += 1; } else { diagonals -= 1; }
+        }
+        zigzag.clear();
+
+        frame(cv::Rect(col - 7, row - 7, 8, 8)).copyTo(block);
+        inverseQuantizeBlock(block, luminance ? quantMatrixLuminance : quantMatrixChrominance);
+        block.copyTo(frame(cv::Rect(col - 7, row - 7, 8, 8)));
+    }
+
+
+    for(int r = 0; r < f_rows; r += 1) {
+        for (int c = 0; c < f_cols; c += 1) {
+            outRes.push_back((int) frame.at<double>(r, c));
+        }
     }
 }
 

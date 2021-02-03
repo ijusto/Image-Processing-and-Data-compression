@@ -11,6 +11,7 @@
 
 #include    "Golomb.h"
 #include    "LosslessJPEGPredictors.hpp"
+#include    "JPEGQuantization.hpp"
 #include    <opencv2/opencv.hpp>
 #include    <vector>
 
@@ -59,6 +60,10 @@ private:
     //!
     vector<vector<uchar>> frames;
 
+    //! used for quantization in lossy mode
+    std::vector<std::vector<int>> prevDCs; // y, u, v
+    JPEGQuantization* quantization;
+
     //! Asserts that vector contains bits stored as least significant bit at the biggest address.
     /*!
      * @param vec
@@ -84,7 +89,30 @@ public:
      */
     void update_m(vector<int> residuals, Golomb *golomb, int m_rate);
 
+    /*!
+     *
+     * @param data
+     * @param indexPtr
+     * @param n_residuals
+     * @param golomb
+     * @param m_rate
+     * @param outRes
+     */
     void getResAndUpdate(vector<bool> &data, unsigned int *indexPtr, int n_residuals, Golomb *golomb, int m_rate, vector<int> &outRes);
+
+    /*!
+     *
+     * @param data
+     * @param indexPtr
+     * @param n_residuals
+     * @param golomb
+     * @param m_rate
+     * @param outRes
+     * @param f_rows
+     * @param f_cols
+     * @param channel
+     */
+    void getResAndUpdate(vector<bool> &data, unsigned int *indexPtr, Golomb *golomb, int m_rate, vector<int> &outRes, int f_rows, int f_cols, int channel);
 
         //!
     /*!
@@ -97,6 +125,16 @@ public:
      */
     void decodeRes_intra(vector<int> &residualValues, vector<uchar> &outPlanarValues, int f_rows, int f_cols);
 
+    /*!
+     *
+     * @param prev_frame
+     * @param currFrameResiduals
+     * @param grid_h
+     * @param grid_w
+     * @param outPlanarValues
+     * @param block_size
+     * @param search_size
+     */
     void decodeRes_inter(Mat &prev_frame, vector<int> &currFrameResiduals, int grid_h, int grid_w, vector<uchar> &outPlanarValues, int block_size, int search_size);
 
     //! Write decoded video

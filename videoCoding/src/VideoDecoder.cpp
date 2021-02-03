@@ -1,6 +1,11 @@
 #include    "../includes/VideoDecoder.hpp"
 
-using namespace cv;
+using cv::Mat;
+using cv::Scalar;
+using cv::BORDER_CONSTANT;
+using cv::noArray;
+using cv::format;
+using namespace std;
 
 int VideoDecoder::boolvec2int(vector<bool> vec){
     int acc = 0;
@@ -28,6 +33,11 @@ VideoDecoder::VideoDecoder(char* encodedFileName){
         totalFrames = boolvec2int(sourceFile->readNbits(paramsSize));
         rows =  boolvec2int(sourceFile->readNbits(paramsSize));
         cols =  boolvec2int(sourceFile->readNbits(paramsSize));
+
+        if(lossy){
+            this->prevDCs = {{}, {}, {}}; // y, u, v
+            this->quantization = new JPEGQuantization();
+        }
 
     } catch( string mess){
         std::cout << mess << std::endl;
@@ -118,7 +128,11 @@ void VideoDecoder::decode(){
                 int size = frame_rows * frame_cols;
                 // decode residuals and update m
                 vector<int> residuals;
-                getResAndUpdate(data, &index, size, golomb, m_rate, residuals);
+                if(this->lossy) {
+                    getResAndUpdate(data, &index, golomb, m_rate, residuals, frame_rows, frame_cols, channel);
+                } else {
+                    getResAndUpdate(data, &index, size, golomb, m_rate, residuals);
+                }
                 // decode y component and add to frame vector
                 this->decodeRes_intra(residuals, component_frame, frame_rows, frame_cols);
             }else{
@@ -193,6 +207,33 @@ void VideoDecoder::update_m(vector<int> residuals, Golomb *golomb, int m_rate){
         res_sum = 0;
         numRes = 0;
     }
+}
+
+void VideoDecoder::getResAndUpdate(vector<bool> &data, unsigned int *indexPtr, Golomb *golomb, int m_rate, vector<int> &outRes, int f_rows, int f_cols, int channel){
+    std::vector<int> decodedLeafs;
+    golomb->decode2(data, decodedLeafs, indexPtr, 1);
+    // Ler com o golomb numero a numero ate um -3 (inclusivo) -> folhas da huffman tree
+    while(decodedLeafs.back() != -3) {
+        golomb->decode2(data, decodedLeafs, indexPtr, 1);
+    }
+    // update m
+    this->update_m(decodedLeafs, golomb, m_rate);
+    decodedLeafs.pop_back(); // -3 golomb encoded to represent the end of the huffman tree
+
+    auto* huffDec = new HuffmanDecoder(this->quantization->huffmanTree(decodedLeafs));
+    std::vector<std::pair<int, int>> rlCode;  // run length code
+
+    bool bit = data.at(*indexPtr);
+    // update index
+    *indexPtr = *indexPtr + 1;
+    while(huffDec->decode(bit, rlCode)){
+        bit = data.at(*indexPtr);
+        // update index
+        *indexPtr = *indexPtr + 1;
+    }
+
+    this->quantization->inverseQuantizeDctBaselineJPEG(f_rows, f_cols, this->prevDCs.at(channel), rlCode, outRes,
+                                                       channel == 0);
 }
 
 void VideoDecoder::getResAndUpdate(vector<bool> &data, unsigned int *indexPtr, int n_residuals, Golomb *golomb, int m_rate, vector<int> &outRes){

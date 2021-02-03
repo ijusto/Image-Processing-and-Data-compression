@@ -8,6 +8,7 @@
 */
 
 #include    <opencv2/opencv.hpp>
+#include    "HuffmanDecoder.hpp"
 #include    <vector>
 
 class JPEGQuantization {
@@ -220,6 +221,18 @@ public:
     void inverseQuantizeDctBaselineJPEG(std::vector<int> &prevDCs, std::vector<std::pair<int, int>> runLengthCode,
                                         cv::Mat &frame, bool luminance);
 
+    /*!
+     *
+     * @param f_rows
+     * @param f_cols
+     * @param prevDCs
+     * @param runLengthCode
+     * @param outRes
+     * @param luminance
+     */
+    void inverseQuantizeDctBaselineJPEG(int f_rows, int f_cols, std::vector<int> &prevDCs,
+                                        std::vector<std::pair<int, int>> runLengthCode,
+                                        vector<int> &outRes, bool luminance);
     /*!
      *
      * @return
