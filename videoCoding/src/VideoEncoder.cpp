@@ -1,7 +1,6 @@
-#include    "Golomb.cpp"
+#include    "QuantizationJPEG.cpp"
 #include    "VideoEncoder.hpp"
 #include    "LosslessJPEGPredictors.cpp"
-//#include    "BaselineJPEG.cpp"
 #include    <fstream>
 #include    <regex>
 #include    <algorithm>
@@ -57,6 +56,7 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int init_m, int mode, bo
     this->initial_m = init_m;
     this->mode = mode;
     this->lossy = lossy;
+    this->prevDCs = {{}, {}, {}}; // y, u, v
     this->calcHist = calcHist;
 
     // init histograms
@@ -155,14 +155,16 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int init_m, int mode, bo
             // encode motion vectors and residuals
             encodeRes_inter(y_prev, frameData, golomb, m_rate, block_size, search_size);
         }
-        // update previous
-        y_prev = frameData;
 
         if(this->lossy){
             // this->last_res contains last residuals (Y)
             // encode residuals using huffman/golomb
-            // append encoded residuals to this->encodedRes (vector<bool>)
+            // append encoded residuals to this->encodedRes
+            quantizeDctBaselineJPEG(this->last_res, this->prevDCs.at(0), golomb, this->encodedRes, true);
         }
+        // update previous
+        y_prev = frameData;
+
 
         // read u
         frameData = Mat(U_frame_rows, U_frame_cols, CV_8UC1);
@@ -179,14 +181,15 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int init_m, int mode, bo
             // encode motion vectors and residuals
             encodeRes_inter(u_prev, frameData, golomb, m_rate, block_size, search_size);
         }
-        // update previous
-        u_prev = frameData;
 
         if(this->lossy){
             // this->last_res contains last residuals (U)
             // encode residuals using huffman/golomb
-            // append encoded residuals to this->encodedRes (vector<bool>)
+            // append encoded residuals to this->encodedRes
+            quantizeDctBaselineJPEG(this->last_res, this->prevDCs.at(1), golomb, this->encodedRes, false);
         }
+        // update previous
+        u_prev = frameData;
 
         // read v
         frameData = Mat(V_frame_rows, V_frame_cols, CV_8UC1);
@@ -203,14 +206,14 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int init_m, int mode, bo
             // encode motion vectors and residuals
             encodeRes_inter(v_prev, frameData, golomb, m_rate, block_size, search_size);
         }
-        // update previous
-        v_prev = frameData;
-
         if(this->lossy){
             // this->last_res contains last residuals (V)
             // encode residuals using huffman/golomb
-            // append encoded residuals to this->encodedRes (vector<bool>)
+            // append encoded residuals to this->encodedRes
+            quantizeDctBaselineJPEG(this->last_res, this->prevDCs.at(2), golomb, this->encodedRes, false);
         }
+        // update previous
+        v_prev = frameData;
 
         frameCounter++;
     }

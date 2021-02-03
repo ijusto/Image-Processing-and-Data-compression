@@ -22,7 +22,8 @@ private:
     vector<vector<char>> *res_hists;
     vector<vector<char>> *sample_hists;
     //! used for quantization in lossy mode
-    Mat last_res;
+    cv::Mat last_res;
+    std::vector<std::vector<int>> prevDCs; // y, u, v
 
     //! Converts integer to bool vector representing bits.
     /*!
