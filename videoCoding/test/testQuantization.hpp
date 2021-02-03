@@ -407,7 +407,7 @@ TEST_CASE("quantizeDctBaselineJPEG"){
     cv::Mat finalY = cv::Mat(8, 8, CV_64F, &final_Y);
     prevDCs = {17};
     INFO(Xmatrix);
-    quantizeDctBaselineJPEG(Xmatrix, prevDCs, golomb, quantEncodedTree, quantCode);
+    quantizeDctBaselineJPEG(Xmatrix, prevDCs, golomb, quantEncodedTree, quantCode, true);
     INFO(Xmatrix);
 
     std::string info = "\nHuffman code: \n";

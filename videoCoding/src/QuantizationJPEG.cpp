@@ -35,18 +35,12 @@ const cv::Mat quantMatrixChrominance = cv::Mat(8, 8, CV_64F, &jpeg_matrix_color)
  * @return DCT Transformation matrix.
  */
 cv::Mat transformationMatrix(){
-    int m = 8;
-    cv::Mat t = cv::Mat::zeros(m, m, CV_64F);
-    for(int r = 0; r <m; r++) {
-        for (int c = 0; c < m; c++) {
-            if(r == 0){
-                t.at<double>(r, c) = 1/(sqrt(m));
-            } else {
-                t.at<double>(r, c) = sqrt((2/(double)m))*cos((M_PI*(2*c+1)*r) / (2*(double)m));
-            }
+    cv::Mat t = cv::Mat::zeros(8, 8, CV_64F);
+    for(int r = 0; r < 8; r++) {
+        for (int c = 0; c < 8; c++) {
+            t.at<double>(r, c) = (r == 0) ? 1/(sqrt(8)) : sqrt((2/(double)8))*cos((M_PI*(2*c+1)*r) / (2*(double)8));
         }
     }
-
     return t;
 }
 
@@ -57,10 +51,6 @@ const cv::Mat t = transformationMatrix();
  * @param frame image frame.
  */
 void divideImageIn8x8Blocks(cv::Mat &frame){
-
-    //std::cout << "nrows: " << frame.rows << ", rows to add: " << ((frame.rows % 8) == 0 ? 0 :  (8 - (frame.rows % 8))) << std::endl;
-    //std::cout << "ncols: " << frame.cols << ", cols to add: " << ((frame.cols % 8) == 0 ? 0 :  (8 - (frame.cols % 8))) << std::endl;
-
     // The image is partitioned into 8 × 8 blocks of pixels.
     // If the number of rows or columns is not multiple of 8, then they are internally adjusted (using padding).
     int nRowsToAdd = (frame.rows % 8) == 0 ? 0 :  (8 - (frame.rows % 8));
@@ -87,31 +77,26 @@ void divideImageIn8x8Blocks(cv::Mat &frame){
         cv::Mat temp = frame;
         cv::hconcat(temp, colsToAdd, frame);
     }
-
-    //std::cout << "frame nrows: " << frame.rows << std::endl;
-    //std::cout << "frame ncols: " << frame.cols << std::endl;
 }
 
 /*! DCT following the Transformation Matrix Approach
  * @param block 8 by 8 block of image frame that we want to apply the dct transformation.
  */
 void dct(cv::Mat &block){
-    int m = 8;
-
     // DCT of the block: T*block*T'
-    cv::Mat mult1 = cv::Mat::zeros(m, m, CV_64F);
-    cv::Mat dct = cv::Mat::zeros(m, m, CV_64F);
-    for(int r = 0; r < m; ++r) {
-        for (int c = 0; c < m; ++c) {
-            for (int s = 0; s < m; ++s) {
+    cv::Mat mult1 = cv::Mat::zeros(8, 8, CV_64F);
+    cv::Mat dct = cv::Mat::zeros(8, 8, CV_64F);
+    for(int r = 0; r < 8; ++r) {
+        for (int c = 0; c < 8; ++c) {
+            for (int s = 0; s < 8; ++s) {
                 // Subtract 2^(b−1) to each pixel value, where b is the number of bits used to represent the pixels.
                 mult1.at<double>(r, c) += t.at<double>(r, s) * (block.at<double>(s, c) - pow(2, 7));
             }
         }
     }
-    for(int r = 0; r < m; ++r) {
-        for (int c = 0; c < m; ++c) {
-            for (int s = 0; s < m; ++s) {
+    for(int r = 0; r < 8; ++r) {
+        for (int c = 0; c < 8; ++c) {
+            for (int s = 0; s < 8; ++s) {
                 dct.at<double>(r, c) += mult1.at<double>(r, s) * t.at<double>(c, s) /* transpose of T */;
             }
         }
@@ -164,6 +149,7 @@ void inverseDCT(cv::Mat &block){
  * @param quantMatrix quantization matrix.
  */
 void quantizeDCTCoeff(cv::Mat &block, cv::Mat quantMatrix){
+    double temp;
     for(int r = 0; r < 8; r++){
         for (int c = 0; c < 8; c++) {
             // ******************************* Quantization of the DCT coefficients ****************************
@@ -171,7 +157,7 @@ void quantizeDCTCoeff(cv::Mat &block, cv::Mat quantMatrix){
             // to the characteristics of the human visual system.
             // The DCT coefficients are quantized using a quantization matrix, previously scaled by a compression
             // quality factor.
-            float temp = block.at<double>(r, c) / quantMatrix.at<double>(r, c); // ỹ(r,c)=ROUND(y(r,c)/q(r,c))
+            temp = block.at<double>(r, c) / quantMatrix.at<double>(r, c); // ỹ(r,c)=ROUND(y(r,c)/q(r,c))
             block.at<double>(r, c) = (int)(temp + 0.5 - (temp<0)); // https://stackoverflow.com/questions/9695329/c-how-to-round-a-double-to-an-int
         }
     }
@@ -182,6 +168,7 @@ void quantizeDCTCoeff(cv::Mat &block, cv::Mat quantMatrix){
  * @param quantMatrix quantization matrix.
  */
 void inverseQuantizeDCTCoeff(cv::Mat &block, cv::Mat quantMatrix){
+    double temp;
     for(int r = 0; r < 8; r++){
         for (int c = 0; c < 8; c++) {
             // ******************************* Quantization of the DCT coefficients ****************************
@@ -189,7 +176,7 @@ void inverseQuantizeDCTCoeff(cv::Mat &block, cv::Mat quantMatrix){
             // to the characteristics of the human visual system.
             // The DCT coefficients are quantized using a quantization matrix, previously scaled by a compression
             // quality factor.
-            float temp = block.at<double>(r, c) * quantMatrix.at<double>(r, c); // ỹ(r,c)=ROUND(y(r,c)/q(r,c))
+            temp = block.at<double>(r, c) * quantMatrix.at<double>(r, c); // ỹ(r,c)=ROUND(y(r,c)/q(r,c))
             block.at<double>(r, c) = (int)(temp + 0.5 - (temp<0)); // https://stackoverflow.com/questions/9695329/c-how-to-round-a-double-to-an-int
         }
     }
@@ -200,28 +187,26 @@ void inverseQuantizeDCTCoeff(cv::Mat &block, cv::Mat quantMatrix){
  * @param quantMatrix quantization matrix.
  */
 void quantizeBlock(cv::Mat &block, cv::Mat quantMatrix){
-    int m = 8;
-
     // DCT of the block: T*block*T'
-    cv::Mat mult1 = cv::Mat::zeros(m, m, CV_64F);
-    cv::Mat dct = cv::Mat::zeros(m, m, CV_64F);
-    for(int r = 0; r < m; ++r) {
-        for (int c = 0; c < m; ++c) {
-            for (int s = 0; s < m; ++s) {
+    cv::Mat mult1 = cv::Mat::zeros(8, 8, CV_64F);
+    cv::Mat dct = cv::Mat::zeros(8, 8, CV_64F);
+    for(int r = 0; r < 8; ++r) {
+        for (int c = 0; c < 8; ++c) {
+            for (int s = 0; s < 8; ++s) {
                 // Subtract 2^(b−1) to each pixel value, where b is the number of bits used to represent the pixels.
                 mult1.at<double>(r, c) += t.at<double>(r, s) * (block.at<double>(s, c) - pow(2, 7));
             }
         }
     }
-    for(int r = 0; r < m; ++r) {
-        for (int c = 0; c < m; ++c) {
-            for (int s = 0; s < m; ++s) {
+    for(int r = 0; r < 8; ++r) {
+        for (int c = 0; c < 8; ++c) {
+            for (int s = 0; s < 8; ++s) {
                 dct.at<double>(r, c) += mult1.at<double>(r, s) * t.at<double>(c, s) /* transpose of T */;
             }
         }
     }
 
-    float temp;
+    double temp;
     for(int r = 0; r < 8; r++) {
         for (int c = 0; c < 8; c++) {
             temp = (int)(dct.at<double>(r, c) + 0.5 - (dct.at<double>(r, c)<0)); // https://stackoverflow.com/questions/9695329/c-how-to-round-a-double-to-an-int
@@ -242,12 +227,11 @@ void quantizeBlock(cv::Mat &block, cv::Mat quantMatrix){
  * @param quantMatrix quantization matrix.
  */
 void inverseQuantizeBlock(cv::Mat &block, cv::Mat quantMatrix){
-    int m = 8;
-
     // inverse of the DCT: T'*dct*T
-    cv::Mat mult1 = cv::Mat::zeros(m, m, CV_64F);
-    cv::Mat inverse_dct = cv::Mat::zeros(m, m, CV_64F);
+    cv::Mat mult1 = cv::Mat::zeros(8, 8, CV_64F);
+    cv::Mat inverse_dct = cv::Mat::zeros(8, 8, CV_64F);
 
+    double temp;
     for(int r = 0; r < 8; r++) {
         for (int c = 0; c < 8; c++) {
             // ******************************* Quantization of the DCT coefficients ****************************
@@ -255,22 +239,22 @@ void inverseQuantizeBlock(cv::Mat &block, cv::Mat quantMatrix){
             // to the characteristics of the human visual system.
             // The DCT coefficients are quantized using a quantization matrix, previously scaled by a compression
             // quality factor.
-            float temp = floor(block.at<double>(r, c) * quantMatrix.at<double>(r, c)); // ỹ(r,c)=ROUND(y(r,c)/q(r,c))
+            temp = floor(block.at<double>(r, c) * quantMatrix.at<double>(r, c)); // ỹ(r,c)=ROUND(y(r,c)/q(r,c))
             block.at<double>(r, c) = (int)(temp - 0.5 - (temp<0)); // https://stackoverflow.com/questions/9695329/c-how-to-round-a-double-to-an-int
         }
     }
 
-    for(int r = 0; r < m; ++r) {
-        for (int c = 0; c < m; ++c) {
-            for (int s = 0; s < m; ++s) {
+    for(int r = 0; r < 8; ++r) {
+        for (int c = 0; c < 8; ++c) {
+            for (int s = 0; s < 8; ++s) {
                 mult1.at<double>(r, c) += t.at<double>(s, r) /* transpose of T */ * block.at<double>(s, c);
             }
         }
     }
 
-    for(int r = 0; r < m; ++r) {
-        for (int c = 0; c < m; ++c) {
-            for (int s = 0; s < m; ++s) {
+    for(int r = 0; r < 8; ++r) {
+        for (int c = 0; c < 8; ++c) {
+            for (int s = 0; s < 8; ++s) {
                 inverse_dct.at<double>(r, c) += mult1.at<double>(r, s) * t.at<double>(s, c);
             }
         }
@@ -291,14 +275,14 @@ void inverseQuantizeBlock(cv::Mat &block, cv::Mat quantMatrix){
  */
 void zigZagScan(cv::Mat &block, std::vector<int> &zigzagVector){
     zigzagVector.push_back(block.at<double>(0, 0)); // dc
-    int row = 0, col = 0, diagonals = 1;
+    int row = 0, col = 0, diagonals = 1, temp_diagonals;
     bool reachedRow8 = false;
     while(true){
         if(!reachedRow8){ col += 1; /* right */ } else { row = row + 1; /* down */ }
         zigzagVector.push_back(block.at<double>(row, col));
 
         // down diagonal
-        int temp_diagonals = diagonals;
+        temp_diagonals = diagonals;
         while(temp_diagonals != 0){
             row += 1; col -= 1;
             zigzagVector.push_back(block.at<double>(row, col));
@@ -329,41 +313,16 @@ void zigZagScan(cv::Mat &block, std::vector<int> &zigzagVector){
  * @param vec zig zag vector.
  * @param code run length code.
  */
-void runLengthPairs(std::vector<int> vec, std::vector<std::pair<int, int>> &code){
+void runLengthPairs(std::vector<int> &vec, std::vector<std::pair<int, int>> &code){
     int nZeros = 0;
     for(int elem : vec){
         if (elem != 0) {
-            code.push_back(std::pair<int, int>(nZeros, elem));
+            code.emplace_back(nZeros, elem);
             nZeros = 0;
         } else {
             nZeros += 1;
         }
     }
-}
-
-/*! Run Length Code
- * In this implementation, the code has the same symbols of the original, except if there is a sequence of one or more
- * zeros. In that case, that sequence is represented by two symbols: 0 and the number of zeros.
- * The symbols 0 0 represent the end of a block.
- * @param vec zig zag vector.
- * @param code run length code.
- */
-void runLength(std::vector<int> vec, std::vector<int> &code){
-    int nZeros = 0;
-    for(int elem : vec){
-        if (elem != 0) {
-            if(nZeros > 0) {
-                code.push_back(0);
-                code.push_back(nZeros);
-            }
-            code.push_back(elem);
-            nZeros = 0;
-        } else {
-            nZeros += 1;
-        }
-    }
-    code.pop_back();
-    code.push_back(0);
 }
 
 /*! Creates a new tree node.
@@ -386,7 +345,7 @@ Node* newNode(int data, Node *leafLeft, Node *leafRight) {
  * @return huffman tree root node pointer.
  */
 Node* huffmanTree(std::vector<int> decodedLeafs){
-    std::vector<int>::iterator leafIt = decodedLeafs.begin();
+    auto leafIt = decodedLeafs.begin();
 
     Node* father = nullptr;
     Node* leftLeaf = newNode(1,
@@ -403,25 +362,13 @@ Node* huffmanTree(std::vector<int> decodedLeafs){
                           (leftLeafData == -2) ? nullptr : newNode(leftLeafData, nullptr, nullptr),
                          newNode(*leafIt, nullptr, nullptr));
         leafIt++;
-
-        father =  newNode(1, leftLeaf, rightLeaf);
+        father = newNode(1, leftLeaf, rightLeaf);
         leftLeaf = father;
     }
     father->data = -4;
 
     return father;
 }
-
-
-/*! Decode the huffman tree and store it in Node pointers so the decoder can decode faster.
- * @param decodedLeafs golomb decoded huffman tree (leafs).
- * @return huffman tree root node pointer.
- */
-Node* huffmanTreev2(std::vector<int> decodedLeafs){
-
-    //TODO: REVISE AND TEST
-}
-
 
 /*! Construct the huffman tree of the run length code and encode it in order to be sent to the decoder.
  * In this implementation, the non zero values and the values representing the number of zeros can have the same code,
@@ -460,7 +407,7 @@ std::vector<bool> huffmanTreeEncode(std::list<std::pair<int, double>> freqs_list
     freqs_listValue.erase(freqs_listValue.begin());
     diffSizeLists--;
 
-    std::list<std::pair<int, double>>::iterator fNZero = freqs_listNZero.begin(), fValue = freqs_listValue.begin();
+    auto fNZero = freqs_listNZero.begin(), fValue = freqs_listValue.begin();
     while(fNZero != freqs_listNZero.end() && fValue != freqs_listValue.end()){
         if (diffSizeLists < 1){
             for(const auto &cw : codeZerosMap){ codeZerosMap[cw.first].insert(codeZerosMap[cw.first].begin(), true); }
@@ -478,74 +425,11 @@ std::vector<bool> huffmanTreeEncode(std::list<std::pair<int, double>> freqs_list
     }
     tree.push_back(-3);  // end of tree
 
-    //int count = 0;
     for(int leaf : tree){
-        //std::cout << leaf << std::endl;
         golomb->encode2(leaf, encodedTree);
-        /*
-        int tmp = 0;
-        for(bool bit : encodedTree) {
-            tmp += 1;
-            if (tmp > count){
-                std::cout << bit;
-            }
-        }
-        count = tmp;
-        std::cout << std::endl;
-         */
     }
-
     return encodedTree;
 }
-
-/*! Construct the huffman tree of the run length code and encode it in order to be sent to the decoder.
- * In this implementation all the values are in the right leafs (except for the least probable one).
- * The values on the leafs are Golomb encoded from top to bottom in depth.
- * We golomb encode -3 to represent the end of the tree.
- * @param freqs_list list of value of the run length code, frequency pairs.
- * @param codeMap map with the value from the run length code as keys and their frequency as value.
- * @param golomb pointer to Golomb Object.
- * @return golomb encoded huffman tree.
- */
-std::vector<bool> huffmanTreeEncodev2(std::list<std::pair<int, double>> freqs_list,
-                                      std::unordered_map<int, std::vector<bool>> &codeMap,
-                                      Golomb *golomb){
-
-    //TODO: REVISE AND TEST
-    std::vector<int> tree;
-    std::vector<bool> encodedTree;
-
-    codeMap[freqs_list.front().first] = {};
-    tree.push_back(freqs_list.front().first);
-    freqs_list.erase(freqs_list.begin());
-
-    for(std::pair<int, double> freq : freqs_list){
-        for(const auto &cw : codeMap){ codeMap[cw.first].insert(codeMap[cw.first].begin(), true); }
-        codeMap[freq.first].insert(codeMap[freq.first].begin(), false);
-        tree.push_back(freq.first);
-    }
-    tree.push_back(-3);  // end of tree
-
-    //int count = 0;
-    for(int leaf : tree){
-        //std::cout << leaf << std::endl;
-        golomb->encode2(leaf, encodedTree);
-        /*
-        int tmp = 0;
-        for(bool bit : encodedTree) {
-            tmp += 1;
-            if (tmp > count){
-                std::cout << bit;
-            }
-        }
-        count = tmp;
-        std::cout << std::endl;
-         */
-    }
-
-    return encodedTree;
-}
-
 
 /*!
  *
@@ -554,7 +438,7 @@ std::vector<bool> huffmanTreeEncodev2(std::list<std::pair<int, double>> freqs_li
  * @param encodedTree
  * @param golomb pointer to Golomb Object.
  */
-void huffmanEncode(std::vector<std::pair<int, int>> runLengthCode, std::vector<bool> &code,
+void huffmanEncode(std::vector<std::pair<int, int>> &runLengthCode, std::vector<bool> &code,
                                 std::vector<bool> &encodedTree, Golomb* golomb){
     std::unordered_map<int, double> freqsMapNZero, freqsMapValue;
     std::unordered_map<int, std::vector<bool>> codeZerosMap, codeValueMap;
@@ -566,15 +450,15 @@ void huffmanEncode(std::vector<std::pair<int, int>> runLengthCode, std::vector<b
     freqsMapNZero[-3]++;// end of huffman code
 
     std::list<std::pair<int, double>> freqs_listNZero, freqs_listValue;
-    std::unordered_map<int, double>::iterator fNZero = freqsMapNZero.begin(), fValue = freqsMapValue.begin();
+    auto fNZero = freqsMapNZero.begin(), fValue = freqsMapValue.begin();
     while(fValue != freqsMapValue.end()){
         freqsMapValue[fValue->first] = fValue->second / runLengthCode.size();
-        freqs_listValue.push_back(std::pair<int, double>(fValue->first, freqsMapValue[fValue->first]));
+        freqs_listValue.emplace_back(fValue->first, freqsMapValue[fValue->first]);
         fValue++;
 
         if(fNZero != freqsMapNZero.end()){
             freqsMapNZero[fNZero->first] = fNZero->second / runLengthCode.size();
-            freqs_listNZero.push_back(std::pair<int, double>(fNZero->first, freqsMapNZero[fNZero->first]));
+            freqs_listNZero.emplace_back(fNZero->first, freqsMapNZero[fNZero->first]);
             fNZero++;
         }
     }
@@ -583,7 +467,6 @@ void huffmanEncode(std::vector<std::pair<int, int>> runLengthCode, std::vector<b
     freqs_listNZero.sort([](const auto &a, const auto &b ) { return a.second < b.second; } );
     freqs_listValue.sort([](const auto &a, const auto &b ) { return a.second < b.second; } );
 
-    //TODO: retest this function
     encodedTree = huffmanTreeEncode(freqs_listNZero, freqs_listValue, codeZerosMap, codeValueMap, golomb);
 
     for(std::pair<int, int> coeff: runLengthCode){
@@ -594,14 +477,13 @@ void huffmanEncode(std::vector<std::pair<int, int>> runLengthCode, std::vector<b
     code.insert(code.end(), codeZerosMap[-3].begin(), codeZerosMap[-3].end());
 }
 
-
 /*!
  *
  * @param runLengthCode
  * @param code
  * @param golomb pointer to Golomb Object.
  */
-void huffmanEncode(std::vector<std::pair<int, int>> runLengthCode, std::vector<bool> &code, Golomb* golomb){
+void huffmanEncode(const std::vector<std::pair<int, int>> &runLengthCode, std::vector<bool> &code, Golomb* golomb){
     std::unordered_map<int, double> freqsMapNZero, freqsMapValue;
     std::unordered_map<int, std::vector<bool>> codeZerosMap, codeValueMap;
 
@@ -612,15 +494,15 @@ void huffmanEncode(std::vector<std::pair<int, int>> runLengthCode, std::vector<b
     freqsMapNZero[-3]++;// end of huffman code
 
     std::list<std::pair<int, double>> freqs_listNZero, freqs_listValue;
-    std::unordered_map<int, double>::iterator fNZero = freqsMapNZero.begin(), fValue = freqsMapValue.begin();
+    auto fNZero = freqsMapNZero.begin(), fValue = freqsMapValue.begin();
     while(fValue != freqsMapValue.end()){
         freqsMapValue[fValue->first] = fValue->second / runLengthCode.size();
-        freqs_listValue.push_back(std::pair<int, double>(fValue->first, freqsMapValue[fValue->first]));
+        freqs_listValue.emplace_back(fValue->first, freqsMapValue[fValue->first]);
         fValue++;
 
         if(fNZero != freqsMapNZero.end()){
             freqsMapNZero[fNZero->first] = fNZero->second / runLengthCode.size();
-            freqs_listNZero.push_back(std::pair<int, double>(fNZero->first, freqsMapNZero[fNZero->first]));
+            freqs_listNZero.emplace_back(fNZero->first, freqsMapNZero[fNZero->first]);
             fNZero++;
         }
     }
@@ -640,51 +522,12 @@ void huffmanEncode(std::vector<std::pair<int, int>> runLengthCode, std::vector<b
     }
 
     code.insert(code.end(), codeZerosMap[-3].begin(), codeZerosMap[-3].end());
-
 }
-
-
-/*!
- *
- * @param runLengthCode
- * @param code
- * @param golomb pointer to Golomb Object.
- */
-void huffmanEncodev2(std::vector<int> runLengthCode, std::vector<bool> &code, Golomb* golomb){
-
-    //TODO: REVISE AND TEST
-    std::unordered_map<int, double> freqsMap;
-    std::unordered_map<int, std::vector<bool>> codeMap;
-
-    for(int coeff: runLengthCode){
-        freqsMap[coeff]++;
-    }
-
-    std::list<std::pair<int, double>> freqs_list;
-    for(std::pair<int, double> freq : freqs_list){
-        freqsMap[freq.first] = freq.second / runLengthCode.size();
-        freqs_list.push_back(std::pair<int, double>(freq.first, freqsMap[freq.first]));
-    }
-
-    // sort codewords by frequency
-    freqs_list.sort([](const auto &a, const auto &b ) { return a.second < b.second; } );
-
-    // Golomb encoded tree
-    std::vector<bool> encodedTree = huffmanTreeEncodev2(freqs_list, codeMap, golomb);
-    code.insert(code.end(), encodedTree.begin(), encodedTree.end());
-
-    // Huffman code
-    for(int coeff: runLengthCode){
-        code.insert(code.end(), codeMap[coeff].begin(), codeMap[coeff].end());
-    }
-}
-
 
 /*!
  * @param huffmanTreeRoot
  */
 void printHuffmanTree(Node* huffmanTreeRoot){
-
     int numberOfLeftLeafs = 0;
     int space = 0;
     Node* node = huffmanTreeRoot;
@@ -695,8 +538,7 @@ void printHuffmanTree(Node* huffmanTreeRoot){
     space = (int)((numberOfLeftLeafs/2 + 1)*4);
     numberOfLeftLeafs = (int)((numberOfLeftLeafs/2 + 1)*4*4);
     std::cout<<std::string(numberOfLeftLeafs, '\t')<<"*"<<std::endl;
-    std::string nodeLine = "";
-    std::string connectLine = "";
+    std::string nodeLine, connectLine;
     std::vector<Node*> prevLineFathers = {huffmanTreeRoot};
     std::vector<Node*> currLineNodes;
     bool leafs;
@@ -770,7 +612,6 @@ void huffmanDecode(std::vector<bool> &code, std::vector<bool> &encodedTree,
     int nZeros = -4;
     for(bool bit : code){
         node = bit ? node->left : node->right;
-
         // if we are decoding the number of zeros
         if(nZeros == -4){
             if(node->left->left == nullptr && node->left->right == nullptr) { // number of zeros are in the left leafs
@@ -782,7 +623,7 @@ void huffmanDecode(std::vector<bool> &code, std::vector<bool> &encodedTree,
             }
         } else { // if we are decoding the value
             if(node->right->left == nullptr && node->right->right == nullptr) { // values are in the right leafs
-                runLengthCode.push_back(std::pair<int, int>(nZeros, node->right->data));
+                runLengthCode.emplace_back(nZeros, node->right->data);
                 nZeros = -4;
                 node = huffmanTreeRoot;
             }
@@ -791,48 +632,16 @@ void huffmanDecode(std::vector<bool> &code, std::vector<bool> &encodedTree,
 }
 
 /*!
- * @param code
- * @param encodedTree
- * @param runLengthCode
- * @param golomb pointer to Golomb Object.
- */
-void huffmanDecodev2(std::vector<bool> &code, std::vector<bool> &encodedTree,
-                   std::vector<int> &runLengthCode, Golomb* golomb){
-    //TODO: REVISE AND TEST
-
-    std::vector<int> decodedLeafs;
-    golomb->decode3(encodedTree, decodedLeafs);
-    decodedLeafs.pop_back(); // -3 golomb encoded to represent the end of the huffman tree
-
-    Node* huffmanTreeRoot = huffmanTree(decodedLeafs);
-    //printHuffmanTree(huffmanTreeRoot);
-    Node* node = huffmanTreeRoot;
-    for(bool bit : code){
-        if(bit){
-            node = node->left;
-            if(node->right == nullptr){
-                runLengthCode.push_back(node->data);
-                node = huffmanTreeRoot;
-            }
-        } else {
-            runLengthCode.push_back(node->right->data);
-            node = huffmanTreeRoot;
-        }
-    }
-}
-
-
-/*!
  *
  * @param runLengthCode
  * @param frame
  */
 void getImage(std::vector<std::pair<int, int>> runLengthCode, cv::Mat &frame){
-    std::vector<std::pair<int, int>>::iterator rlIt = runLengthCode.begin();
-    int diagonals, row = 0, col = 0;
+    auto rlIt = runLengthCode.begin();
+    int diagonals, row = 0, col = 0, temp_diagonals;
     bool reachedRow8;
     std::vector<int> zigzag = std::vector(64, 0);
-    std::vector<int>::iterator zigzagIt = zigzag.begin();
+    auto zigzagIt = zigzag.begin();
     while(rlIt != runLengthCode.end()){
         /* int bob = rlIt->first == -1; // Beginning of block */
         frame.at<double>(row, col) = rlIt->second; // dc
@@ -862,7 +671,7 @@ void getImage(std::vector<std::pair<int, int>> runLengthCode, cv::Mat &frame){
             zigzagIt++;
 
             // down diagonal
-            int temp_diagonals = diagonals;
+            temp_diagonals = diagonals;
             while(temp_diagonals != 0){
                 row += 1; col -= 1;
                 frame.at<double>(row, col) = *zigzagIt;
@@ -892,7 +701,6 @@ void getImage(std::vector<std::pair<int, int>> runLengthCode, cv::Mat &frame){
     }
 }
 
-
 /*!
  *
  * @param frame
@@ -902,22 +710,21 @@ void getImage(std::vector<std::pair<int, int>> runLengthCode, cv::Mat &frame){
  * @param code
  */
 void quantizeDctBaselineJPEG(cv::Mat &frame, std::vector<int> &prevDCs, Golomb* golomb, std::vector<bool> &encodedTree,
-                             std::vector<bool> &code) {
+                             std::vector<bool> &code, bool luminance) {
 
     divideImageIn8x8Blocks(frame);
 
     // ***************************************** Calculation of the DCT ************************************************
     cv::Mat block;
     std::vector<int> zigzagVector;
-    std::vector<int>::iterator prevDC = prevDCs.begin();
+    auto prevDC = prevDCs.begin();
     std::vector<std::pair<int, int>> runLength, blockACs;
     double dc;
     for(int r = 0; r < frame.rows; r += 8) {
         for(int c = 0; c < frame.cols; c += 8) {
             frame(cv::Rect(c, r,8,8)).copyTo(block);
 
-            // TODO see what jpeg matrix to use
-            quantizeBlock(block, quantMatrixLuminance);
+            quantizeBlock(block, luminance ? quantMatrixLuminance : quantMatrixChrominance);
             block.copyTo(frame(cv::Rect(c, r,8,8)));
 
             // Next, the coefficients are organized in a one-dimensional vector according to a zig-zag scan.
@@ -938,7 +745,7 @@ void quantizeDctBaselineJPEG(cv::Mat &frame, std::vector<int> &prevDCs, Golomb* 
 
             // The DC coefficient of each block is predicatively encoded in relation to the DC coefficient of the
             // previous block.
-            runLength.push_back(std::pair(-1, (int)(dc - *prevDC)));
+            runLength.emplace_back(-1, (int)(dc - *prevDC));
             frame.at<double>(r,c) = (int)(dc - *prevDC);
             *prevDC = dc;
             prevDC++;
@@ -949,8 +756,6 @@ void quantizeDctBaselineJPEG(cv::Mat &frame, std::vector<int> &prevDCs, Golomb* 
 
     huffmanEncode(runLength, code, encodedTree, golomb);
 }
-
-
 
 /*!
  *
@@ -998,7 +803,7 @@ void quantizeDctBaselineJPEG(cv::Mat &frame, std::vector<int> &prevDCs, Golomb* 
             if(prevDcsEmpty){
                 prevDCs.push_back(0);
             }
-            runLength.push_back(std::pair(-1, (int)(dc - prevDCs.at(prevDCIt))));
+            runLength.emplace_back(-1, (int)(dc - prevDCs.at(prevDCIt)));
             frame.at<double>(r,c) = (int)(dc - prevDCs.at(prevDCIt));
             prevDCs.at(prevDCIt) = dc;
             prevDCIt++;
@@ -1010,7 +815,6 @@ void quantizeDctBaselineJPEG(cv::Mat &frame, std::vector<int> &prevDCs, Golomb* 
     huffmanEncode(runLength, code, golomb);
 }
 
-
 //!
 /*!
  *
@@ -1020,13 +824,13 @@ void quantizeDctBaselineJPEG(cv::Mat &frame, std::vector<int> &prevDCs, Golomb* 
  */
 void inverseQuantizeDctBaselineJPEG(std::vector<int> &prevDCs, std::vector<std::pair<int, int>> runLengthCode,
                                     cv::Mat &frame, bool luminance){
-    std::vector<int>::iterator dcIt = prevDCs.begin();
-    std::vector<std::pair<int, int>>::iterator rlIt = runLengthCode.begin();
+    auto dcIt = prevDCs.begin();
+    auto rlIt = runLengthCode.begin();
     cv::Mat block;
-    int diagonals, row = 0, col = 0;
+    int diagonals, row = 0, col = 0, temp_diagonals;
     bool reachedRow8;
     std::vector<int> zigzag = std::vector(64, 0);
-    std::vector<int>::iterator zigzagIt = zigzag.begin();
+    auto zigzagIt = zigzag.begin();
     while(rlIt != runLengthCode.end()){
         /* int bob = rlIt->first == -1; // Beginning of block */
         *dcIt += rlIt->second; // refresh prevDCs
@@ -1058,7 +862,7 @@ void inverseQuantizeDctBaselineJPEG(std::vector<int> &prevDCs, std::vector<std::
             zigzagIt++;
 
             // down diagonal
-            int temp_diagonals = diagonals;
+            temp_diagonals = diagonals;
             while(temp_diagonals != 0){
                 row += 1; col -= 1;
                 frame.at<double>(row, col) = *zigzagIt;
