@@ -438,7 +438,7 @@ void VideoEncoder::write(char *filename) {
 
     vector<bool> file;
 
-    // add 36 byte file header (initial_m, predictor, subsampling, mode, fps1, fps2, totalFrames, frame rows, frame cols)
+    // add 40 byte file header (initial_m, predictor, subsampling, mode, lossy, fps1, fps2, totalFrames, frame rows, frame cols)
 
     // initial_m
     vector<bool> m = int2boolvec(this->initial_m);
@@ -452,6 +452,9 @@ void VideoEncoder::write(char *filename) {
     // mode
     vector<bool> vecmode = int2boolvec(this->mode);
     file.insert(file.end(), vecmode.begin(), vecmode.end());
+    // lossy
+    vector<bool> veclossy = int2boolvec(this->lossy);
+    file.insert(file.end(), veclossy.begin(), veclossy.end());
     // fps part 1
     vector<bool> f1 = int2boolvec(this->fps1);
     file.insert(file.end(), f1.begin(), f1.end());

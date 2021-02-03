@@ -13,8 +13,8 @@ int VideoDecoder::boolvec2int(vector<bool> vec){
 VideoDecoder::VideoDecoder(char* encodedFileName){
     sourceFile = new BitStream(encodedFileName, 'r');
 
-    // 36 byte file header (initial_m, predictor, subsampling, mode, fps1, fps2, frame rows, frame cols)
-    headerSize = 36;        // bytes
+    // 40 byte file header (initial_m, predictor, subsampling, mode, lossy, fps1, fps2, totalFrames, frame rows, frame cols)
+    headerSize = 40;        // bytes
     int paramsSize = 32;    // bits 4 bytes
 
     try {
@@ -22,6 +22,7 @@ VideoDecoder::VideoDecoder(char* encodedFileName){
         predictor =  boolvec2int(sourceFile->readNbits(paramsSize));
         subsampling = boolvec2int(sourceFile->readNbits(paramsSize));
         mode = boolvec2int(sourceFile->readNbits(paramsSize));
+        lossy = boolvec2int(sourceFile->readNbits(paramsSize));
         fps1 = boolvec2int(sourceFile->readNbits(paramsSize));
         fps2 = boolvec2int(sourceFile->readNbits(paramsSize));
         totalFrames = boolvec2int(sourceFile->readNbits(paramsSize));

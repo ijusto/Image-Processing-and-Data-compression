@@ -38,6 +38,9 @@ private:
     //!
     int mode;
 
+    //! 0 - lossless, 1 - lossy
+    int lossy;
+
     //!
     int fps1;
 
