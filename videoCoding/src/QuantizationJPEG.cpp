@@ -509,6 +509,55 @@ void huffmanEncode(std::vector<std::pair<int, int>> runLengthCode, std::vector<b
     code.insert(code.end(), codeZerosMap[-3].begin(), codeZerosMap[-3].end());
 }
 
+
+/*!
+ *
+ * @param runLengthCode
+ * @param code
+ * @param golomb pointer to Golomb Object.
+ */
+void huffmanEncode(std::vector<std::pair<int, int>> runLengthCode, std::vector<bool> &code, Golomb* golomb){
+    std::unordered_map<int, double> freqsMapNZero, freqsMapValue;
+    std::unordered_map<int, std::vector<bool>> codeZerosMap, codeValueMap;
+
+    for(std::pair<int, int> coeff: runLengthCode){
+        freqsMapNZero[coeff.first]++;
+        freqsMapValue[coeff.second]++;
+    }
+    freqsMapNZero[-3]++;// end of huffman code
+
+    std::list<std::pair<int, double>> freqs_listNZero, freqs_listValue;
+    std::unordered_map<int, double>::iterator fNZero = freqsMapNZero.begin(), fValue = freqsMapValue.begin();
+    while(fValue != freqsMapValue.end()){
+        freqsMapValue[fValue->first] = fValue->second / runLengthCode.size();
+        freqs_listValue.push_back(std::pair<int, double>(fValue->first, freqsMapValue[fValue->first]));
+        fValue++;
+
+        if(fNZero != freqsMapNZero.end()){
+            freqsMapNZero[fNZero->first] = fNZero->second / runLengthCode.size();
+            freqs_listNZero.push_back(std::pair<int, double>(fNZero->first, freqsMapNZero[fNZero->first]));
+            fNZero++;
+        }
+    }
+
+    // sort codewords by frequency
+    freqs_listNZero.sort([](const auto &a, const auto &b ) { return a.second < b.second; } );
+    freqs_listValue.sort([](const auto &a, const auto &b ) { return a.second < b.second; } );
+
+    // Golomb encoded tree
+    std::vector<bool> encodedTree = huffmanTreeEncode(freqs_listNZero, freqs_listValue, codeZerosMap, codeValueMap, golomb);
+    code.insert(code.end(), encodedTree.begin(), encodedTree.end());
+
+    // Huffman code
+    for(std::pair<int, int> coeff: runLengthCode){
+        code.insert(code.end(), codeZerosMap[coeff.first].begin(), codeZerosMap[coeff.first].end());
+        code.insert(code.end(), codeValueMap[coeff.second].begin(), codeValueMap[coeff.second].end());
+    }
+
+    code.insert(code.end(), codeZerosMap[-3].begin(), codeZerosMap[-3].end());
+
+}
+
 /*!
  * @param huffmanTreeRoot
  */
@@ -746,6 +795,69 @@ void quantizeDctBaselineJPEG(cv::Mat &frame, std::vector<int> &prevDCs, Golomb* 
 
     huffmanEncode(runLength, code, encodedTree, golomb);
 }
+
+
+
+/*!
+ *
+ * @param frame
+ * @param prevDCs
+ * @param golomb
+ * @param code
+ * @param luminance
+ */
+void quantizeDctBaselineJPEG(cv::Mat &frame, std::vector<int> &prevDCs, Golomb* golomb, std::vector<bool> &code, bool luminance) {
+
+    divideImageIn8x8Blocks(frame);
+
+    // ***************************************** Calculation of the DCT ************************************************
+    cv::Mat block;
+    std::vector<int> zigzagVector;
+    std::vector<int>::iterator prevDC = prevDCs.begin();
+    std::vector<std::pair<int, int>> runLength, blockACs;
+    double dc;
+    bool prevDcsEmpty = prevDCs.empty();
+    for(int r = 0; r < frame.rows; r += 8) {
+        for(int c = 0; c < frame.cols; c += 8) {
+            frame(cv::Rect(r,c,8,8)).copyTo(block);
+
+            // TODO see what jpeg matrix to use
+            quantizeBlock(block, luminance ? quantMatrixLuminance : quantMatrixChrominance);
+            block.copyTo(frame(cv::Rect(r,c,8,8)));
+
+            // Next, the coefficients are organized in a one-dimensional vector according to a zig-zag scan.
+            zigzagVector.clear();
+            zigZagScan(block, zigzagVector);
+
+            dc = zigzagVector.at(0);
+            zigzagVector.erase(zigzagVector.begin()); // remove dc from zigzag array
+
+            // ********************* Statistical coding (Huffman) of the quantized DCT coefficients ********************
+
+            // The non-zero AC coefficients are encoded using Huffman or arithmetic coding, representing the value of
+            // the coefficient, as well as the number of zeros preceding it.
+            // In this case  the symbol to represent the end of the block doesn't exist. We use -1 in the value
+            // representing the number of zeros, to represent the beginning of a block, followed by the dc.
+            blockACs.clear();
+            runLengthPairs(zigzagVector, blockACs);
+
+            // The DC coefficient of each block is predicatively encoded in relation to the DC coefficient of the
+            // previous block.
+            if(prevDcsEmpty){
+                prevDCs.push_back(0);
+            }
+            runLength.push_back(std::pair(-1, (int)(dc - *prevDC)));
+            frame.at<double>(r,c) = (int)(dc - *prevDC);
+            *prevDC = dc;
+            prevDC++;
+
+            runLength.insert(runLength.end(), blockACs.begin(), blockACs.end());
+        }
+    }
+
+    huffmanEncode(runLength, code, golomb);
+}
+
 
 //!
 /*!
