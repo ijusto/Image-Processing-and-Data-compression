@@ -341,6 +341,31 @@ void runLengthPairs(std::vector<int> vec, std::vector<std::pair<int, int>> &code
     }
 }
 
+/*! Run Length Code
+ * In this implementation, the code has the same symbols of the original, except if there is a sequence of one or more
+ * zeros. In that case, that sequence is represented by two symbols: 0 and the number of zeros.
+ * The symbols 0 0 represent the end of a block.
+ * @param vec zig zag vector.
+ * @param code run length code.
+ */
+void runLength(std::vector<int> vec, std::vector<int> &code){
+    int nZeros = 0;
+    for(int elem : vec){
+        if (elem != 0) {
+            if(nZeros > 0) {
+                code.push_back(0);
+                code.push_back(nZeros);
+            }
+            code.push_back(elem);
+            nZeros = 0;
+        } else {
+            nZeros += 1;
+        }
+    }
+    code.pop_back();
+    code.push_back(0);
+}
+
 /*! Creates a new tree node.
  * @param data data to be stored in the new tree node.
  * @param leafLeft pointer to the new node's leaft leaf.
@@ -387,6 +412,17 @@ Node* huffmanTree(std::vector<int> decodedLeafs){
     return father;
 }
 
+
+/*! Decode the huffman tree and store it in Node pointers so the decoder can decode faster.
+ * @param decodedLeafs golomb decoded huffman tree (leafs).
+ * @return huffman tree root node pointer.
+ */
+Node* huffmanTreev2(std::vector<int> decodedLeafs){
+
+    //TODO: REVISE AND TEST
+}
+
+
 /*! Construct the huffman tree of the run length code and encode it in order to be sent to the decoder.
  * In this implementation, the non zero values and the values representing the number of zeros can have the same code,
  * because the the non zero values are always on the right leafs and the values representing the number of zeros are
@@ -398,8 +434,8 @@ Node* huffmanTree(std::vector<int> decodedLeafs){
  * The very last two values of the huffman code are -3 to represent the end of the code.
  * @param freqs_listNZero list of (number of zeros of the run length code, frequency of that number) pairs.
  * @param freqs_listValue list of (non zero number of the run length code, frequency of that number) pairs.
- * @param codeZerosMap map with the number of zeros values from the run length code as keys and their frequency as value.
- * @param codeValueMap map with the non zero number values from the run length code as keys and their frequency as value.
+ * @param codeZerosMap map with the number of zeros values from the run length code as keys and their huffman code as value.
+ * @param codeValueMap map with the non zero number values from the run length code as keys and their huffman code as value.
  * @param golomb pointer to Golomb Object.
  * @return golomb encoded huffman tree.
  */
@@ -461,6 +497,55 @@ std::vector<bool> huffmanTreeEncode(std::list<std::pair<int, double>> freqs_list
 
     return encodedTree;
 }
+
+/*! Construct the huffman tree of the run length code and encode it in order to be sent to the decoder.
+ * In this implementation all the values are in the right leafs (except for the least probable one).
+ * The values on the leafs are Golomb encoded from top to bottom in depth.
+ * We golomb encode -3 to represent the end of the tree.
+ * @param freqs_list list of value of the run length code, frequency pairs.
+ * @param codeMap map with the value from the run length code as keys and their frequency as value.
+ * @param golomb pointer to Golomb Object.
+ * @return golomb encoded huffman tree.
+ */
+std::vector<bool> huffmanTreeEncodev2(std::list<std::pair<int, double>> freqs_list,
+                                      std::unordered_map<int, std::vector<bool>> &codeMap,
+                                      Golomb *golomb){
+
+    //TODO: REVISE AND TEST
+    std::vector<int> tree;
+    std::vector<bool> encodedTree;
+
+    codeMap[freqs_list.front().first] = {};
+    tree.push_back(freqs_list.front().first);
+    freqs_list.erase(freqs_list.begin());
+
+    for(std::pair<int, double> freq : freqs_list){
+        for(const auto &cw : codeMap){ codeMap[cw.first].insert(codeMap[cw.first].begin(), true); }
+        codeMap[freq.first].insert(codeMap[freq.first].begin(), false);
+        tree.push_back(freq.first);
+    }
+    tree.push_back(-3);  // end of tree
+
+    //int count = 0;
+    for(int leaf : tree){
+        //std::cout << leaf << std::endl;
+        golomb->encode2(leaf, encodedTree);
+        /*
+        int tmp = 0;
+        for(bool bit : encodedTree) {
+            tmp += 1;
+            if (tmp > count){
+                std::cout << bit;
+            }
+        }
+        count = tmp;
+        std::cout << std::endl;
+         */
+    }
+
+    return encodedTree;
+}
+
 
 /*!
  *
@@ -558,6 +643,43 @@ void huffmanEncode(std::vector<std::pair<int, int>> runLengthCode, std::vector<b
 
 }
 
+
+/*!
+ *
+ * @param runLengthCode
+ * @param code
+ * @param golomb pointer to Golomb Object.
+ */
+void huffmanEncodev2(std::vector<int> runLengthCode, std::vector<bool> &code, Golomb* golomb){
+
+    //TODO: REVISE AND TEST
+    std::unordered_map<int, double> freqsMap;
+    std::unordered_map<int, std::vector<bool>> codeMap;
+
+    for(int coeff: runLengthCode){
+        freqsMap[coeff]++;
+    }
+
+    std::list<std::pair<int, double>> freqs_list;
+    for(std::pair<int, double> freq : freqs_list){
+        freqsMap[freq.first] = freq.second / runLengthCode.size();
+        freqs_list.push_back(std::pair<int, double>(freq.first, freqsMap[freq.first]));
+    }
+
+    // sort codewords by frequency
+    freqs_list.sort([](const auto &a, const auto &b ) { return a.second < b.second; } );
+
+    // Golomb encoded tree
+    std::vector<bool> encodedTree = huffmanTreeEncodev2(freqs_list, codeMap, golomb);
+    code.insert(code.end(), encodedTree.begin(), encodedTree.end());
+
+    // Huffman code
+    for(int coeff: runLengthCode){
+        code.insert(code.end(), codeMap[coeff].begin(), codeMap[coeff].end());
+    }
+}
+
+
 /*!
  * @param huffmanTreeRoot
  */
@@ -643,7 +765,7 @@ void huffmanDecode(std::vector<bool> &code, std::vector<bool> &encodedTree,
     decodedLeafs.pop_back(); // -3 golomb encoded to represent the end of the huffman tree
 
     Node* huffmanTreeRoot = huffmanTree(decodedLeafs);
-    printHuffmanTree(huffmanTreeRoot); // TODO: comment this line
+    printHuffmanTree(huffmanTreeRoot);
     Node* node = huffmanTreeRoot;
     int nZeros = -4;
     for(bool bit : code){
@@ -667,6 +789,38 @@ void huffmanDecode(std::vector<bool> &code, std::vector<bool> &encodedTree,
         }
     }
 }
+
+/*!
+ * @param code
+ * @param encodedTree
+ * @param runLengthCode
+ * @param golomb pointer to Golomb Object.
+ */
+void huffmanDecodev2(std::vector<bool> &code, std::vector<bool> &encodedTree,
+                   std::vector<int> &runLengthCode, Golomb* golomb){
+    //TODO: REVISE AND TEST
+
+    std::vector<int> decodedLeafs;
+    golomb->decode3(encodedTree, decodedLeafs);
+    decodedLeafs.pop_back(); // -3 golomb encoded to represent the end of the huffman tree
+
+    Node* huffmanTreeRoot = huffmanTree(decodedLeafs);
+    //printHuffmanTree(huffmanTreeRoot);
+    Node* node = huffmanTreeRoot;
+    for(bool bit : code){
+        if(bit){
+            node = node->left;
+            if(node->right == nullptr){
+                runLengthCode.push_back(node->data);
+                node = huffmanTreeRoot;
+            }
+        } else {
+            runLengthCode.push_back(node->right->data);
+            node = huffmanTreeRoot;
+        }
+    }
+}
+
 
 /*!
  *
