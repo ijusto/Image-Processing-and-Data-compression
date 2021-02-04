@@ -216,8 +216,6 @@ void VideoDecoder::getResAndUpdate(vector<bool> &data, unsigned int *indexPtr, G
     while(decodedLeafs.back() != -3) {
         golomb->decode2(data, decodedLeafs, indexPtr, 1);
     }
-    // update m
-    this->update_m(decodedLeafs, golomb, m_rate);
     decodedLeafs.pop_back(); // -3 golomb encoded to represent the end of the huffman tree
 
     auto* huffDec = new HuffmanDecoder(this->quantization->huffmanTree(decodedLeafs));
