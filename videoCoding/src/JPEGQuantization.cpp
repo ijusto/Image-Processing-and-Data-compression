@@ -818,33 +818,38 @@ void JPEGQuantization::inverseQuantizeDctBaselineJPEG(int f_rows, int f_cols, st
         divideImageIn8x8Blocks(frame);
     }
     int rowToCopy, colToCopy;
-    int diagonals, row = 0, col = 0, temp_diagonals;
+    int diagonals, frow, fcol, row = 0, col = 0, temp_diagonals;
     bool reachedRow8 = false;
+    bool beg = true;
     std::vector<int> zigzag = std::vector(64, 0);
     auto zigzagIt = zigzag.begin();
     while(rlIt != runLengthCode.end()){
+
+        if(beg){
+            fcol = 0;
+            frow = 0;
+            beg = false;
+        } else if(col == frame.cols - 1){
+            fcol = 0;
+            frow += 1;
+        } else if(rlIt != runLengthCode.begin()){
+            fcol += 1;
+            frow -= row;
+        }
         /* int bob = rlIt->first == -1; // Beginning of block */
         if(prevDcsEmpty){
             prevDCs.push_back(0);
         }
-        frame.at<double>(row, col) = rlIt->second + prevDCs.at(prevDCIt); // dc
+        int aaaa = rlIt->second + prevDCs.at(prevDCIt); // dc
+        frame.at<double>(frow, fcol) = rlIt->second + prevDCs.at(prevDCIt); // dc
         prevDCs.at(prevDCIt) += rlIt->second; // refresh prevDCs
         prevDCIt++;
-        if(!reachedRow8){
-            col = 0;
-            row = 0;
-        } else if(col == frame.cols - 1){
-            col = 0;
-            row += 1;
-        } else if(rlIt != runLengthCode.begin()){
-            col += 1;
-            row -= 7;
-        }
-        rowToCopy = row;
-        colToCopy = col;
+        rowToCopy = frow;
+        colToCopy = fcol;
         rlIt++;
         diagonals = 1;
         reachedRow8 = false;
+        row = 0, col = 0;
 
         while(rlIt->first != -1 && rlIt != runLengthCode.end()){
             if(rlIt->first != 0){
@@ -856,23 +861,24 @@ void JPEGQuantization::inverseQuantizeDctBaselineJPEG(int f_rows, int f_cols, st
         }
         zigzagIt = zigzag.begin();
         while(zigzagIt != zigzag.end()){
-            if(!reachedRow8){ col += 1; /* right */ } else { row = row + 1; /* down */ }
-            frame.at<double>(row, col) = *zigzagIt;
+            if(!reachedRow8){ col += 1; fcol += 1;/* right */ } else { row += 1; frow += 1;/* down */ }
+            frame.at<double>(frow, fcol) = *zigzagIt;
             zigzagIt++;
 
             // down diagonal
             temp_diagonals = diagonals;
             while(temp_diagonals != 0){
                 row += 1; col -= 1;
-                frame.at<double>(row, col) = *zigzagIt;
+                frow += 1; fcol -= 1;
+                frame.at<double>(frow, fcol) = *zigzagIt;
                 zigzagIt++;
                 temp_diagonals -= 1;
             }
             if(row == 7){ reachedRow8 = true; }
             if(!reachedRow8){ diagonals += 1; } else { diagonals -= 1; }
 
-            if(!reachedRow8){ row = row + 1; /* down */ } else { col += 1; /* right */ }
-            frame.at<double>(row, col) = *zigzagIt;
+            if(!reachedRow8){ row += 1; frow += 1;/* down */ } else { col += 1; fcol += 1;/* right */ }
+            frame.at<double>(frow, fcol) = *zigzagIt;
             zigzagIt++;
 
             if(diagonals == 0){ break; }
@@ -881,7 +887,8 @@ void JPEGQuantization::inverseQuantizeDctBaselineJPEG(int f_rows, int f_cols, st
             temp_diagonals = diagonals;
             while(temp_diagonals != 0){
                 row -= 1; col += 1;
-                frame.at<double>(row, col) = *zigzagIt;
+                frow -= 1; fcol += 1;
+                frame.at<double>(frow, fcol) = *zigzagIt;
                 zigzagIt++;
                 temp_diagonals -= 1;
             }
@@ -905,8 +912,8 @@ void JPEGQuantization::inverseQuantizeDctBaselineJPEG(int f_rows, int f_cols, st
 
     for(int r = 0; r < f_rows; r += 1) {
         for (int c = 0; c < f_cols; c += 1) {
-            double temp = frame.at<double>(r, c);
-            outRes.push_back((int) (temp + 0.5 - (temp<0)));
+            int temp = frame.at<double>(r, c);
+            outRes.push_back(temp);
         }
     }
 }
