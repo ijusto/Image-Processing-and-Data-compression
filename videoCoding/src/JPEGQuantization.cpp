@@ -288,13 +288,12 @@ Node* JPEGQuantization::huffmanTree(std::vector<int> decodedLeafs){
     return father;
 }
 
-std::vector<bool> JPEGQuantization::huffmanTreeEncode(std::list<std::pair<int, double>> freqs_listNZero,
+void JPEGQuantization::huffmanTreeEncode(std::vector<bool> &encodedTree, std::list<std::pair<int, double>> freqs_listNZero,
                                     std::list<std::pair<int, double>> freqs_listValue,
                                     std::unordered_map<int, std::vector<bool>> &codeZerosMap,
                                     std::unordered_map<int, std::vector<bool>> &codeValueMap,
                                     Golomb *golomb){
     std::vector<int> tree;
-    std::vector<bool> encodedTree;
     int diffSizeLists = freqs_listValue.size() - freqs_listNZero.size();
     if (diffSizeLists == 0){
         codeZerosMap[freqs_listNZero.front().first].push_back(true);
@@ -332,7 +331,6 @@ std::vector<bool> JPEGQuantization::huffmanTreeEncode(std::list<std::pair<int, d
         golomb->encode2(leaf, encodedTree);
     }
     std::cout<<std::endl;
-    return encodedTree;
 }
 
 void JPEGQuantization::huffmanEncode(std::vector<std::pair<int, int>> &runLengthCode, std::vector<bool> &code,
@@ -364,7 +362,7 @@ void JPEGQuantization::huffmanEncode(std::vector<std::pair<int, int>> &runLength
     freqs_listNZero.sort([](const auto &a, const auto &b ) { return a.second < b.second; } );
     freqs_listValue.sort([](const auto &a, const auto &b ) { return a.second < b.second; } );
 
-    encodedTree = huffmanTreeEncode(freqs_listNZero, freqs_listValue, codeZerosMap, codeValueMap, golomb);
+    huffmanTreeEncode(encodedTree, freqs_listNZero, freqs_listValue, codeZerosMap, codeValueMap, golomb);
 
     for(std::pair<int, int> coeff: runLengthCode){
         code.insert(code.end(), codeZerosMap[coeff.first].begin(), codeZerosMap[coeff.first].end());
@@ -403,7 +401,8 @@ void JPEGQuantization::huffmanEncode(const std::vector<std::pair<int, int>> &run
     freqs_listValue.sort([](const auto &a, const auto &b ) { return a.second < b.second; } );
 
     // Golomb encoded tree
-    std::vector<bool> encodedTree = huffmanTreeEncode(freqs_listNZero, freqs_listValue, codeZerosMap, codeValueMap, golomb);
+    std::vector<bool> encodedTree;
+    huffmanTreeEncode(encodedTree, freqs_listNZero, freqs_listValue, codeZerosMap, codeValueMap, golomb);
     code.insert(code.end(), encodedTree.begin(), encodedTree.end());
 
     // Huffman code
@@ -733,8 +732,9 @@ void JPEGQuantization::quantize(cv::Mat &frame, std::vector<int> &prevDCs, Golom
 
 void JPEGQuantization::inverseQuantizeDctBaselineJPEG(std::vector<int> &prevDCs, std::vector<std::pair<int, int>> runLengthCode,
                                     cv::Mat &frame, bool luminance){
-    auto dcIt = prevDCs.begin();
     auto rlIt = runLengthCode.begin();
+    bool prevDcsEmpty = prevDCs.empty();
+    int prevDCIt = 0;
     cv::Mat block;
     int diagonals, row = 0, col = 0, temp_diagonals;
     bool reachedRow8;
@@ -742,9 +742,12 @@ void JPEGQuantization::inverseQuantizeDctBaselineJPEG(std::vector<int> &prevDCs,
     auto zigzagIt = zigzag.begin();
     while(rlIt != runLengthCode.end()){
         /* int bob = rlIt->first == -1; // Beginning of block */
-        frame.at<double>(row, col) = rlIt->second + *dcIt; // dc
-        *dcIt += rlIt->second; // refresh prevDCs
-        dcIt++;
+        if(prevDcsEmpty){
+            prevDCs.push_back(0);
+        }
+        frame.at<double>(row, col) = rlIt->second + prevDCs.at(prevDCIt); // dc
+        prevDCs.at(prevDCIt) += rlIt->second; // refresh prevDCs
+        prevDCIt++;
         if(col == frame.cols - 1){
             col = 0;
             row += 1;
@@ -805,30 +808,40 @@ void JPEGQuantization::inverseQuantizeDctBaselineJPEG(std::vector<int> &prevDCs,
     }
 }
 void JPEGQuantization::inverseQuantizeDctBaselineJPEG(int f_rows, int f_cols, std::vector<int> &prevDCs,
-                                                      std::vector<std::pair<int, int>> runLengthCode,
+                                                      std::vector<std::pair<int, int>> &runLengthCode,
                                                       vector<int> &outRes, bool luminance){
-    auto dcIt = prevDCs.begin();
+    bool prevDcsEmpty = prevDCs.empty();
+    int prevDCIt = 0;
     auto rlIt = runLengthCode.begin();
-    cv::Mat frame = cv::Mat::zeros(f_rows, f_cols, CV_64F), block;
+    cv::Mat frame = cv::Mat::zeros(f_rows, f_cols, CV_64F), block = cv::Mat::zeros(8, 8, CV_64F);
     if(f_rows % 8 != 0 or f_cols % 8 != 0){
         divideImageIn8x8Blocks(frame);
     }
+    int rowToCopy, colToCopy;
     int diagonals, row = 0, col = 0, temp_diagonals;
-    bool reachedRow8;
+    bool reachedRow8 = false;
     std::vector<int> zigzag = std::vector(64, 0);
     auto zigzagIt = zigzag.begin();
     while(rlIt != runLengthCode.end()){
         /* int bob = rlIt->first == -1; // Beginning of block */
-        frame.at<double>(row, col) = rlIt->second + *dcIt; // dc
-        *dcIt += rlIt->second; // refresh prevDCs
-        dcIt++;
-        if(col == frame.cols - 1){
+        if(prevDcsEmpty){
+            prevDCs.push_back(0);
+        }
+        frame.at<double>(row, col) = rlIt->second + prevDCs.at(prevDCIt); // dc
+        prevDCs.at(prevDCIt) += rlIt->second; // refresh prevDCs
+        prevDCIt++;
+        if(!reachedRow8){
+            col = 0;
+            row = 0;
+        } else if(col == frame.cols - 1){
             col = 0;
             row += 1;
         } else if(rlIt != runLengthCode.begin()){
             col += 1;
-            row -= 8;
+            row -= 7;
         }
+        rowToCopy = row;
+        colToCopy = col;
         rlIt++;
         diagonals = 1;
         reachedRow8 = false;
@@ -876,15 +889,24 @@ void JPEGQuantization::inverseQuantizeDctBaselineJPEG(int f_rows, int f_cols, st
         }
         zigzag.clear();
 
-        frame(cv::Rect(col - 7, row - 7, 8, 8)).copyTo(block);
+        for(int fr = rowToCopy, br = 0; fr < rowToCopy + 8; fr++, br++){
+            for(int fc = colToCopy, bc = 0; fc < colToCopy + 8; fc++, bc++){
+                block.at<double>(br, bc) = frame.at<double>(fr, fc);
+            }
+        }
         inverseQuantizeBlock(block, luminance ? quantMatrixLuminance : quantMatrixChrominance);
-        block.copyTo(frame(cv::Rect(col - 7, row - 7, 8, 8)));
+        for(int fr = rowToCopy, br = 0; fr < rowToCopy + 8; fr++, br++){
+            for(int fc = colToCopy, bc = 0; fc < colToCopy + 8; fc++, bc++){
+                frame.at<double>(fr, fc) = block.at<double>(br, bc);
+            }
+        }
     }
 
 
     for(int r = 0; r < f_rows; r += 1) {
         for (int c = 0; c < f_cols; c += 1) {
-            outRes.push_back((int) frame.at<double>(r, c));
+            double temp = frame.at<double>(r, c);
+            outRes.push_back((int) (temp + 0.5 - (temp<0)));
         }
     }
 }

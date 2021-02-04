@@ -145,7 +145,7 @@ public:
      * @param golomb pointer to Golomb Object.
      * @return golomb encoded huffman tree.
      */
-    static std::vector<bool> huffmanTreeEncode(std::list<std::pair<int, double>> freqs_listNZero,
+    static void huffmanTreeEncode(std::vector<bool> &encodedTree, std::list<std::pair<int, double>> freqs_listNZero,
                                         std::list<std::pair<int, double>> freqs_listValue,
                                         std::unordered_map<int, std::vector<bool>> &codeZerosMap,
                                         std::unordered_map<int, std::vector<bool>> &codeValueMap,
@@ -241,7 +241,7 @@ public:
      * @param luminance
      */
     void inverseQuantizeDctBaselineJPEG(int f_rows, int f_cols, std::vector<int> &prevDCs,
-                                        std::vector<std::pair<int, int>> runLengthCode,
+                                        std::vector<std::pair<int, int>> &runLengthCode,
                                         vector<int> &outRes, bool luminance);
     /*!
      *

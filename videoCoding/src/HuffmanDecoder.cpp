@@ -3,7 +3,7 @@
 #include    <opencv2/opencv.hpp>
 #include    <cmath>
 
-HuffmanDecoder::HuffmanDecoder(Node* huffmanTree) : huffmanTree(huffmanTree), node(huffmanTree){ this->nZeros = -4; }
+HuffmanDecoder::HuffmanDecoder(Node* huffmanTree) : huffmanTree(huffmanTree), node(huffmanTree){ this->nZeros = -5; }
 
 bool HuffmanDecoder::decode(bool bit, std::vector<std::pair<int, int>> &runLengthCode){
     this->node = bit ? this->node->left : this->node->right;
