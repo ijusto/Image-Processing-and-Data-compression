@@ -23,7 +23,7 @@ class BitStream{
 private:
     vector<unsigned char> readFileInfo, writeFileInfo;
     unsigned char  buffer;
-    int cr_pos, cw_pos, len,r_pos ,w_pos,result;
+    long long cr_pos, cw_pos, len,r_pos ,w_pos,result;
     ofstream outfile;
 
 public:

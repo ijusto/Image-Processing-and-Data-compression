@@ -33,6 +33,20 @@ Golomb::Golomb(unsigned int _m, char *_file, char mode) {
     }
 }
 
+Golomb::Golomb(unsigned int _m, char mode, BitStream *bitstream) {
+    this->m = _m;
+    if(mode == 'e'){
+        this->writeBitStream = bitstream;
+        this->mode = 'e';
+    } else if(mode == 'd'){
+        this->readBitStream = bitstream;
+        this->mode = 'd';
+    } else {
+        throw "Mode not allowed. Modes available: e (encode) or d (decode).\nIf you want the two modes use Golomb::"
+              "Golomb(unsigned int _m, char *_encodeFile, char *_decodeFile);";
+    }
+}
+
 void Golomb::setM(unsigned int _m){
     this->m = _m;
 }
@@ -213,32 +227,30 @@ void Golomb::decode3(vector<bool> &encodedBits, vector<int> &decoded) {
 }
 
 
-void Golomb::decode2(vector<bool> &encodedBits, vector<int> &decoded, unsigned int *index, unsigned int count) {
+void Golomb::decode2(vector<int> &decoded, unsigned int count) {
     unsigned int b = (unsigned int) ceil(log2(this->m));
 
     int n_decoded = 0;
     while(n_decoded < count) {
         /* Decode unary */
         unsigned int q = 0;
-        while (!encodedBits.at(*index + q)) {
-            q++;
+        try{
+            while(!this->readBitStream->readBit()){ q++; }
+        } catch( string mess){
+            break;
         }
-
-        // update index
-        *index = *index + (q + 1);
 
         /* Decode truncated binary */
         unsigned int r = 0;
         // auto b = (unsigned int) ceil(log2(this->m));
 
         vector<bool> nBitsRead;
-        for (int i = 0; i < b - 1; i++) {
-            bool val = encodedBits.at(*index + i);
-            nBitsRead.push_back(val);
+        try{
+            nBitsRead = this->readBitStream->readNbits(b - 1);
+        } catch( string mess){
+            std::cout << mess << std::endl;
+            std::exit(0);
         }
-
-        // update index
-        *index = *index + (b - 1);
 
         // convert the b-1 bits read to dec/int
         int readInt = 0;
@@ -251,9 +263,13 @@ void Golomb::decode2(vector<bool> &encodedBits, vector<int> &decoded, unsigned i
 
         /* If the bits read are an encoded value less than 2**b-m, decoding is complete.*/
         if (readInt >= ((int) pow(2, b) - this->m)) {
-            bool bitRead = encodedBits.at(*index);
-            // update index
-            *index = *index + 1;
+            bool bitRead;
+            try{
+                bitRead = this->readBitStream->readBit();
+            } catch( string mess){
+                std::cout << mess << std::endl;
+                std::exit(0);
+            }
 
             // covert the b-1 firstly read bits "concatenated" with the last bit read to dec/int
             unsigned int bitReadInt = 0;

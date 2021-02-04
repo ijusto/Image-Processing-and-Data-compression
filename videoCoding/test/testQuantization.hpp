@@ -571,7 +571,7 @@ TEST_CASE("quantizeDctBaselineJPEG 2 "){
     correct.insert(correct.end(), quantCode.begin(), quantCode.end());
     CHECK(std::equal(qCode.begin(), qCode.end(), correct.begin()));
 }
-
+/*
 TEST_CASE("inverseQuantizeDctBaselineJPEG 3"){
 
     double X [8][8] = {{183,160,94,153,194,163,132,165},
@@ -589,29 +589,41 @@ TEST_CASE("inverseQuantizeDctBaselineJPEG 3"){
     for(int n : prevDCs){ info += std::to_string(n); }
     INFO(info);
 
-    unsigned int indexPtr = 0;
     std::vector<int> decodedLeafs;
-    golomb->decode2(qCode, decodedLeafs, &indexPtr, 3);
-    for(int n : decodedLeafs){ std::cout<< n; }
-    std::cout<<std::endl;
+    std::reverse(qCode.begin(), qCode.end());
+    int ind = 0;
+    std::vector<bool> eBit = {qCode.at(ind)};
+    //golomb->decode2(data, decodedLeafs, indexPtr, 3);
+    golomb->decode3(eBit, decodedLeafs);
+    ind++;
+    eBit = {qCode.at(ind)};
+    golomb->decode3(eBit, decodedLeafs);
+    ind++;
+    eBit = {qCode.at(ind)};
+    golomb->decode3(eBit, decodedLeafs);
     // Ler com o golomb numero a numero ate um -3 (inclusivo) -> folhas da huffman tree
     while(decodedLeafs.back() != -3) {
-        golomb->decode2(qCode, decodedLeafs, &indexPtr, 3);
+        //golomb->decode2(decodedLeafs, 2);
+        ind++;
+        eBit = {qCode.at(ind)};
+        golomb->decode3(eBit, decodedLeafs);
+        ind++;
+        eBit = {qCode.at(ind)};
+        golomb->decode3(eBit, decodedLeafs);
     }
-    for(int n : decodedLeafs){ std::cout<< n; }
-    std::cout<<std::endl;
     decodedLeafs.pop_back(); // -3 golomb encoded to represent the end of the huffman tree
 
     auto* huffDec = new HuffmanDecoder(jpegQuant->huffmanTree(decodedLeafs));
     std::vector<std::pair<int, int>> rlCode;  // run length code
 
-    bool bit = qCode.at(indexPtr);
-    // update index
-    indexPtr = indexPtr + 1;
+    bool bit;
+
+    ind++;
+    bit = {qCode.at(ind)};
+
     while(huffDec->decode(bit, rlCode)){
-        bit = qCode.at(indexPtr);
-        // update index
-        indexPtr = indexPtr + 1;
+        ind++;
+        bit = {qCode.at(ind)};
     }
 
     std::vector<int> numbers;
@@ -634,7 +646,7 @@ TEST_CASE("inverseQuantizeDctBaselineJPEG 3"){
     //CHECK(is_small_diff);
     CHECK(1);
 }
-
+*/
 TEST_CASE("Huffman Decoder in Video Decoder"){
     /*
     cv::Mat frame;

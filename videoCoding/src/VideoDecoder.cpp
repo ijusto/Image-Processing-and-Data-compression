@@ -46,9 +46,6 @@ VideoDecoder::VideoDecoder(char* encodedFileName){
 }
 
 void VideoDecoder::decode(){
-    // read all data
-    vector<bool> data;
-    sourceFile->readToEnd(data);
     // used to index data in golomb.decode2
     unsigned int index = 0;
 
@@ -76,8 +73,8 @@ void VideoDecoder::decode(){
             break;
     }
 
-    // Golomb decoder
-    Golomb *golomb = new Golomb(initial_m);
+    // Golomb decoder;
+    Golomb *golomb = new Golomb(initial_m, 'd', sourceFile);
     int m_rate = 100; // must be equal to Encoder's m_rate
 
     // intra coding rate
@@ -129,9 +126,9 @@ void VideoDecoder::decode(){
                 // decode residuals and update m
                 vector<int> residuals;
                 if(this->lossy) {
-                    getResAndUpdate(data, &index, golomb, m_rate, residuals, frame_rows, frame_cols, channel);
+                    getResAndUpdate(golomb, residuals, frame_rows, frame_cols, channel);
                 } else {
-                    getResAndUpdate(data, &index, size, golomb, m_rate, residuals);
+                    getResAndUpdate(size, golomb, m_rate, residuals);
                 }
                 // decode y component and add to frame vector
                 this->decodeRes_intra(residuals, component_frame, frame_rows, frame_cols);
@@ -153,13 +150,13 @@ void VideoDecoder::decode(){
                 int size = frame_rows * frame_cols + 2*grid_h*grid_w;
                 // decode residuals and update m
                 vector<int> residuals;
-                getResAndUpdate(data, &index, size, golomb, m_rate, residuals);
+                getResAndUpdate(size, golomb, m_rate, residuals);
                 // decode y component residuals + motion vectors
                 this->decodeRes_inter(prev, residuals, grid_h, grid_w, component_frame, block_size, search_size);
             }
             if(this->mode == 1){
                 // hybrid
-                // update prev TODO: ?
+                // update prev
                 prev.data = component_frame.data();
             }
             // add component to frame
@@ -208,33 +205,41 @@ void VideoDecoder::update_m(vector<int> residuals, Golomb *golomb, int m_rate){
         numRes = 0;
     }
 }
-
-void VideoDecoder::getResAndUpdate(vector<bool> &data, unsigned int *indexPtr, Golomb *golomb, int m_rate, vector<int> &outRes, int f_rows, int f_cols, int channel){
+void VideoDecoder::getResAndUpdate(Golomb *golomb, vector<int> &outRes, int f_rows, int f_cols, int channel){
     std::vector<int> decodedLeafs;
-    golomb->decode2(data, decodedLeafs, indexPtr, 3);
+    //golomb->decode2(data, decodedLeafs, indexPtr, 3);
+    golomb->decode2(decodedLeafs, 3);
     // Ler com o golomb numero a numero ate um -3 (inclusivo) -> folhas da huffman tree
     while(decodedLeafs.back() != -3) {
-        golomb->decode2(data, decodedLeafs, indexPtr, 3);
+        //golomb->decode2(data, decodedLeafs, indexPtr, 3);
+        golomb->decode2(decodedLeafs, 2);
     }
     decodedLeafs.pop_back(); // -3 golomb encoded to represent the end of the huffman tree
 
     auto* huffDec = new HuffmanDecoder(this->quantization->huffmanTree(decodedLeafs));
     std::vector<std::pair<int, int>> rlCode;  // run length code
 
-    bool bit = data.at(*indexPtr);
-    // update index
-    *indexPtr = *indexPtr + 1;
+    bool bit;
+    try{
+        bit = golomb->readBitStream->readBit();
+    } catch( string mess){
+        std::cout << mess << std::endl;
+        std::exit(0);
+    }
+
     while(huffDec->decode(bit, rlCode)){
-        bit = data.at(*indexPtr);
-        // update index
-        *indexPtr = *indexPtr + 1;
+        try{
+            bit = golomb->readBitStream->readBit();
+        } catch( string mess){
+            break;
+        }
     }
 
     this->quantization->inverseQuantizeDctBaselineJPEG(f_rows, f_cols, this->prevDCs.at(channel), rlCode, outRes,
                                                        channel == 0);
 }
 
-void VideoDecoder::getResAndUpdate(vector<bool> &data, unsigned int *indexPtr, int n_residuals, Golomb *golomb, int m_rate, vector<int> &outRes){
+void VideoDecoder::getResAndUpdate(int n_residuals, Golomb *golomb, int m_rate, vector<int> &outRes){
     int n_to_decode = m_rate;
     int n_decoded = 0;
     while(n_decoded < n_residuals){
@@ -245,7 +250,7 @@ void VideoDecoder::getResAndUpdate(vector<bool> &data, unsigned int *indexPtr, i
         n_decoded += n_to_decode;
         // read y
         vector<int> tmp;
-        golomb->decode2(data, tmp, indexPtr, n_to_decode);
+        golomb->decode2(tmp, n_to_decode);
         // update m
         this->update_m(tmp, golomb, m_rate);
         // add to total outRes

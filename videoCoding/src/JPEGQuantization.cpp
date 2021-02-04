@@ -328,8 +328,10 @@ std::vector<bool> JPEGQuantization::huffmanTreeEncode(std::list<std::pair<int, d
     tree.push_back(-3);  // end of tree
 
     for(int leaf : tree){
+        std::cout << leaf << ",";
         golomb->encode2(leaf, encodedTree);
     }
+    std::cout<<std::endl;
     return encodedTree;
 }
 
@@ -495,7 +497,7 @@ void JPEGQuantization::huffmanDecode(std::vector<bool> &code, std::vector<bool> 
         // if we are decoding the number of zeros
         if(nZeros == -5){
             if(node->left->left == nullptr && node->left->right == nullptr) { // number of zeros are in the left leafs
-                if(node->left->data == -3){
+                if(node->left->data == -4){
                     break;
                 }
                 nZeros = node->left->data;
@@ -679,6 +681,7 @@ void JPEGQuantization::quantizeDctBaselineJPEG(cv::Mat &frame, std::vector<int> 
 
 void JPEGQuantization::quantize(cv::Mat &frame, std::vector<int> &prevDCs, Golomb* golomb, std::vector<bool> &code, bool luminance) {
 
+    std::vector<bool> tempCode;
     if(frame.rows % 8 != 0 or frame.cols % 8 != 0){
         divideImageIn8x8Blocks(frame);
     }
@@ -723,7 +726,8 @@ void JPEGQuantization::quantize(cv::Mat &frame, std::vector<int> &prevDCs, Golom
         }
     }
 
-    huffmanEncode(runLength, code, golomb);
+    huffmanEncode(runLength, tempCode, golomb);
+    code.insert(code.end(), tempCode.begin(), tempCode.end());
 }
 
 
