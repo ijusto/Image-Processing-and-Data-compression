@@ -13,13 +13,13 @@ public:
     string yuv420File = "yuv420.y4m";
     string DecodeWAV = "decodeWAV.wav";
 
-    /*
-    virtual ~files() {
+    void rem() {
         remove("audio.mp3");
         remove("audio.wav");
         remove("yuv420.y4m");
         remove("decodeWAV.wav");
-    }*/
+    }
+
 };
 
 
@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
     char* file3 = argv[4];
 
     files name;
-
+    name.rem();
     int initial_m = 512;
     int predictor = 8;
     bool mode = 0;
@@ -131,7 +131,7 @@ int main(int argc, char *argv[]) {
         cout << "Decoding Video DONE!!" << endl;
 
         //reconstruct .y4m on .avi
-        reconstructFile( name, file3);
+        reconstructFile(name, file3);
 
         addAudio(name,file3);
 

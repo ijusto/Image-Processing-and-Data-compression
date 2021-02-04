@@ -37,29 +37,21 @@ VideoDecoder::VideoDecoder(char *filename, char* encodedFileName, char ch) {
         }
     }else if(ch == 'v'){
         //Video
-        sourceFile = new BitStream(encodedFileName, 'r');
+        string path = "./Testing/code_video";
+        sourceFile = new BitStream(&path[0], 'r');
 
         // 36 byte file header (initial_m, predictor, subsampling, mode, fps1, fps2, frame rows, frame cols)
         headerSize = 36;        // bytes
         try {
             initial_m = boolvec2int(sourceFile->readNbits(paramsSize));
-            //cout << "init_m: " << initial_m << endl;
             predictor =  boolvec2int(sourceFile->readNbits(paramsSize));
-            //cout << "preditor: " << predictor << endl;
             subsampling = boolvec2int(sourceFile->readNbits(paramsSize));
-            //cout << "sub: " << subsampling << endl;
             mode = boolvec2int(sourceFile->readNbits(paramsSize));
-            //cout << "mode: " << mode << endl;
             fps1 = boolvec2int(sourceFile->readNbits(paramsSize));
-            //cout << "fps1: " << fps1<< endl;
             fps2 = boolvec2int(sourceFile->readNbits(paramsSize));
-            //cout << "fps2: " << fps2<< endl;
             totalFrames = boolvec2int(sourceFile->readNbits(paramsSize));
-            //cout << "totalFrames: " << totalFrames<< endl;
             rows =  boolvec2int(sourceFile->readNbits(paramsSize));
-            //cout << "rows1: " << rows<< endl;
             cols =  boolvec2int(sourceFile->readNbits(paramsSize));
-            //cout << "cols: " << cols<< endl;
 
         } catch( string mess){
             std::cout << mess << std::endl;
@@ -313,8 +305,6 @@ void VideoDecoder::decodeVideo(){
         frameCounter++;
     }
 
-    cout << endl;
-
 }
 
 // TODO: make it fast
@@ -368,7 +358,7 @@ void VideoDecoder::getResAndUpdate(vector<bool> &data, unsigned int *indexPtr, i
         // add to total outRes
         outRes.insert(outRes.end(), tmp.begin(), tmp.end());
     }
-    cout << "Mas saio" << endl;
+
 }
 
 void VideoDecoder::decodeRes_intra(vector<int> &residualValues, vector<uchar> &outPlanarValues, int f_rows, int f_cols){
