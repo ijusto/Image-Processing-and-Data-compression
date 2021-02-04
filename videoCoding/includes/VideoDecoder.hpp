@@ -98,7 +98,7 @@ public:
      * @param m_rate
      * @param outRes
      */
-    void getResAndUpdate(vector<bool> &data, unsigned int *indexPtr, int n_residuals, Golomb *golomb, int m_rate, vector<int> &outRes);
+    void getResAndUpdate(int n_residuals, Golomb *golomb, int m_rate, vector<int> &outRes);
 
     /*!
      *
@@ -113,7 +113,7 @@ public:
      * @param channel
      */
     void getResAndUpdate(vector<bool> &data, unsigned int *indexPtr, Golomb *golomb, int m_rate, vector<int> &outRes, int f_rows, int f_cols, int channel);
-
+    // TODO: change to void getResAndUpdate(Golomb *golomb, int m_rate, vector<int> &outRes, int f_rows, int f_cols, int channel);
         //!
     /*!
      * @param

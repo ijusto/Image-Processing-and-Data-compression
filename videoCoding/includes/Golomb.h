@@ -52,6 +52,8 @@ public:
     */
     Golomb(unsigned int _m, char *_file, char mode);
 
+    Golomb(unsigned int _m, char mode, BitStream *bitstream);
+
     //! Golomb class destructor.
     ~Golomb();
 
@@ -83,13 +85,11 @@ public:
 
     //! Reads bits of bool vector until it decodes a number and updates pointer.
     /*!
-     * @param encodedBits vector containing bits to decode
      * @param decoded vector decoded integers
-     * @param index next bit pointer
      * @param count number of numbers to decode
      * @return
      */
-    void decode2(vector<bool> &encodedBits, vector<int> &decoded, unsigned int *index, unsigned int count);
+    void decode2(vector<int> &decoded, unsigned int count);
 
     void setEncodeFile(char *_encodeFile);
 
