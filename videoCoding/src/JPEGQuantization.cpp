@@ -342,7 +342,7 @@ void JPEGQuantization::huffmanEncode(std::vector<std::pair<int, int>> &runLength
         freqsMapNZero[coeff.first]++;
         freqsMapValue[coeff.second]++;
     }
-    freqsMapNZero[-3]++;// end of huffman code
+    freqsMapNZero[-4]++;// end of huffman code
 
     std::list<std::pair<int, double>> freqs_listNZero, freqs_listValue;
     auto fNZero = freqsMapNZero.begin(), fValue = freqsMapValue.begin();
@@ -369,7 +369,7 @@ void JPEGQuantization::huffmanEncode(std::vector<std::pair<int, int>> &runLength
         code.insert(code.end(), codeValueMap[coeff.second].begin(), codeValueMap[coeff.second].end());
     }
 
-    code.insert(code.end(), codeZerosMap[-3].begin(), codeZerosMap[-3].end());
+    code.insert(code.end(), codeZerosMap[-4].begin(), codeZerosMap[-4].end());
 }
 
 void JPEGQuantization::huffmanEncode(const std::vector<std::pair<int, int>> &runLengthCode, std::vector<bool> &code, Golomb* golomb){
@@ -380,7 +380,7 @@ void JPEGQuantization::huffmanEncode(const std::vector<std::pair<int, int>> &run
         freqsMapNZero[coeff.first]++;
         freqsMapValue[coeff.second]++;
     }
-    freqsMapNZero[-3]++;// end of huffman code
+    freqsMapNZero[-4]++;// end of huffman code
 
     std::list<std::pair<int, double>> freqs_listNZero, freqs_listValue;
     auto fNZero = freqsMapNZero.begin(), fValue = freqsMapValue.begin();
@@ -410,7 +410,7 @@ void JPEGQuantization::huffmanEncode(const std::vector<std::pair<int, int>> &run
         code.insert(code.end(), codeValueMap[coeff.second].begin(), codeValueMap[coeff.second].end());
     }
 
-    code.insert(code.end(), codeZerosMap[-3].begin(), codeZerosMap[-3].end());
+    code.insert(code.end(), codeZerosMap[-4].begin(), codeZerosMap[-4].end());
 }
 
 void JPEGQuantization::printHuffmanTree(Node* huffmanTreeRoot){
@@ -489,11 +489,11 @@ void JPEGQuantization::huffmanDecode(std::vector<bool> &code, std::vector<bool> 
     Node* huffmanTreeRoot = huffmanTree(decodedLeafs);
     printHuffmanTree(huffmanTreeRoot);
     Node* node = huffmanTreeRoot;
-    int nZeros = -4;
+    int nZeros = -5;
     for(bool bit : code){
         node = bit ? node->left : node->right;
         // if we are decoding the number of zeros
-        if(nZeros == -4){
+        if(nZeros == -5){
             if(node->left->left == nullptr && node->left->right == nullptr) { // number of zeros are in the left leafs
                 if(node->left->data == -3){
                     break;
@@ -504,7 +504,7 @@ void JPEGQuantization::huffmanDecode(std::vector<bool> &code, std::vector<bool> 
         } else { // if we are decoding the value
             if(node->right->left == nullptr && node->right->right == nullptr) { // values are in the right leafs
                 runLengthCode.emplace_back(nZeros, node->right->data);
-                nZeros = -4;
+                nZeros = -5;
                 node = huffmanTreeRoot;
             }
         }
@@ -675,6 +675,57 @@ void JPEGQuantization::quantizeDctBaselineJPEG(cv::Mat &frame, std::vector<int> 
 
     huffmanEncode(runLength, code, golomb);
 }
+
+
+void JPEGQuantization::quantize(cv::Mat &frame, std::vector<int> &prevDCs, Golomb* golomb, std::vector<bool> &code, bool luminance) {
+
+    if(frame.rows % 8 != 0 or frame.cols % 8 != 0){
+        divideImageIn8x8Blocks(frame);
+    }
+    // ***************************************** Calculation of the DCT ************************************************
+    cv::Mat block;
+    std::vector<int> zigzagVector;
+    int prevDCIt = 0;
+    std::vector<std::pair<int, int>> runLength, blockACs;
+    double dc;
+    bool prevDcsEmpty = prevDCs.empty();
+    for(int r = 0; r < frame.rows; r += 8) {
+        for(int c = 0; c < frame.cols; c += 8) {
+            frame(cv::Rect(c, r,8,8)).copyTo(block);
+            quantizeBlock(block, luminance ? quantMatrixLuminance : quantMatrixChrominance);
+
+            // Next, the coefficients are organized in a one-dimensional vector according to a zig-zag scan.
+            zigzagVector.clear();
+            zigZagScan(block, zigzagVector);
+
+            dc = zigzagVector.at(0);
+            zigzagVector.erase(zigzagVector.begin()); // remove dc from zigzag array
+
+            // ********************* Statistical coding (Huffman) of the quantized DCT coefficients ********************
+
+            // The non-zero AC coefficients are encoded using Huffman or arithmetic coding, representing the value of
+            // the coefficient, as well as the number of zeros preceding it.
+            // In this case  the symbol to represent the end of the block doesn't exist. We use -1 in the value
+            // representing the number of zeros, to represent the beginning of a block, followed by the dc.
+            blockACs.clear();
+            runLengthPairs(zigzagVector, blockACs);
+
+            // The DC coefficient of each block is predicatively encoded in relation to the DC coefficient of the
+            // previous block.
+            if(prevDcsEmpty){
+                prevDCs.push_back(0);
+            }
+            runLength.emplace_back(-1, (int)(dc - prevDCs.at(prevDCIt)));
+            prevDCs.at(prevDCIt) = dc;
+            prevDCIt++;
+
+            runLength.insert(runLength.end(), blockACs.begin(), blockACs.end());
+        }
+    }
+
+    huffmanEncode(runLength, code, golomb);
+}
+
 
 void JPEGQuantization::inverseQuantizeDctBaselineJPEG(std::vector<int> &prevDCs, std::vector<std::pair<int, int>> runLengthCode,
                                     cv::Mat &frame, bool luminance){

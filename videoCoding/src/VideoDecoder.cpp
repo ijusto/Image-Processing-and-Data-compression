@@ -211,10 +211,10 @@ void VideoDecoder::update_m(vector<int> residuals, Golomb *golomb, int m_rate){
 
 void VideoDecoder::getResAndUpdate(vector<bool> &data, unsigned int *indexPtr, Golomb *golomb, int m_rate, vector<int> &outRes, int f_rows, int f_cols, int channel){
     std::vector<int> decodedLeafs;
-    golomb->decode2(data, decodedLeafs, indexPtr, 1);
+    golomb->decode2(data, decodedLeafs, indexPtr, 3);
     // Ler com o golomb numero a numero ate um -3 (inclusivo) -> folhas da huffman tree
     while(decodedLeafs.back() != -3) {
-        golomb->decode2(data, decodedLeafs, indexPtr, 1);
+        golomb->decode2(data, decodedLeafs, indexPtr, 3);
     }
     decodedLeafs.pop_back(); // -3 golomb encoded to represent the end of the huffman tree
 

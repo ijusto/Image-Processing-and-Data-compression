@@ -26,6 +26,7 @@ std::vector<std::pair<int, int>> acs = {{0,5}, {0, -3}, {0, -1}, {0, -2}, {0, -3
                                         {6,1}, {0, 1}, {1, 1}};
 
 std::vector<bool> code;
+std::vector<bool> qCode;
 std::vector<bool> encodedHuffmanTree;
 std::vector<std::pair<int, int>> runLengthCode = {{-1, 3}, {0,5}, {0, -3}, {0, -1},
                                                   {0, -2}, {0, -3}, {0,1}, {0, 1},
@@ -534,6 +535,104 @@ TEST_CASE("inverseQuantizeDctBaselineJPEG 2"){
     INFO(Xmatrix-result);
     bool is_small_diff = cv::checkRange(Xmatrix-result, true, nullptr, -60, 60);
     CHECK(is_small_diff);
+}
+
+
+TEST_CASE("quantizeDctBaselineJPEG 2 "){
+
+    double X [8][8] = {{183,160,94,153,194,163,132,165},
+                       {183,153,116,176,187,166,130,169},
+                       {179,168,171,182,179,170,131,167},
+                       {177,177,179,177,179,165,131,167},
+                       {178,178,179,176,182,164,130,171},
+                       {179,180,180,179,183,169,132,169},
+                       {179,179,180,182,183,170,129,173},
+                       {180,179,181,179,181,170,130,169}};
+    double final_Y [8][8] = {{3,5,-3,1,3,-2,1,0},
+                             {-3,-2,1,2,1,0,0,0},
+                             {-1,-1,1,1,1,0,0,0},
+                             {-1,0,0,1,0,0,0,0},
+                             {0,0,0,0,0,0,0,0},
+                             {0,0,0,0,0,0,0,0},
+                             {0,0,0,0,0,0,0,0},
+                             {0,0,0,0,0,0,0,0}};
+    cv::Mat Xmatrix = cv::Mat(8, 8, CV_64F, &X);
+    cv::Mat finalY = cv::Mat(8, 8, CV_64F, &final_Y);
+    prevDCs = {17};
+    INFO(Xmatrix);
+    jpegQuant->quantize(Xmatrix, prevDCs, golomb, qCode, true);
+
+    std::string info = "\node: \n";
+    for(bool bit : qCode){
+        info +=(bit) ? '1' : '0';
+    }
+    INFO(info);
+    std::vector<bool> correct = quantEncodedTree;
+    correct.insert(correct.end(), quantCode.begin(), quantCode.end());
+    CHECK(std::equal(qCode.begin(), qCode.end(), correct.begin()));
+}
+
+TEST_CASE("inverseQuantizeDctBaselineJPEG 3"){
+
+    double X [8][8] = {{183,160,94,153,194,163,132,165},
+                       {183,153,116,176,187,166,130,169},
+                       {179,168,171,182,179,170,131,167},
+                       {177,177,179,177,179,165,131,167},
+                       {178,178,179,176,182,164,130,171},
+                       {179,180,180,179,183,169,132,169},
+                       {179,179,180,182,183,170,129,173},
+                       {180,179,181,179,181,170,130,169}};
+    cv::Mat Xmatrix = cv::Mat(8, 8, CV_64F, &X);
+    cv::Mat result = cv::Mat(8, 8, CV_64F);
+    std::string info = "\nPrevious dcs: \n";
+    prevDCs = {17};
+    for(int n : prevDCs){ info += std::to_string(n); }
+    INFO(info);
+
+    unsigned int indexPtr = 0;
+    std::vector<int> decodedLeafs;
+    golomb->decode2(qCode, decodedLeafs, &indexPtr, 3);
+    for(int n : decodedLeafs){ std::cout<< n; }
+    std::cout<<std::endl;
+    // Ler com o golomb numero a numero ate um -3 (inclusivo) -> folhas da huffman tree
+    while(decodedLeafs.back() != -3) {
+        golomb->decode2(qCode, decodedLeafs, &indexPtr, 3);
+    }
+    for(int n : decodedLeafs){ std::cout<< n; }
+    std::cout<<std::endl;
+    decodedLeafs.pop_back(); // -3 golomb encoded to represent the end of the huffman tree
+
+    auto* huffDec = new HuffmanDecoder(jpegQuant->huffmanTree(decodedLeafs));
+    std::vector<std::pair<int, int>> rlCode;  // run length code
+
+    bool bit = qCode.at(indexPtr);
+    // update index
+    indexPtr = indexPtr + 1;
+    while(huffDec->decode(bit, rlCode)){
+        bit = qCode.at(indexPtr);
+        // update index
+        indexPtr = indexPtr + 1;
+    }
+
+    std::vector<int> numbers;
+    jpegQuant->inverseQuantizeDctBaselineJPEG(8, 8, prevDCs, rlCode, numbers, true);
+
+    INFO("\nX: \n");
+    INFO(Xmatrix);
+    //INFO("\nresult: \n");
+    //INFO(result);
+
+    info = "\nnumbers: \n";
+    for(int n : numbers){ info += std::to_string(n); }
+    INFO(info);
+    info = "\nRefreshed previous dcs: \n";
+    for(int n : prevDCs){ info += std::to_string(n); }
+    INFO(info);
+    //INFO("\nDifferences between X and inverse of the quantization: \n");
+    //INFO(Xmatrix-result);
+    //bool is_small_diff = cv::checkRange(Xmatrix-result, true, nullptr, -60, 60);
+    //CHECK(is_small_diff);
+    CHECK(1);
 }
 
 TEST_CASE("Huffman Decoder in Video Decoder"){

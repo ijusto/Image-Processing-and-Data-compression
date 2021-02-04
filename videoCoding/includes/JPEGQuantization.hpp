@@ -211,6 +211,16 @@ public:
      */
     void quantizeDctBaselineJPEG(cv::Mat &frame, std::vector<int> &prevDCs, Golomb* golomb, std::vector<bool> &code, bool luminance);
 
+    /*!
+     *
+     * @param frame
+     * @param prevDCs
+     * @param golomb
+     * @param code
+     * @param luminance
+     */
+    void quantize(cv::Mat &frame, std::vector<int> &prevDCs, Golomb* golomb, std::vector<bool> &code, bool luminance);
+
     //!
     /*!
      *

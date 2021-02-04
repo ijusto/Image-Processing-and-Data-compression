@@ -9,7 +9,7 @@ bool HuffmanDecoder::decode(bool bit, std::vector<std::pair<int, int>> &runLengt
     this->node = bit ? this->node->left : this->node->right;
 
     // if we are decoding the number of zeros
-    if(this->nZeros == -4){
+    if(this->nZeros == -5){
         if(this->node->left->left == nullptr && this->node->left->right == nullptr) { // number of zeros are in the left leafs
             this->nZeros = this->node->left->data;
             this->node = this->huffmanTree;
@@ -17,13 +17,13 @@ bool HuffmanDecoder::decode(bool bit, std::vector<std::pair<int, int>> &runLengt
     } else { // if we are decoding the value
         if(this->node->right->left == nullptr && this->node->right->right == nullptr) { // values are in the right leafs
             runLengthCode.push_back(std::pair<int, int>(this->nZeros, this->node->right->data));
-            this->nZeros = -4;
+            this->nZeros = -5;
             this->node = this->huffmanTree;
         }
     }
 
-    if(this->nZeros == -3){ // end of huffman code
-        this->nZeros = -4;
+    if(this->nZeros == -4){ // end of huffman code
+        this->nZeros = -5;
         return false;
     }
 
