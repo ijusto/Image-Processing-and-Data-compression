@@ -1,4 +1,4 @@
-#include "BitStream.hpp"
+#include "../includes/BitStream.hpp"
 
 BitStream :: BitStream(char *file, char mode){
 
@@ -14,6 +14,7 @@ BitStream :: BitStream(char *file, char mode){
             len++;
         }
         infile.close();
+
     } else if(mode == 'w'){
         outfile.open(file, std::ios::binary);
         if(!outfile.is_open()){
@@ -22,6 +23,7 @@ BitStream :: BitStream(char *file, char mode){
     } else {
         throw "Mode not allowed. Modes available: r (read) or w (write).";
     }
+
     //Init var need
     cr_pos = 0;
     r_pos = 7;
