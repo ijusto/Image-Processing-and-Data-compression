@@ -168,9 +168,11 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int init_m, int mode, bo
             // append encoded residuals to this->encodedRes
             quantization->quantize(this->last_res, this->prevDCs.at(0), golomb, this->encodedRes, true);
         }
-        // update previous
-        y_prev = frameData;
 
+        if(this->mode == 1){
+            // update previous
+            y_prev = frameData;
+        }
 
         // read u
         frameData = Mat(U_frame_rows, U_frame_cols, CV_8UC1);
@@ -194,8 +196,11 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int init_m, int mode, bo
             // append encoded residuals to this->encodedRes
             quantization->quantize(this->last_res, this->prevDCs.at(1), golomb, this->encodedRes, false);
         }
-        // update previous
-        u_prev = frameData;
+
+        if(this->mode == 1){
+            // update previous
+            u_prev = frameData;
+        }
 
         // read v
         frameData = Mat(V_frame_rows, V_frame_cols, CV_8UC1);
@@ -218,8 +223,11 @@ VideoEncoder::VideoEncoder(char* srcFileName, int pred, int init_m, int mode, bo
             // append encoded residuals to this->encodedRes
             quantization->quantize(this->last_res, this->prevDCs.at(2), golomb, this->encodedRes, false);
         }
-        // update previous
-        v_prev = frameData;
+
+        if(this->mode == 1){
+            // update previous
+            v_prev = frameData;
+        }
 
         frameCounter++;
     }

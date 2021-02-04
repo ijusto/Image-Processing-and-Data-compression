@@ -173,8 +173,11 @@ void VideoDecoder::decode(){
 
 }
 
-// TODO: make it fast
-void VideoDecoder::update_m(vector<int> residuals, Golomb *golomb, int m_rate){
+void VideoDecoder::update_m(vector<int> &residuals, Golomb *golomb, int m_rate){
+    if(residuals.size() != m_rate){
+        return;
+    }
+
     // used to compute mean of mapped residuals
     float res_sum = 0;
     int numRes = 0;
@@ -189,20 +192,15 @@ void VideoDecoder::update_m(vector<int> residuals, Golomb *golomb, int m_rate){
         numRes++;
     }
 
-    if(numRes == m_rate){
-        // calc mean from last m_rate mapped pixels
-        float res_mean = res_sum/numRes;
-        // calc alpha of geometric dist
-        // mu = alpha/(1 - alpha) <=> alpha = mu/(1 + mu)
-        float alpha = res_mean/(1+res_mean);
-        int m = ceil(-1/log(alpha));
-        if (m != 0){
-            // cout << "NEW M " << m << endl;
-            golomb->setM(m);
-        }
-        //reset
-        res_sum = 0;
-        numRes = 0;
+    // calc mean from last m_rate mapped pixels
+    float res_mean = res_sum/numRes;
+    // calc alpha of geometric dist
+    // mu = alpha/(1 - alpha) <=> alpha = mu/(1 + mu)
+    float alpha = res_mean/(1+res_mean);
+    int m = ceil(-1/log(alpha));
+    if (m != 0){
+        // cout << "NEW M " << m << endl;
+        golomb->setM(m);
     }
 }
 void VideoDecoder::getResAndUpdate(Golomb *golomb, vector<int> &outRes, int f_rows, int f_cols, int channel){
@@ -277,22 +275,22 @@ void VideoDecoder::decodeRes_intra(vector<int> &residualValues, vector<uchar> &o
                     value = residualValues.at(idx) + predictors.usePredictor2();
                     break;
                 case 3:
-                    value = residualValues.at(idx) +predictors.usePredictor3();
+                    value = residualValues.at(idx) + predictors.usePredictor3();
                     break;
                 case 4:
-                    value = residualValues.at(idx) +predictors.usePredictor4();
+                    value = residualValues.at(idx) + predictors.usePredictor4();
                     break;
                 case 5:
-                    value = residualValues.at(idx) +predictors.usePredictor5();
+                    value = residualValues.at(idx) + predictors.usePredictor5();
                     break;
                 case 6:
-                    value = residualValues.at(idx) +predictors.usePredictor6();
+                    value = residualValues.at(idx) + predictors.usePredictor6();
                     break;
                 case 7:
-                    value = residualValues.at(idx) +predictors.usePredictor7();
+                    value = residualValues.at(idx) + predictors.usePredictor7();
                     break;
                 case 8:
-                    value = residualValues.at(idx) +predictors.usePredictorJLS();
+                    value = residualValues.at(idx) + predictors.usePredictorJLS();
                     break;
                 default:
                     std::cout << "ERROR: Predictor chosen isn't correct!!!" << std::endl;

@@ -85,16 +85,17 @@ int main(int argc, char *argv[]) {
             vectorToCsv("u_samples.csv", (vector<char> *) &samples.at(1));
             vectorToCsv("v_samples.csv", (vector<char> *) &samples.at(2));
         }
+        printf("The program ended with success.\n");
     }else if (op == "decode"){
         VideoDecoder* videoDecoder = new VideoDecoder(src);
         cout << "decoding..." << endl;
         videoDecoder->decode();
         cout << "writing..." << endl;
         videoDecoder->write(dst);
+        printf("The program ended with success.\n");
     }else{
         printf("ERROR : This option doesn't exist!!\n");
     }
 
-    printf("The program ended with success.\n");
     return 0;
 }

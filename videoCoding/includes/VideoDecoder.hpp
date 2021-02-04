@@ -87,7 +87,7 @@ public:
      * @param
      * @param
      */
-    void update_m(vector<int> residuals, Golomb *golomb, int m_rate);
+    void update_m(vector<int> &residuals, Golomb *golomb, int m_rate);
 
     /*!
      *
